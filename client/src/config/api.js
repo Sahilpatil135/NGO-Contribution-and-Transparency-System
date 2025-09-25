@@ -1,0 +1,64 @@
+import { ENV } from './environment';
+
+// API Configuration
+const API_BASE_URL = ENV.API_BASE_URL;
+
+export const API_ENDPOINTS = {
+  // Authentication endpoints
+  REGISTER: `${API_BASE_URL}/api/auth/register`,
+  LOGIN: `${API_BASE_URL}/api/auth/login`,
+  LOGOUT: `${API_BASE_URL}/api/auth/logout`,
+  ME: `${API_BASE_URL}/api/auth/me`,
+  GOOGLE_AUTH: `${API_BASE_URL}/api/auth/google`,
+  GOOGLE_CALLBACK: `${API_BASE_URL}/api/auth/google/callback`,
+};
+
+// API utility functions
+export const apiRequest = async (url, options = {}) => {
+  const defaultOptions = {
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  };
+
+  // Add authorization header if token exists
+  const token = localStorage.getItem('authToken');
+  if (token) {
+    defaultOptions.headers.Authorization = `Bearer ${token}`;
+  }
+
+  const config = {
+    ...defaultOptions,
+    ...options,
+    headers: {
+      ...defaultOptions.headers,
+      ...options.headers,
+    },
+  };
+
+  try {
+    const response = await fetch(url, config);
+
+    // Handle non-JSON responses (like redirects)
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      if (response.ok) {
+        return { success: true, data: null };
+      }
+
+      throw new Error(`${await response.text()}`);
+    }
+
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || `HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    return { success: true, data };
+  } catch (error) {
+    console.error('API request failed:', error);
+    return { success: false, error: error.message };
+  }
+};

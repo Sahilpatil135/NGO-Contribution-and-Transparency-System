@@ -9,31 +9,56 @@ import (
 
 	_ "github.com/joho/godotenv/autoload"
 
+	"server/internal/config"
 	"server/internal/database"
+	"server/internal/handlers"
+	"server/internal/repository"
+	"server/internal/services"
 )
 
 type Server struct {
 	port int
-
-	db database.Service
+	db   database.Service
 }
 
 func NewServer() *http.Server {
 	port, _ := strconv.Atoi(os.Getenv("PORT"))
-	NewServer := &Server{
-		port: port,
+	if port == 0 {
+		port = 8080
+	}
 
-		db: database.New(),
+	// Initialize database
+	dbService := database.New()
+
+	// Get underlying sql.DB for repositories
+	sqlDB := dbService.GetDB()
+
+	// Initialize repositories
+	userRepo := repository.NewUserRepository(sqlDB)
+
+	// Initialize services
+	jwtService := services.NewJWTService()
+	authService := services.NewAuthService(userRepo, jwtService)
+
+	// Initialize handlers
+	authHandler := handlers.NewAuthHandler(authService, jwtService)
+
+	// Configure OAuth
+	config.ConfigureOAuth()
+
+	server := &Server{
+		port: port,
+		db:   dbService,
 	}
 
 	// Declare Server config
-	server := &http.Server{
-		Addr:         fmt.Sprintf(":%d", NewServer.port),
-		Handler:      NewServer.RegisterRoutes(),
+	httpServer := &http.Server{
+		Addr:         fmt.Sprintf(":%d", port),
+		Handler:      server.RegisterRoutes(authHandler),
 		IdleTimeout:  time.Minute,
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 30 * time.Second,
 	}
 
-	return server
+	return httpServer
 }

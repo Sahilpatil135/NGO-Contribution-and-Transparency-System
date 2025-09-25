@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Login from './components/auth/Login';
 import Signup from './components/auth/Signup';
 import Dashboard from './components/Dashboard';
+import OAuthCallback from './pages/OAuthCallback';
 import './App.css';
 
 const AppRoutes = () => {
@@ -36,6 +37,10 @@ const AppRoutes = () => {
         element={
           isAuthenticated ? <Dashboard /> : <Navigate to="/login" replace />
         } 
+      />
+      <Route 
+        path="/auth/callback" 
+        element={<OAuthCallback />} 
       />
       <Route 
         path="/" 

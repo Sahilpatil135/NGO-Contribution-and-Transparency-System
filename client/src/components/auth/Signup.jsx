@@ -26,6 +26,13 @@ const Signup = () => {
     setIsLoading(true);
     setError('');
 
+    // Basic validation
+    if (!formData.name || !formData.email || !formData.password || !formData.confirmPassword) {
+      setError('Please fill in all fields.');
+      setIsLoading(false);
+      return;
+    }
+
     // Validate passwords match
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match');
@@ -40,11 +47,20 @@ const Signup = () => {
       return;
     }
 
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      setError('Please enter a valid email address');
+      setIsLoading(false);
+      return;
+    }
+
     try {
       const result = await signup(formData.name, formData.email, formData.password);
       if (!result.success) {
         setError(result.error || 'Signup failed. Please try again.');
       }
+      // If successful, the AuthContext will handle the redirect
     } catch (err) {
       setError('Signup failed. Please try again.');
     } finally {
