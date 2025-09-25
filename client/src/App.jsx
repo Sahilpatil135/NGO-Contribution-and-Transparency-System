@@ -4,6 +4,7 @@ import Login from './components/auth/Login';
 import Signup from './components/auth/Signup';
 import Dashboard from './components/Dashboard';
 import './App.css';
+import ContributionsPage from './Pages/ContributionsPage';
 
 const AppRoutes = () => {
   const { isAuthenticated, isLoading } = useAuth();
@@ -19,30 +20,31 @@ const AppRoutes = () => {
 
   return (
     <Routes>
-      <Route 
-        path="/login" 
+      <Route
+        path="/login"
         element={
           isAuthenticated ? <Navigate to="/dashboard" replace /> : <Login />
-        } 
+        }
       />
-      <Route 
-        path="/signup" 
+      <Route
+        path="/signup"
         element={
           isAuthenticated ? <Navigate to="/dashboard" replace /> : <Signup />
-        } 
+        }
       />
-      <Route 
-        path="/dashboard" 
+      <Route
+        path="/dashboard"
         element={
           isAuthenticated ? <Dashboard /> : <Navigate to="/login" replace />
-        } 
+        }
       />
-      <Route 
-        path="/" 
+      <Route
+        path="/"
         element={
           <Navigate to={isAuthenticated ? "/dashboard" : "/login"} replace />
-        } 
+        }
       />
+      <Route path="/makeContribution" element={<ContributionsPage />} />
     </Routes>
   );
 };
