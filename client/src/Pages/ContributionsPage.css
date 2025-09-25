@@ -1,0 +1,130 @@
+.contributions {
+  min-height: 100vh;
+  /* background: #f8f9fa; */
+  background-color: wheat;
+  padding: 40px 20px;
+}
+
+.contributions-header {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.contributions-header h1 {
+  font-size: 32px;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin-bottom: 8px;
+}
+
+.contributions-header p {
+  font-size: 18px;
+  color: #666;
+  margin: 0;
+}
+
+.contributions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.ngo-card {
+  background: rgb(255, 206, 155);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: row;
+  padding: 40px;
+  gap: 24px;
+  align-items: center;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.ngo-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+.ngo-image {
+  width: 300px;
+  height: 300px;
+  background: #ddd;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+.ngo-details {
+  flex: 1;
+}
+
+.ngo-details h3 {
+  font-size: 20px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-bottom: 8px;
+}
+
+.ngo-cause {
+  color: #666;
+  margin-bottom: 12px;
+  line-height: 1.5;
+}
+
+.ngo-amount {
+  font-size: 16px;
+  color: #333;
+  margin-bottom: 16px;
+}
+
+.progress-container {
+  width: 100%;
+  height: 10px;
+  background: #e9ecef;
+  border-radius: 5px;
+  margin: 12px 0 6px 0;
+  overflow: hidden;
+}
+
+.progress-bar {
+  height: 100%;
+  background: #28a745;
+  transition: width 0.4s ease;
+}
+
+.progress-text {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 16px;
+}
+
+
+.donate-button {
+  background: #28a745;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.donate-button:hover {
+  background: #218838;
+}
+
+@media (max-width: 768px) {
+  .ngo-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .ngo-image {
+    width: 100%;
+    height: 200px;
+  }
+}

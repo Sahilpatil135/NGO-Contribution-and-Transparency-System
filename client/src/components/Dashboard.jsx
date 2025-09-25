@@ -1,5 +1,6 @@
 import { useAuth } from '../contexts/AuthContext';
 import './Dashboard.css';
+import { Link } from "react-router-dom";
 
 const Dashboard = () => {
   const { user, logout, fetchCurrentUser } = useAuth();
@@ -36,10 +37,12 @@ const Dashboard = () => {
           </div>
 
           <div className="features-grid">
-            <div className="feature-card">
-              <h3>Make Contributions</h3>
-              <p>Donate to various causes and track your contributions</p>
-            </div>
+            <Link to="/makeContribution" style={{ textDecoration: "none" }}>
+              <div className="feature-card">
+                <h3>Make Contributions</h3>
+                <p>Donate to various causes and track your contributions</p>
+              </div>
+            </Link>
 
             <div className="feature-card">
               <h3>View Reports</h3>
