@@ -54,10 +54,7 @@ const ContributionsPage = () => {
                                 <div className="progress-text">
                                     <span>₹{ngo.raised} raised</span>
                                     <span>Goal: ₹{ngo.goal}</span>
-                                </div>
-                                {/* <p className="ngo-amount">
-                                    Suggested Donation: <strong>{ngo.amount}</strong>
-                                </p> */}
+                                </div>                                
                                 <button className="donate-button">Donate Now</button>
                             </div>
                         </div>
