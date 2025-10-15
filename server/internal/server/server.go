@@ -1,24 +1,23 @@
 package server
 
 import (
-	"fmt"
-	"net/http"
-	"os"
-	"strconv"
-	"time"
+    "fmt"
+    "net/http"
+    "os"
+    "strconv"
+    "time"
+    _ "github.com/joho/godotenv/autoload"
 
-	_ "github.com/joho/godotenv/autoload"
-
-	"server/internal/config"
-	"server/internal/database"
-	"server/internal/handlers"
-	"server/internal/repository"
-	"server/internal/services"
+    "server/internal/config"
+    "server/internal/database"
+    "server/internal/handlers"
+    "server/internal/repository"
+    "server/internal/services"
 )
 
 type Server struct {
-	port int
-	db   database.Service
+    port int
+    db   database.Service
 }
 
 func NewServer() *http.Server {
@@ -46,10 +45,12 @@ func NewServer() *http.Server {
 	// Configure OAuth
 	config.ConfigureOAuth()
 
-	server := &Server{
-		port: port,
-		db:   dbService,
-	}
+    server := &Server{
+        port: port,
+        db:   dbService,
+    }
+
+    // Routes will be registered via RegisterRoutes
 
 	// Declare Server config
 	httpServer := &http.Server{

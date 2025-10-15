@@ -3,6 +3,7 @@ import "./ContributionsPage.css";
 import ngoImage1 from '../assets/Gemini_Generated_Image_tjfuxotjfuxotjfu (2).png';
 import ngoImage2 from '../assets/Gemini_Generated_Image_tjfuxotjfuxotjfu (1).png';
 import ngoImage3 from '../assets/Gemini_Generated_Image_tjfuxotjfuxotjfu.png';
+import DonateButton from "../components/DonateButton";
 
 const ContributionsPage = () => {
     const ngos = [
@@ -54,8 +55,8 @@ const ContributionsPage = () => {
                                 <div className="progress-text">
                                     <span>₹{ngo.raised} raised</span>
                                     <span>Goal: ₹{ngo.goal}</span>
-                                </div>                                
-                                <button className="donate-button">Donate Now</button>
+                                </div>                                                                
+                                <DonateButton amount={10} />
                             </div>
                         </div>
                     );

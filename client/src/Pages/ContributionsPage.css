@@ -102,7 +102,7 @@
 }
 
 
-.donate-button {
+/* .donate-button {
   background: #28a745;
   color: white;
   border: none;
@@ -115,7 +115,7 @@
 
 .donate-button:hover {
   background: #218838;
-}
+} */
 
 @media (max-width: 768px) {
   .ngo-card {

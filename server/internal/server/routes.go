@@ -27,8 +27,11 @@ func (s *Server) RegisterRoutes(authHandler *handlers.AuthHandler) http.Handler 
 	r.Get("/", s.HelloWorldHandler)
 	r.Get("/health", s.healthHandler)
 
-	// Register auth routes
+    // Register auth routes
 	authHandler.RegisterRoutes(r)
+
+    // Register payment routes
+    s.registerPaymentRoutes(r)
 
 	return r
 }
