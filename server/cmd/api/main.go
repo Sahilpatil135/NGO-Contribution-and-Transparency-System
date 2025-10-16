@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 	"time"
 
@@ -46,6 +48,12 @@ func main() {
 
 	// Run graceful shutdown in a separate goroutine
 	go gracefulShutdown(server, done)
+
+	port, _ := strconv.Atoi(os.Getenv("PORT"))
+	if port == 0 {
+		port = 8080
+	}
+	fmt.Printf("Starting Server on Port %v\n", port)
 
 	err := server.ListenAndServe()
 	if err != nil && err != http.ErrServerClosed {

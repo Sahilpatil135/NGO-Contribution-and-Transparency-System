@@ -54,6 +54,9 @@ func New() Service {
 	dbInstance = &service{
 		db: db,
 	}
+
+	fmt.Println("Connected to Database")
+
 	return dbInstance
 }
 
