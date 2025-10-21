@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import "./ContributionsPage.css";
 import ngoImage1 from '../assets/Gemini_Generated_Image_tjfuxotjfuxotjfu (2).png';
 import ngoImage2 from '../assets/Gemini_Generated_Image_tjfuxotjfuxotjfu (1).png';
@@ -30,6 +30,18 @@ const ContributionsPage = () => {
         },
     ];
 
+    const [donationAmounts, setDonationAmounts] = useState(
+        ngos.map(() => "")
+    );
+
+    // 🪄 Function to update specific NGO donation amount
+    const handleAmountChange = (index, value) => {
+        const newAmounts = [...donationAmounts];
+        newAmounts[index] = value;
+        setDonationAmounts(newAmounts);
+    };
+
+
     return (
         <div className="contributions">
             <div className="contributions-header">
@@ -40,6 +52,7 @@ const ContributionsPage = () => {
             <div className="contributions-list">
                 {ngos.map((ngo, index) => {
                     const progress = (ngo.raised / ngo.goal) * 100;
+                    const amount = donationAmounts[index];
                     return (
                         <div className="ngo-card" key={index}>
                             <div className="ngo-image">
@@ -55,8 +68,19 @@ const ContributionsPage = () => {
                                 <div className="progress-text">
                                     <span>₹{ngo.raised} raised</span>
                                     <span>Goal: ₹{ngo.goal}</span>
-                                </div>                                                                
-                                <DonateButton amount={10} />
+                                </div>
+                                <div className="donation-input">
+                                    <input
+                                        type="number"
+                                        placeholder="Enter amount (₹)"
+                                        value={amount}
+                                        min="1"
+                                        onChange={(e) =>
+                                            handleAmountChange(index, e.target.value)
+                                        }
+                                    />
+                                </div>
+                                <DonateButton amount={Number(amount) || 0} />
                             </div>
                         </div>
                     );

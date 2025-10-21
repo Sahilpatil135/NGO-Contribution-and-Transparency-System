@@ -1,4 +1,4 @@
-.dashboard {
+/* .dashboard {
   min-height: 100vh;
   background: #f8f9fa;
 }
@@ -90,7 +90,7 @@
 }
 
 .feature-card {
-  /* background: #f8f9fa; */
+  /* background: #f8f9fa; *
   background: wheat;
   border-radius: 12px;
   padding: 24px;
@@ -143,4 +143,159 @@
     grid-template-columns: 1fr;
     gap: 16px;
   }
+}  */
+
+/* Navbar */
+  .navbar {
+  width: 90vw;
+  height: 10vh;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 5vw;
+  background-color: #fff;
 }
+
+.navbar-left {
+  display: flex;
+  align-items: center;
+  padding-left: 4vw;
+}
+
+.logo {
+  font-size: 3.2vh;
+  font-weight: 600;
+  color: #3a0b2e;
+  display: flex;
+  align-items: center;
+  gap: 0.5vw;
+}
+
+.logo-icon {
+  color: #f75c03;
+  font-size: 3vh;
+}
+
+.nav-links {
+  list-style: none;
+  display: flex;
+  gap: 3vw;
+}
+
+.nav-links li {
+  font-size: 2.4vh;
+  cursor: pointer;
+  color: #000;
+}
+
+.nav-btns {
+  justify-content: space-between;
+}
+
+.donate-btn {
+  background-color: #ff6200;
+  color: #fff;
+  border: none;
+  font-size: 1.9vh;
+  padding: 1.2vh 2vw;
+  cursor: pointer;
+  border-radius: 0.4vh;
+  transition: 0.3s;
+  margin-right: 1vw;
+}
+
+.donate-btn:hover {
+  background-color: #e65500;
+}
+
+/* Hero Section */
+.hero {
+  width: 90vw;
+  height: 90vh;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #e3e5cf;
+  margin: 0 4vw;
+}
+
+.hero-text {
+  width: 50vw;
+  padding: 0 5vw;
+}
+
+.hero-text h1 {
+  font-size: 10vh;
+  color: #3a0b2e;
+  font-weight: 700;
+  line-height: 8vh;
+}
+
+.highlight {
+  color: #ff6200;
+  font-style: italic;
+}
+
+.donation-count {
+  margin-top: 5vh;
+}
+
+.donation-count h2 {
+  font-size: 4vh;
+  color: #3a0b2e;
+  margin-bottom: 1vh;
+}
+
+.donation-count p {
+  font-size: 2vh;
+  color: #3a0b2e;
+  margin-top: 0.2vh;
+}
+
+.hero-description {
+  font-size: 2.1vh;
+  color: #3a0b2e;
+  margin-top: 4vh;
+  line-height: 3vh;
+  width: 80%;
+  /* text-align: center; */
+}
+
+.hero-buttons {
+  display: flex;
+  gap: 2vw;
+  margin-top: 3vh;
+  text-align: center;
+}
+
+.get-involved-btn {
+  background-color: transparent;
+  border: 0.2vh solid #3a0b2e;
+  color: #3a0b2e;
+  font-size: 1.9vh;
+  padding: 1.2vh 2vw;
+  cursor: pointer;
+  border-radius: 0.4vh;
+  transition: 0.3s;
+}
+
+.get-involved-btn:hover {
+  background-color: #3a0b2e;
+  color: #fff;
+}
+
+/* Hero Images */
+.hero-images {
+  width: 30vw;
+  height: 60vh;
+  display: flex;
+  justify-content: space-between;
+  padding: 4vw;
+}
+
+.hero-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 1vh;
+} 

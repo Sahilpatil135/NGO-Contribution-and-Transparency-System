@@ -57,6 +57,7 @@
 
 .ngo-details {
   flex: 1;
+  padding: 1vw;
 }
 
 .ngo-details h3 {
@@ -101,21 +102,19 @@
   margin-bottom: 16px;
 }
 
-
-/* .donate-button {
-  background: #28a745;
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: 500;
-  transition: background-color 0.2s;
+.donation-input {
+  margin-top: 10px;
+  margin-bottom: 10px;
 }
 
-.donate-button:hover {
-  background: #218838;
-} */
+.donation-input input {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 1rem;
+}
+
 
 @media (max-width: 768px) {
   .ngo-card {
