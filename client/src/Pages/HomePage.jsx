@@ -3,6 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { Link } from "react-router-dom";
 import heroimg from "../assets/img1.png"
 import StatsCounter from '../components/StatsCounter';
+import Card from '../components/Card';
 
 const HomePage = () => {
     const { user, fetchCurrentUser } = useAuth();
@@ -65,6 +66,18 @@ const HomePage = () => {
                     </h1>
                     <p className="text-gray-500 max-w-lg mx-auto my-0 leading-relaxed">CharityLight brings transparency to giving — every donation is tracked, building trust and impact.</p>
                     <StatsCounter />
+                </div>
+            </section>
+
+            <section className="w-11/12 mx-auto my-16 items-center text-center space-y-6">
+                <h1 className="text-6xl font-bold">
+                    Featured <span className="text-[#ff6200] italic">Causes</span>
+                </h1>
+                <p className="text-gray-500 max-w-lg mx-auto my-0 leading-relaxed">Discover impactful charity campaigns verified on our transparent blockchain network.</p>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full my-8">
+                    <Card />
+                    <Card />
+                    <Card />
                 </div>
             </section>
 
