@@ -39,7 +39,7 @@ const StatsCounter = () => {
                 {statsData.map((stat) => (
                     <div
                         key={stat.id}
-                        className="bg-[#f8f8f8] shadow-md rounded-2xl p-6 flex flex-col items-center text-center hover:shadow-xl transition-shadow duration-300"
+                        className="bg-[#f1f1f1] shadow-md rounded-2xl p-6 flex flex-col items-center text-center hover:shadow-xl transition-shadow duration-300"
                     >
                         <h3 className="text-xl font-semibold text-gray-600 mb-4">
                             {stat.title}
