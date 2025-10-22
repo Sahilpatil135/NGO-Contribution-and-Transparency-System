@@ -2,9 +2,10 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Login from './components/auth/Login';
 import Signup from './components/auth/Signup';
-import Dashboard from './components/Dashboard';
 import OAuthCallback from './pages/OAuthCallback';
 import './App.css';
+import Navbar from './components/Navbar';
+import HomePage from './Pages/HomePage';
 import ContributionsPage from './Pages/ContributionsPage';
 
 const AppRoutes = () => {
@@ -24,19 +25,19 @@ const AppRoutes = () => {
       <Route
         path="/login"
         element={
-          isAuthenticated ? <Navigate to="/dashboard" replace /> : <Login />
+          isAuthenticated ? <Navigate to="/" replace /> : <Login />
         }
       />
       <Route
         path="/signup"
         element={
-          isAuthenticated ? <Navigate to="/dashboard" replace /> : <Signup />
+          isAuthenticated ? <Navigate to="/" replace /> : <Signup />
         }
       />
       <Route
-        path="/dashboard"
+        path="/"
         element={
-          isAuthenticated ? <Dashboard /> : <Navigate to="/login" replace />
+          isAuthenticated ? <HomePage /> : <Navigate to="/login" replace />
         }
       />
       <Route
@@ -46,7 +47,7 @@ const AppRoutes = () => {
       <Route
         path="/"
         element={
-          <Navigate to={isAuthenticated ? "/dashboard" : "/login"} replace />
+          <Navigate to={isAuthenticated ? "/" : "/login"} replace />
         }
       />
       <Route path="/makeContribution" element={<ContributionsPage />} />
@@ -59,6 +60,7 @@ function App() {
     <AuthProvider>
       <Router>
         <div className="app">
+          <Navbar />
           <AppRoutes />
         </div>
       </Router>

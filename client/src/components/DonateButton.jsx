@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { createOrder, verifyPayment } from "../services/paymentApi";
-import "./DonateButton.css";
 
 const DonateButton = ({ amount }) => {
   const handleDonate = async () => {
@@ -54,7 +53,7 @@ const DonateButton = ({ amount }) => {
   return (
     <button
       onClick={handleDonate}
-      className="donate-button"  
+      className="bg-[#28a745] text-white border-none px-5 py-2 rounded-md cursor-pointer font-medium transition-colors duration-300 hover:bg-[#218838]"  
       style={buttonStyle}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
