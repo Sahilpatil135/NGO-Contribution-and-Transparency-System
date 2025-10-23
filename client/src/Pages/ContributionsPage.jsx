@@ -96,6 +96,7 @@
 import React from 'react'
 import img1 from "../assets/makeContributionbanner.jpg"
 import img2 from "../assets/Gemini_Generated_Image_tjfuxotjfuxotjfu (2).png"
+import CausesCarousel from '../components/CausesCarousel';
 
 const ContributionsPage = () => {
   return (
@@ -121,8 +122,15 @@ const ContributionsPage = () => {
         </section>
 
         {/* Explore NGO's  */}
-
-        
+        {/* <section className="my-16 bg-gray-200">
+            <div className="w-11/12 flex flex-col justify-between mx-auto py-16">
+                <h1 className="text-4xl pl-16">Explore Causes</h1>
+                
+            </div>
+        </section> */}
+        <section>
+            <CausesCarousel />
+        </section>
     </div>
   )
 }
