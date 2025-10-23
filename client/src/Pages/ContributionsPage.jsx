@@ -97,42 +97,54 @@ import React from 'react'
 import img1 from "../assets/makeContributionbanner.jpg"
 import img2 from "../assets/Gemini_Generated_Image_tjfuxotjfuxotjfu (2).png"
 import CausesCarousel from '../components/CausesCarousel';
+import Card from '../components/Card';
 
 const ContributionsPage = () => {
-  return (
-    <div className="w-full">
-        {/* Hero section  */}
-        <section>
-            <img src={img1} alt="..." />
-        </section>
+    return (
+        <div className="w-full">
+            {/* Hero section  */}
+            <section>
+                <img src={img1} alt="..." />
+            </section>
 
-        {/* Types of Donations section  */}
-        <section className="mt-30">
-            <div className="w-11/12 flex flex-col items-center justify-between mx-auto my-6">
-                <h1 className="text-5xl font-bold mb-16">Where Do <span className="text-[#ff6200] italic">YOU</span> Want To <span className="text-[#ff6200] italic">Contribute</span> ?</h1>
-                <div className="grid grid-cols-1 md: grid-cols-5 gap-8 w-full my-8">
-                    {/* will replace by clickable div's with links to respective pages */}
-                    <div className="flex flex-col"><img src={img2} alt=".." /> Monetary Donations</div>
-                    <div className="flex flex-col"><img src={img2} alt=".." /> Voluntering</div>
-                    <div className="flex flex-col"><img src={img2} alt=".." /> Blood & Organ Donations</div>
-                    <div className="flex flex-col"><img src={img2} alt=".." /> Goods & Resources Donation</div>
-                    <div className="flex flex-col"><img src={img2} alt=".." /> Environmental Support</div>
+            {/* Types of Donations section  */}
+            <section className="mt-30">
+                <div className="w-11/12 flex flex-col items-center justify-between mx-auto my-6">
+                    <h1 className="text-5xl font-bold mb-16">Where Do <span className="text-[#ff6200] italic">YOU</span> Want To <span className="text-[#ff6200] italic">Contribute</span> ?</h1>
+                    <div className="grid grid-cols-1 md: grid-cols-5 gap-8 w-full my-8">
+                        {/* will replace by clickable div's with links to respective pages */}
+                        <div className="flex flex-col"><img src={img2} alt=".." /> Monetary Donations</div>
+                        <div className="flex flex-col"><img src={img2} alt=".." /> Voluntering</div>
+                        <div className="flex flex-col"><img src={img2} alt=".." /> Blood & Organ Donations</div>
+                        <div className="flex flex-col"><img src={img2} alt=".." /> Goods & Resources Donation</div>
+                        <div className="flex flex-col"><img src={img2} alt=".." /> Environmental Support</div>
+                    </div>
                 </div>
-            </div>
-        </section>
+            </section>
 
-        {/* Explore NGO's  */}
-        {/* <section className="my-16 bg-gray-200">
+            {/* Explore NGO's  */}
+            {/* <section className="my-16 bg-gray-200">
             <div className="w-11/12 flex flex-col justify-between mx-auto py-16">
                 <h1 className="text-4xl pl-16">Explore Causes</h1>
                 
             </div>
         </section> */}
-        <section>
-            <CausesCarousel />
-        </section>
-    </div>
-  )
+
+            {/* Types of Causes */}
+            <section>
+                <CausesCarousel />
+            </section>
+
+            {/* Dynamically causes card will get displayed on selecting type of cause  */}
+            <section className="w-11/12 mx-auto my-20 items-center text-center space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-12 w-full my-8">
+                    <Card />
+                    <Card />
+                    <Card />
+                </div>
+            </section>
+        </div>
+    )
 }
 
 export default ContributionsPage
