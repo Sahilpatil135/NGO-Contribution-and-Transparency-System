@@ -59,6 +59,7 @@ const HomePage = () => {
                 </div>
             </section>
 
+            {/* Stats Section  */}
             <section>
                 <div className="w-11/12 mx-auto my-16 items-center text-center space-y-6">
                     <h1 className="text-6xl font-bold">
@@ -69,12 +70,15 @@ const HomePage = () => {
                 </div>
             </section>
 
+            {/* Objectives of CharityLight & Safety using Blockchain (TODO) */}
+
+            {/* Causes Section  */}
             <section className="w-11/12 mx-auto my-16 items-center text-center space-y-6">
                 <h1 className="text-6xl font-bold">
                     Featured <span className="text-[#ff6200] italic">Causes</span>
                 </h1>
                 <p className="text-gray-500 max-w-lg mx-auto my-0 leading-relaxed">Discover impactful charity campaigns verified on our transparent blockchain network.</p>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full my-8">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-12 w-full my-8">
                     <Card />
                     <Card />
                     <Card />

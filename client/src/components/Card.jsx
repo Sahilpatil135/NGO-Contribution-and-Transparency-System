@@ -1,52 +1,11 @@
-// import React from 'react'
-// import heroimg from "../assets/img1.png"
-// import { FaRegHeart } from "react-icons/fa";
-// import { BiUpvote } from "react-icons/bi";
-// import { BiDownvote } from "react-icons/bi";
-// import "./Card.css"
-
-// const Card = () => {
-//     return (
-//         <div>
-//             <div>
-//                 <img src={heroimg} alt="..." />
-//                 <button><FaRegHeart /></button>
-//                 <div className="flex ">
-//                     <button><BiUpvote /></button> 55 | <button><BiDownvote /></button>
-//                 </div>
-//             </div>
-//             <div>
-//                 <h1>Title</h1>
-//                 <p>by Campaign name</p>
-//                 <div className="flex flex-col">
-//                     <div className="flex justify-between">
-//                         <p>No. of Donations</p>
-//                         <p>Time left</p>
-//                     </div>
-//                     <div className="progress-container">
-//                         <div className="progress-bar"></div>
-//                     </div>
-//                     <div className="progress-text">
-//                         <span>₹{1000} raised</span>
-//                         <span>Goal: ₹{5000}</span>
-//                     </div>
-//                 </div>
-//                 <button>Donate</button>
-//             </div>
-//         </div>
-//     )
-// }
-
-// export default Card
-
-
 import React, { useState } from "react";
 import heroimg from "../assets/img1.png";
 import { FaRegHeart } from "react-icons/fa";
-import { BiUpvote, BiDownvote } from "react-icons/bi";
+import { BiUpvote, BiDownvote, BiGroup } from "react-icons/bi";
+import { IoMdTime } from "react-icons/io";
 
 const Card = () => {
-  const raised = 1000;
+  const raised = 2000;
   const goal = 5000;
   const progress = Math.min((raised / goal) * 100, 100);
 
@@ -66,18 +25,18 @@ const Card = () => {
           className="w-full h-56 object-cover"
         />
 
-        {/* Heart Button */ }
-        <button className="absolute top-3 right-3 bg-white p-2 rounded-full shadow hover:bg-gray-100 transition">
+        {/* Heart Button */}
+        <button className="absolute top-3 right-3 bg-white p-2 rounded-full shadow hover:bg-gray-100 transition cursor-pointer">
           <FaRegHeart className="text-red-500 text-lg" />
         </button>
 
         {/* Upvote/Downvote */}
         <div className="absolute bottom-3 right-3 flex items-center bg-white/90 px-2 py-1 rounded-full text-gray-700 text-sm shadow">
-          <button className="hover:text-green-600">
+          <button className="hover:text-green-600 cursor-pointer">
             <BiUpvote className="text-lg" />
           </button>
-          <span className="mx-1">55</span>
-          <button className="hover:text-red-600">
+          <span className="mx-1">55 |</span>
+          <button className="hover:text-red-600 cursor-pointer">
             <BiDownvote className="text-lg" />
           </button>
         </div>
@@ -93,8 +52,8 @@ const Card = () => {
           <div>
             {/* Donations & Time Left */}
             <div className="flex justify-between text-sm text-gray-600 mb-2">
-              <p>No. of Donations</p>
-              <p>Time left</p>
+              <p className="flex"><BiGroup className="h-5 mr-1 text-lg" />100 Donations</p>
+              <p className="flex"><IoMdTime className="h-5 text-lg mr-1" />3 Days Left</p>
             </div>
 
             {/* Progress Bar */}
@@ -106,14 +65,14 @@ const Card = () => {
             </div>
 
             {/* Raised vs Goal */}
-            <div className="flex justify-between text-xs text-gray-600">
-              <span>₹{raised.toLocaleString()} raised</span>
-              <span>Goal: ₹{goal.toLocaleString()}</span>
+            <div className="flex justify-between text-sm text-gray-600">
+              <span> <span className="text-lg font-bold text-black">₹{raised.toLocaleString()}</span> Raised</span>
+              <span>Goal: <span className="text-red-500 font-bold">₹{goal.toLocaleString()}</span></span>
             </div>
           </div>
         ) : (
           <div className="flex justify-center items-center h-12">
-            <button className="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-6 rounded-full transition">
+            <button className="bg-green-600 hover:bg-green-700 w-full text-white font-semibold py-2 px-6 mx-2 rounded-full transition cursor-pointer">
               Donate
             </button>
           </div>

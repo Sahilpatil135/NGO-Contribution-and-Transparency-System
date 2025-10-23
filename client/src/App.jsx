@@ -21,6 +21,9 @@ const AppRoutes = () => {
   }
 
   return (
+    <>
+    {isAuthenticated && <Navbar />}
+
     <Routes>
       <Route
         path="/login"
@@ -44,14 +47,15 @@ const AppRoutes = () => {
         path="/auth/callback"
         element={<OAuthCallback />}
       />
-      <Route
+      {/* <Route
         path="/"
         element={
           <Navigate to={isAuthenticated ? "/" : "/login"} replace />
         }
-      />
-      <Route path="/makeContribution" element={<ContributionsPage />} />
+      /> */}
+      <Route path="/makeContribution" element={isAuthenticated ? <ContributionsPage /> : <Navigate to="/login" replace />} />
     </Routes>
+    </>
   );
 };
 
@@ -60,7 +64,7 @@ function App() {
     <AuthProvider>
       <Router>
         <div className="app">
-          <Navbar />
+          {/* <Navbar /> */}
           <AppRoutes />
         </div>
       </Router>
