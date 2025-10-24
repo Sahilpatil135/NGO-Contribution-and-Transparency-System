@@ -3,6 +3,7 @@ import heroimg from "../assets/img1.png";
 import { FaRegHeart } from "react-icons/fa";
 import { BiUpvote, BiDownvote, BiGroup } from "react-icons/bi";
 import { IoMdTime } from "react-icons/io";
+import { Link } from "react-router-dom";
 
 const Card = () => {
   const raised = 2000;
@@ -17,6 +18,7 @@ const Card = () => {
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
     >
+      <Link to="/campaign/1">
       {/* Image Section */}
       <div className="relative">
         <img
@@ -47,15 +49,15 @@ const Card = () => {
         <h1 className="text-xl font-bold text-gray-800">Helping Hands Foundation</h1>
         <p className="text-md text-gray-500 mb-3">by Campaign Name</p>
 
+        {/* Donations & Time Left */}
+        <div className="flex justify-between text-sm text-gray-600 mb-2">
+          <p className="flex"><BiGroup className="h-5 mr-1 text-lg" />100 Donations</p>
+          <p className="flex"><IoMdTime className="h-5 text-lg mr-1" />3 Days Left</p>
+        </div>
+
         {/* Hover Logic: hide details, show donate button */}
         {!hover ? (
           <div>
-            {/* Donations & Time Left */}
-            <div className="flex justify-between text-sm text-gray-600 mb-2">
-              <p className="flex"><BiGroup className="h-5 mr-1 text-lg" />100 Donations</p>
-              <p className="flex"><IoMdTime className="h-5 text-lg mr-1" />3 Days Left</p>
-            </div>
-
             {/* Progress Bar */}
             <div className="w-full bg-gray-200 h-2 rounded-full overflow-hidden mb-2">
               <div
@@ -78,6 +80,7 @@ const Card = () => {
           </div>
         )}
       </div>
+      </Link>
     </div>
   );
 };

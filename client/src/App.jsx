@@ -7,6 +7,7 @@ import './App.css';
 import Navbar from './components/Navbar';
 import HomePage from './Pages/HomePage';
 import ContributionsPage from './Pages/ContributionsPage';
+import CampaignPage from './Pages/CampaignPage';
 
 const AppRoutes = () => {
   const { isAuthenticated, isLoading } = useAuth();
@@ -54,6 +55,7 @@ const AppRoutes = () => {
         }
       /> */}
       <Route path="/makeContribution" element={isAuthenticated ? <ContributionsPage /> : <Navigate to="/login" replace />} />
+      <Route path="/campaign/:id" element={isAuthenticated ? <CampaignPage /> : <Navigate to="/login" replace />} />
     </Routes>
     </>
   );
