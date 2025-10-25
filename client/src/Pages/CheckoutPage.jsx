@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import img1 from "/img1.png";
 import { LuLock } from "react-icons/lu";
+import DonateButton from "../components/DonateButton";
 
 const CheckoutPage = () => {
   const [amount, setAmount] = useState(500);
@@ -55,19 +56,24 @@ const CheckoutPage = () => {
     return true;
   };
 
-  const handleSubmit = () => {
+  // const handleSubmit = () => {
+  //   if (validateForm()) {
+  //     alert("Form submitted successfully!");
+  //   }
+  // };
+  const handleProceedToPay = () => {
     if (validateForm()) {
-      alert("Form submitted successfully!");
+      document.getElementById("rzp-trigger").click();
     }
   };
 
   return (
     <div className="bg-gray-100 py-12">
       <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-[70%_30%] gap-10 px-4 md:px-8">
-        
+
         {/* LEFT SIDE */}
         <div className="flex flex-col space-y-10">
-          
+
           {/* Donation Amount Card */}
           <div className="bg-white p-6 px-8 rounded-xl shadow-md">
             <h2 className="text-2xl font-semibold text-[#3a0b2e] mb-4">
@@ -78,11 +84,10 @@ const CheckoutPage = () => {
                 <button
                   key={val}
                   onClick={() => setAmount(val)}
-                  className={`py-2 rounded-lg border cursor-pointer transition ${
-                    amount === val
-                      ? "bg-[#ff6200] text-white border-[#ff6200]"
-                      : "bg-white text-[#3a0b2e] border-gray-300 hover:border-[#ff6200]"
-                  }`}
+                  className={`py-2 rounded-lg border cursor-pointer transition ${amount === val
+                    ? "bg-[#ff6200] text-white border-[#ff6200]"
+                    : "bg-white text-[#3a0b2e] border-gray-300 hover:border-[#ff6200]"
+                    }`}
                 >
                   ₹{val}
                 </button>
@@ -230,15 +235,28 @@ const CheckoutPage = () => {
                 </label>
               </div>
 
-              <button
+              {/* <button
                 onClick={handleSubmit}
+                className="w-full bg-[#ff6200] hover:bg-[#e45a00] text-white font-semibold py-3 my-2 rounded-lg transition cursor-pointer"
+              >
+                Proceed to Pay ₹{amount}
+              </button> */}
+
+              {/* Proceed to Pay */}
+              <button
+                onClick={handleProceedToPay}
                 className="w-full bg-[#ff6200] hover:bg-[#e45a00] text-white font-semibold py-3 my-2 rounded-lg transition cursor-pointer"
               >
                 Proceed to Pay ₹{amount}
               </button>
 
+              {/* Hidden DonateButton trigger */}
+              <div className="hidden">
+                <DonateButton id="rzp-trigger" amount={amount} />
+              </div>
+
               <p className="flex justify-center text-center text-sm text-gray-500 mt-1">
-                <LuLock className="ml-4 mr-1 h-5"/>All payments go through a secure gateway
+                <LuLock className="ml-4 mr-1 h-5" />All payments go through a secure gateway
               </p>
             </div>
           </div>
@@ -268,9 +286,18 @@ const CheckoutPage = () => {
             <p className="text-gray-600">of ₹5,00,000 goal</p>
           </div>
 
-          <button className="w-full bg-[#ff6200] hover:bg-[#e45a00] text-white font-semibold py-3 rounded-lg transition cursor-pointer">
+          {/* <button className="w-full bg-[#ff6200] hover:bg-[#e45a00] text-white font-semibold py-3 rounded-lg transition cursor-pointer">
+            Proceed to Pay ₹{amount}
+          </button> */}
+
+          {/* Mirror button for right side */}
+          <button
+            onClick={handleProceedToPay}
+            className="w-full bg-[#ff6200] hover:bg-[#e45a00] text-white font-semibold py-3 rounded-lg transition cursor-pointer"
+          >
             Proceed to Pay ₹{amount}
           </button>
+
         </div>
       </div>
     </div>
