@@ -1,5 +1,6 @@
 import React from "react";
 import img1 from "../assets/img1.png";
+import { Link } from "react-router-dom";
 
 const campaign = {
   title: "Help Dr Amruta provide life-saving cancer treatment to poor patients who can’t afford care",
@@ -84,9 +85,12 @@ const CampaignPage = () => {
           </p>
 
           {/* Donate Button */}
-          <button className="w-full bg-[#ff6200] hover:bg-[#e45a00] text-white font-semibold py-3 rounded-lg transition">
-            Donate Now
-          </button>
+          <Link to="/checkout">
+            <button className="w-full bg-[#ff6200] hover:bg-[#e45a00] text-white font-semibold py-3 rounded-lg transition cursor-pointer">
+              Donate Now
+            </button>
+          </Link>
+
         </div>
       </div>
 
