@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import img1 from "../assets/img1.png";
+import img1 from "/img1.png";
 import { LuLock } from "react-icons/lu";
 
 const CheckoutPage = () => {

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import heroimg from "../assets/img1.png";
+import heroimg from "/img1.png";
 import { FaRegHeart } from "react-icons/fa";
 import { BiUpvote, BiDownvote, BiGroup } from "react-icons/bi";
 import { IoMdTime } from "react-icons/io";

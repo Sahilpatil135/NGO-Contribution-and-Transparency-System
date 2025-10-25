@@ -1,7 +1,7 @@
 import React from "react";
 import CountUp from "react-countup";
 import { useInView } from "react-intersection-observer";
-import img1 from "../assets/Gemini_Generated_Image_tjfuxotjfuxotjfu.png";
+import img1 from "/ngo_helping_hand.png";
 
 const statsData = [
     {

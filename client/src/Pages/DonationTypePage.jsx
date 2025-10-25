@@ -1,9 +1,9 @@
 import { useParams } from "react-router-dom";
-import monetaryBanner from "../assets/makeContributionbanner.jpg";
-import volunteerBanner from "../assets/makeContributionbanner.jpg";
-import bloodBanner from "../assets/makeContributionbanner.jpg";
-import goodsBanner from "../assets/makeContributionbanner.jpg";
-import environmentBanner from "../assets/makeContributionbanner.jpg";
+import monetaryBanner from "/makeContributionbanner.jpg";
+import volunteerBanner from "/makeContributionbanner.jpg";
+import bloodBanner from "/makeContributionbanner.jpg";
+import goodsBanner from "/makeContributionbanner.jpg";
+import environmentBanner from "/makeContributionbanner.jpg";
 import Card from "../components/Card";
 
 const banners = {

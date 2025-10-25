@@ -1,7 +1,7 @@
 import React from 'react'
 import { useAuth } from '../contexts/AuthContext';
 import { Link } from "react-router-dom";
-import heroimg from "../assets/img1.png"
+import heroimg from "/img1.png"
 import StatsCounter from '../components/StatsCounter';
 import Card from '../components/Card';
 
@@ -40,12 +40,15 @@ const HomePage = () => {
                     <div className="flex gap-4 pt-2">
                         <Link to="/makeContribution" className="no-underline">
                             <button className="bg-[#ff6200] text-white text-sm px-6 py-2 rounded-md transition hover:bg-[#e65500] cursor-pointer">
-                                Donate Now
+                                Start Donating
                             </button>
                         </Link>
-                        <button className="bg-transparent border border-[#3a0b2e] text-[#3a0b2e] text-sm px-6 py-2 rounded-md transition hover:bg-[#3a0b2e] hover:text-white">
-                            Get Involved
-                        </button>
+                        <Link to="/makecontribution/volunteering" className="no-underline">
+                            <button className="bg-transparent border border-[#3a0b2e] text-[#3a0b2e] text-sm px-6 py-2 rounded-md transition hover:bg-[#3a0b2e] hover:text-white cursor-pointer">
+                                Join as Volunteer
+                            </button>
+                        </Link>
+
                     </div>
                 </div>
 
