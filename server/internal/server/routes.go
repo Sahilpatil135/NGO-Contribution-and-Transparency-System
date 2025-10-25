@@ -12,7 +12,7 @@ import (
 	"github.com/go-chi/cors"
 )
 
-func (s *Server) RegisterRoutes(authHandler *handlers.AuthHandler) http.Handler {
+func (s *Server) RegisterRoutes(authHandler *handlers.AuthHandler, causeHandler *handlers.CauseHandler) http.Handler {
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 
@@ -27,11 +27,14 @@ func (s *Server) RegisterRoutes(authHandler *handlers.AuthHandler) http.Handler 
 	r.Get("/", s.HelloWorldHandler)
 	r.Get("/health", s.healthHandler)
 
-    // Register auth routes
+	// Register auth routes
 	authHandler.RegisterRoutes(r)
 
-    // Register payment routes
-    s.registerPaymentRoutes(r)
+	// Register cause routes
+	causeHandler.RegisterRoutes(r)
+
+	// Register payment routes
+	s.registerPaymentRoutes(r)
 
 	return r
 }

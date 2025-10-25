@@ -21,6 +21,7 @@ type jwtService struct {
 type Claims struct {
 	UserID uuid.UUID `json:"user_id"`
 	Email  string    `json:"email"`
+	// Role   string    `json:"role"`
 	jwt.RegisteredClaims
 }
 
@@ -38,6 +39,8 @@ func (j *jwtService) GenerateToken(userID uuid.UUID, email string) (string, erro
 	claims := &Claims{
 		UserID: userID,
 		Email:  email,
+		//  TODO: Add Role (user/ngo) to the claims
+		// Role: role,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)), // 24 hours
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
@@ -51,7 +54,7 @@ func (j *jwtService) GenerateToken(userID uuid.UUID, email string) (string, erro
 }
 
 func (j *jwtService) ValidateToken(tokenString string) (*Claims, error) {
-	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (any, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}

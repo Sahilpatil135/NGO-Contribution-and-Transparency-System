@@ -30,7 +30,8 @@ func NewAuthHandler(authService services.AuthService, jwtService services.JWTSer
 
 func (h *AuthHandler) RegisterRoutes(r chi.Router) {
 	r.Route("/api/auth", func(r chi.Router) {
-		r.Post("/register", h.Register)
+		r.Post("/register", h.RegisterUser)
+		r.Post("/register/organization", h.RegisterOrganization)
 		r.Post("/login", h.Login)
 		r.Get("/me", middleware.AuthMiddleware(h.jwtService)(http.HandlerFunc(h.GetMe)).ServeHTTP)
 		r.Post("/logout", h.Logout)
@@ -41,7 +42,7 @@ func (h *AuthHandler) RegisterRoutes(r chi.Router) {
 	})
 }
 
-func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
+func (h *AuthHandler) RegisterUser(w http.ResponseWriter, r *http.Request) {
 	var req models.CreateUserRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
@@ -59,7 +60,36 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	authResp, err := h.authService.Register(r.Context(), &req)
+	authResp, err := h.authService.RegisterUser(r.Context(), &req)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(authResp)
+}
+
+func (h *AuthHandler) RegisterOrganization(w http.ResponseWriter, r *http.Request) {
+	var req models.CreateOrganizationRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		fmt.Println(err)
+		return
+	}
+
+	// Basic validation
+	if req.Name == "" || req.Email == "" || req.Password == "" || req.OrganizationName == "" {
+		http.Error(w, "Name, organization name, email, and password are required", http.StatusBadRequest)
+		return
+	}
+
+	if len(req.Password) < 6 {
+		http.Error(w, "Password must be at least 6 characters long", http.StatusBadRequest)
+		return
+	}
+
+	authResp, err := h.authService.RegisterOrganization(r.Context(), &req)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -84,7 +114,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 
 	authResp, err := h.authService.Login(r.Context(), &req)
 	if err != nil {
-		http.Error(w, "Invalid credentials", http.StatusUnauthorized)
+		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return
 	}
 
@@ -139,7 +169,7 @@ func (h *AuthHandler) CompleteAuth(w http.ResponseWriter, r *http.Request) {
 		provider = "google"
 	}
 
-	fmt.Println(user)
+	fmt.Printf("%+v\n", user)
 
 	// Derive a friendly display name if provider didn't populate Name
 	displayName := user.Name
@@ -180,11 +210,10 @@ func (h *AuthHandler) CompleteAuth(w http.ResponseWriter, r *http.Request) {
 		user.AvatarURL,
 	)
 	if err != nil {
+		fmt.Println(err)
 		http.Error(w, "Failed to create/update user", http.StatusInternalServerError)
 		return
 	}
-
-	fmt.Println(user)
 
 	// Redirect back to frontend with token
 	frontendURL := os.Getenv("FRONTEND_URL")
@@ -199,7 +228,6 @@ func (h *AuthHandler) CompleteAuth(w http.ResponseWriter, r *http.Request) {
 	redirectURL.RawQuery = q.Encode()
 
 	redirectURLString := redirectURL.String()
-	fmt.Println(redirectURLString)
 
 	http.Redirect(w, r, redirectURLString, http.StatusFound)
 }

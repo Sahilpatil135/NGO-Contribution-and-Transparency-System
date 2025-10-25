@@ -19,6 +19,7 @@ type User struct {
 	IsVerified   bool      `json:"is_verified" db:"is_verified"`
 	CreatedAt    time.Time `json:"created_at" db:"created_at"`
 	UpdatedAt    time.Time `json:"updated_at" db:"updated_at"`
+	Role         string    `json:"role" db:"role"`
 }
 
 // CreateUserRequest represents the request payload for creating a user
@@ -51,6 +52,7 @@ type UserResponse struct {
 	IsVerified bool      `json:"is_verified"`
 	CreatedAt  time.Time `json:"created_at"`
 	UpdatedAt  time.Time `json:"updated_at"`
+	Role       string    `json:"role" db:"role"`
 }
 
 // ToUserResponse converts a User to UserResponse
@@ -65,5 +67,6 @@ func (u *User) ToUserResponse() UserResponse {
 		IsVerified: u.IsVerified,
 		CreatedAt:  u.CreatedAt,
 		UpdatedAt:  u.UpdatedAt,
+		Role:       u.Role,
 	}
 }
