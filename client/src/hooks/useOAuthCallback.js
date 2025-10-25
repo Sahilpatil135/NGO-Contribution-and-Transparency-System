@@ -24,7 +24,7 @@ export const useOAuthCallback = () => {
           localStorage.setItem('authToken', token);
           const me = await fetchCurrentUser();
           if (me.success) {
-            navigate('/dashboard', { replace: true });
+            navigate('/', { replace: true });
           } else {
             navigate('/login?error=oauth_failed');
           }
@@ -33,7 +33,7 @@ export const useOAuthCallback = () => {
 
         // Fallback: if already authenticated
         if (user) {
-          navigate('/dashboard', { replace: true });
+          navigate('/', { replace: true });
           return;
         }
 

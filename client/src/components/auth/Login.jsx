@@ -43,7 +43,6 @@ const Login = () => {
     try {
       const result = await login(formData.email, formData.password);
       if (!result.success) {
-        // console.log(result)
         setError(result.error || 'Login failed. Please try again.');
       }
       // If successful, the AuthContext will handle the redirect

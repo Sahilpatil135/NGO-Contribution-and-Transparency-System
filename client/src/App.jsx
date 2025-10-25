@@ -25,42 +25,42 @@ const AppRoutes = () => {
 
   return (
     <>
-    {isAuthenticated && <Navbar />}
+      {isAuthenticated && <Navbar />}
 
-    <Routes>
-      <Route
-        path="/login"
-        element={
-          isAuthenticated ? <Navigate to="/" replace /> : <Login />
-        }
-      />
-      <Route
-        path="/signup"
-        element={
-          isAuthenticated ? <Navigate to="/" replace /> : <Signup />
-        }
-      />
-      <Route
-        path="/"
-        element={
-          isAuthenticated ? <HomePage /> : <Navigate to="/login" replace />
-        }
-      />
-      <Route
-        path="/auth/callback"
-        element={<OAuthCallback />}
-      />
-      {/* <Route
+      <Routes>
+        <Route
+          path="/login"
+          element={
+            isAuthenticated ? <Navigate to="/" replace /> : <Login />
+          }
+        />
+        <Route
+          path="/signup"
+          element={
+            isAuthenticated ? <Navigate to="/" replace /> : <Signup />
+          }
+        />
+        <Route
+          path="/"
+          element={
+            isAuthenticated ? <HomePage /> : <Navigate to="/login" replace />
+          }
+        />
+        <Route
+          path="/auth/callback"
+          element={<OAuthCallback />}
+        />
+        {/* <Route
         path="/"
         element={
           <Navigate to={isAuthenticated ? "/" : "/login"} replace />
         }
       /> */}
-      <Route path="/makeContribution" element={isAuthenticated ? <ContributionsPage /> : <Navigate to="/login" replace />} />
-      <Route path="/campaign/:id" element={isAuthenticated ? <CampaignPage /> : <Navigate to="/login" replace />} />
-      <Route path="/checkout" element={isAuthenticated ? <CheckoutPage /> : <Navigate to="/login" replace />} />
-      <Route path="/makeContribution/:id" element={isAuthenticated ? <DonationTypePage /> : <Navigate to="/login" replace />} />
-    </Routes>
+        <Route path="/makeContribution" element={isAuthenticated ? <ContributionsPage /> : <Navigate to="/login" replace />} />
+        <Route path="/campaign/:id" element={isAuthenticated ? <CampaignPage /> : <Navigate to="/login" replace />} />
+        <Route path="/checkout" element={isAuthenticated ? <CheckoutPage /> : <Navigate to="/login" replace />} />
+        <Route path="/makeContribution/:id" element={isAuthenticated ? <DonationTypePage /> : <Navigate to="/login" replace />} />
+      </Routes>
     </>
   );
 };

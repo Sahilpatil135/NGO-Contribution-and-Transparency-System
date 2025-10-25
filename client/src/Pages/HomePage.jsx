@@ -6,7 +6,7 @@ import StatsCounter from '../components/StatsCounter';
 import Card from '../components/Card';
 
 const HomePage = () => {
-    const { user, fetchCurrentUser } = useAuth();
+    const { user } = useAuth();
 
     if (!user) {
         return null;
