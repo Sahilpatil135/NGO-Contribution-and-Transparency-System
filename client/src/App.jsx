@@ -5,12 +5,14 @@ import Signup from './components/auth/Signup';
 import OAuthCallback from './pages/OAuthCallback';
 import './App.css';
 import Navbar from './components/Navbar';
+import Footer from './components/Footer';
 import HomePage from './Pages/HomePage';
 import ContributionsPage from './Pages/ContributionsPage';
 import CampaignPage from './Pages/CampaignPage';
 import CheckoutPage from './Pages/CheckoutPage';
 import DonationTypePage from './Pages/DonationTypePage';
 import NgoRegistration from './Pages/NgoRegistration';
+import CreateCampaign from './Pages/CreateCampaign';
 
 const AppRoutes = () => {
   const { isAuthenticated, isLoading } = useAuth();
@@ -51,18 +53,15 @@ const AppRoutes = () => {
           path="/auth/callback"
           element={<OAuthCallback />}
         />
-        {/* <Route
-        path="/"
-        element={
-          <Navigate to={isAuthenticated ? "/" : "/login"} replace />
-        }
-      /> */}
         <Route path="/makeContribution" element={isAuthenticated ? <ContributionsPage /> : <Navigate to="/login" replace />} />
         <Route path="/campaign/:id" element={isAuthenticated ? <CampaignPage /> : <Navigate to="/login" replace />} />
         <Route path="/checkout" element={isAuthenticated ? <CheckoutPage /> : <Navigate to="/login" replace />} />
         <Route path="/makeContribution/:id" element={isAuthenticated ? <DonationTypePage /> : <Navigate to="/login" replace />} />
         <Route path="/ngoRegistration" element={isAuthenticated ? <NgoRegistration /> : <Navigate to="/login" replace />} />
+        <Route path="/createCampaign" element={isAuthenticated ? <CreateCampaign /> : <Navigate to="/login" replace />} />
       </Routes>
+
+      {isAuthenticated && <Footer />}
     </>
   );
 };

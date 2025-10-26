@@ -7,21 +7,21 @@ const statsData = [
     {
         id: 1,
         title: "Causes Accomplished",
-        image: img1, // update paths based on your assets
+        image: "/cause_accomplished.png", // update paths based on your assets
         end: 5000,
         desc: "Empowering real change through successfully funded charity campaigns worldwide.",
     },
     {
         id: 2,
         title: "NGO's Listed",
-        image: img1,
+        image: "/ngo_listed.png",
         end: 1200,
         desc: "Trusted organizations verified and connected through our transparent blockchain network.",
     },
     {
         id: 3,
         title: "Donations Tracked",
-        image: img1,
+        image: "/donations_tracked.png",
         end: 50,
         desc: "Every contribution recorded securely — bringing complete visibility to where help goes.",
     },
@@ -47,7 +47,7 @@ const StatsCounter = () => {
                         <img
                             src={stat.image}
                             alt={stat.title}
-                            className="w-100 h-50 mb-4 object-contain rounded-lg"
+                            className="w-80 h-80 mb-4 object-cover rounded-lg"
                         />
 
                         <h2 className="text-5xl font-bold text-gray-800 mb-2 flex">

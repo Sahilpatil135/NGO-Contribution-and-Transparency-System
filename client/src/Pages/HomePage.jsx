@@ -74,9 +74,61 @@ const HomePage = () => {
             </section>
 
             {/* Objectives of CharityLight & Safety using Blockchain (TODO) */}
+            <section className="w-11/12 mx-auto mt-20 rounded-lg bg-[#3a0b2e] py-16 px-6 md:px-12">
+                <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center gap-12">
+
+                    {/* Left Image */}
+                    <div className="md:w-1/2 w-full">
+                        <img
+                            src="/img1.png"
+                            alt="Our Mission"
+                            className="w-full h-[380px] object-cover rounded-2xl shadow-lg"
+                        />
+                    </div>
+
+                    {/* Right Content */}
+                    <div className="md:w-1/2 w-full text-white">
+                        <h2 className="text-4xl font-bold mb-6 leading-snug">
+                            Building <span className="text-[#ff6200]">Trust</span> Through Transparency
+                        </h2>
+
+                        <p className="text-gray-200 mb-6 text-base leading-relaxed">
+                            We’re redefining how donations work — by making every contribution
+                            <span className="text-[#ff6200] font-semibold"> transparent, verifiable, </span>
+                            and truly impactful. Our platform connects compassionate donors with trusted NGOs
+                            using the power of <span className="font-semibold">blockchain and smart contracts.</span>
+                        </p>
+
+                        <ul className="space-y-4 text-gray-100 text-sm md:text-base">
+                            <li className="flex items-start gap-3">
+                                <span className="text-[#ff6200] text-xl">✓</span>
+                                <span>Empowering NGOs with a decentralized, transparent donation system.</span>
+                            </li>
+                            <li className="flex items-start gap-3">
+                                <span className="text-[#ff6200] text-xl">✓</span>
+                                <span>Supporting diverse contributions — from funds to time, blood, and organ pledges.</span>
+                            </li>
+                            <li className="flex items-start gap-3">
+                                <span className="text-[#ff6200] text-xl">✓</span>
+                                <span>Ensuring authenticity with image forensics and metadata-based verification.</span>
+                            </li>
+                            <li className="flex items-start gap-3">
+                                <span className="text-[#ff6200] text-xl">✓</span>
+                                <span>Rewarding trust through verifiable receipts and community-driven validation.</span>
+                            </li>
+                        </ul>
+
+                        <Link to="/about" className="no-underline">
+                            <button className="mt-8 bg-[#ff6200] text-white font-semibold px-6 py-3 rounded-md hover:bg-[#e45a00] transition cursor-pointer">
+                                Learn More
+                            </button>
+                        </Link>
+                    </div>
+                </div>
+            </section>
 
             {/* Causes Section  */}
-            <section className="w-11/12 mx-auto my-16 items-center text-center space-y-6">
+            <section className="w-11/12 mx-auto my-16 mt-20 items-center text-center space-y-6">
                 <h1 className="text-6xl font-bold">
                     Featured <span className="text-[#ff6200] italic">Causes</span>
                 </h1>

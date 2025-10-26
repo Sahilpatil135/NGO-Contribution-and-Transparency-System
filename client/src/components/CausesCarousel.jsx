@@ -4,11 +4,11 @@ import img1 from "/img1.png";
 // Example data for causes
 const causes = [
 //   { id: 1, name: "Urgent", img: "/images/urgent.jpg" }, add links for respective pages
-  { id: 1, name: "Urgent", img: img1 },
-  { id: 2, name: "Strays", img: img1 },
-  { id: 3, name: "Elderly", img: img1 },
+  { id: 1, name: "Urgent", img: "/carousel_urgent.png" },
+  { id: 2, name: "Strays", img: "carousel_strays.png" },
+  { id: 3, name: "Elderly", img: "/carousel_elderly.png" },
   { id: 4, name: "Children", img: img1 },
-  { id: 5, name: "Environmental", img: img1 },
+  { id: 5, name: "Environmental", img: "/carousel_environmental.png" },
   { id: 6, name: "Specially-Abled", img: img1 },
   { id: 7, name: "Education", img: img1 },
   { id: 8, name: "Hunger", img: img1 },
