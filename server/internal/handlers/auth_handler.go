@@ -38,8 +38,8 @@ func (h *AuthHandler) RegisterRoutes(r chi.Router) {
 
 		r.Group(func(protected chi.Router) {
 			protected.Use(middleware.AuthMiddleware(h.jwtService))
-			r.Get("/me", h.GetMe)
-			r.Get("/me/organization", h.GetMyOrganization)
+			protected.Get("/me", h.GetMe)
+			protected.Get("/me/organization", h.GetMyOrganization)
 		})
 
 		// Dynamic provider routes to work with chi and gothic

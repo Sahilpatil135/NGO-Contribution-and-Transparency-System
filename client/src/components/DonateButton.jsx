@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { createOrder, verifyPayment } from "../services/paymentApi";
 
-const DonateButton = ({ amount }) => {
+const DonateButton = ({ amount, donorInfo = {} }) => {
   const handleDonate = async () => {
     try {
       const order = await createOrder(amount);
@@ -10,7 +10,7 @@ const DonateButton = ({ amount }) => {
         key: order.key,
         amount: order.amount,
         currency: order.currency,
-        name: "Your NGO Name",
+        name: "CharityLight",
         description: "Donation Support",
         order_id: order.orderId,
         handler: async function (response) {
@@ -28,8 +28,9 @@ const DonateButton = ({ amount }) => {
           }
         },
         prefill: {
-          name: "Your Donor",
-          email: "donor@example.com",
+          name: donorInfo.name || "Donor",
+          email: donorInfo.email || "donor@example.com",
+          contact: donorInfo.mobile || "",
         },
         theme: {
           color: "#3399cc",
@@ -52,6 +53,7 @@ const DonateButton = ({ amount }) => {
 
   return (
     <button
+      id="rzp-trigger"
       onClick={handleDonate}
       className="bg-[#28a745] text-white border-none px-5 py-2 rounded-md cursor-pointer font-medium transition-colors duration-300 hover:bg-[#218838]"  
       style={buttonStyle}

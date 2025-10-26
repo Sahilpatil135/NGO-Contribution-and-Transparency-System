@@ -217,7 +217,7 @@ const CheckoutPage = () => {
                   onChange={handleChange}
                   placeholder="ABCDE1234F"
                   maxLength="10"
-                  className="w-full uppercase border border-gray-300 rounded-lg py-2 px-3 focus:outline-none focus:border-[#ff6200] placeholder-gray-400"
+                  className="w-full border border-gray-300 rounded-lg py-2 px-3 focus:outline-none focus:border-[#ff6200] placeholder-gray-400"
                 />
               </div>
 
@@ -252,7 +252,15 @@ const CheckoutPage = () => {
 
               {/* Hidden DonateButton trigger */}
               <div className="hidden">
-                <DonateButton id="rzp-trigger" amount={amount} />
+                <DonateButton 
+                  id="rzp-trigger" 
+                  amount={amount} 
+                  donorInfo={{
+                    name: form.name,
+                    email: form.email,
+                    mobile: form.mobile
+                  }}
+                />
               </div>
 
               <p className="flex justify-center text-center text-sm text-gray-500 mt-1">
