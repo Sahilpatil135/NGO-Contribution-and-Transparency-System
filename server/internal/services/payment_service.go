@@ -19,8 +19,8 @@ func NewPaymentService(keyID, keySecret string) *PaymentService {
 	}
 }
 
-func (s *PaymentService) CreateOrder(amount int, receipt string) (map[string]interface{}, error) {
-	data := map[string]interface{}{
+func (s *PaymentService) CreateOrder(amount int, receipt string) (map[string]any, error) {
+	data := map[string]any{
 		"amount":          amount * 100, // amount in paise
 		"currency":        "INR",
 		"receipt":         receipt,

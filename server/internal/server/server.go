@@ -45,7 +45,7 @@ func NewServer() *http.Server {
 
 	// Initialize handlers
 	authHandler := handlers.NewAuthHandler(authService, jwtService)
-	causeHandler := handlers.NewCauseHandler(causeService)
+	causeHandler := handlers.NewCauseHandler(causeService, authService, jwtService)
 
 	// Configure OAuth
 	config.ConfigureOAuth()

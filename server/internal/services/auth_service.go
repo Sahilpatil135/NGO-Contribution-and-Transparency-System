@@ -14,9 +14,12 @@ import (
 
 type AuthService interface {
 	RegisterUser(ctx context.Context, req *models.CreateUserRequest) (*models.AuthResponse, error)
-	RegisterOrganization(ctx context.Context, req *models.CreateOrganizationRequest) (*models.AuthResponse, error)
 	Login(ctx context.Context, req *models.LoginRequest) (*models.AuthResponse, error)
 	GetUserByID(ctx context.Context, userID uuid.UUID) (*models.User, error)
+
+	RegisterOrganization(ctx context.Context, req *models.CreateOrganizationRequest) (*models.AuthResponse, error)
+	GetOrganizationByID(ctx context.Context, organizationID uuid.UUID) (*models.Organization, error)
+
 	CreateOrUpdateOAuthUser(ctx context.Context, provider, providerID, name, email, avatarURL string) (*models.AuthResponse, error)
 }
 
@@ -110,8 +113,6 @@ func (a *authService) RegisterOrganization(ctx context.Context, req *models.Crea
 		Role:         "organization",
 	}
 
-	fmt.Println(user.Role)
-
 	// Create user
 	organization := &models.Organization{
 		ID:                 uuid.New(),
@@ -174,6 +175,11 @@ func (a *authService) Login(ctx context.Context, req *models.LoginRequest) (*mod
 
 func (a *authService) GetUserByID(ctx context.Context, userID uuid.UUID) (*models.User, error) {
 	return a.userRepo.GetByID(ctx, userID)
+}
+
+func (a *authService) GetOrganizationByID(ctx context.Context, organizationID uuid.UUID) (*models.Organization, error) {
+	org, err := a.organizationRepo.GetByID(ctx, organizationID)
+	return org, err
 }
 
 func (a *authService) CreateOrUpdateOAuthUser(ctx context.Context, provider, providerID, name, email, avatarURL string) (*models.AuthResponse, error) {

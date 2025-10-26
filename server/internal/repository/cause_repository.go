@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"time"
 
 	"server/internal/models"
 
@@ -274,9 +273,9 @@ func (r *causeRepository) GetAll(ctx context.Context) ([]*models.Cause, error) {
 // func (r *causeRepository) Update(ctx context.Context, cause *models.Cause) error { }
 
 func (r *causeRepository) Delete(ctx context.Context, id uuid.UUID) error {
-	query := `UPDATE causes SET is_active = false, updated_at = $2 WHERE id = $1`
+	query := `UPDATE causes SET is_active = false WHERE id = $1`
 
-	_, err := r.db.ExecContext(ctx, query, id, time.Now())
+	_, err := r.db.ExecContext(ctx, query, id)
 
 	return err
 }

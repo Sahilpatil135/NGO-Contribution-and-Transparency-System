@@ -32,9 +32,15 @@ func (h *AuthHandler) RegisterRoutes(r chi.Router) {
 	r.Route("/api/auth", func(r chi.Router) {
 		r.Post("/register", h.RegisterUser)
 		r.Post("/register/organization", h.RegisterOrganization)
+
 		r.Post("/login", h.Login)
-		r.Get("/me", middleware.AuthMiddleware(h.jwtService)(http.HandlerFunc(h.GetMe)).ServeHTTP)
 		r.Post("/logout", h.Logout)
+
+		r.Group(func(protected chi.Router) {
+			protected.Use(middleware.AuthMiddleware(h.jwtService))
+			r.Get("/me", h.GetMe)
+			r.Get("/me/organization", h.GetMyOrganization)
+		})
 
 		// Dynamic provider routes to work with chi and gothic
 		r.Get("/{provider}", h.BeginAuth)
@@ -138,6 +144,24 @@ func (h *AuthHandler) GetMe(w http.ResponseWriter, r *http.Request) {
 	userResp := user.ToUserResponse()
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(userResp)
+}
+
+func (h *AuthHandler) GetMyOrganization(w http.ResponseWriter, r *http.Request) {
+	userID, ok := middleware.GetUserIDFromContext(r.Context())
+	if !ok {
+		http.Error(w, "User not found", http.StatusUnauthorized)
+		return
+	}
+
+	organization, err := h.authService.GetOrganizationByID(r.Context(), userID)
+	if err != nil {
+		http.Error(w, "User not found", http.StatusNotFound)
+		return
+	}
+
+	organizationResp := organization.ToOrganizationResponse()
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(organizationResp)
 }
 
 // BeginAuth starts the OAuth flow for any provider

@@ -127,7 +127,9 @@ func (r *organizationRepository) GetByID(ctx context.Context, id uuid.UUID) (*mo
 		WHERE u.id = $1 AND u.role = 'organization'
 	`
 
-	organization := &models.Organization{}
+	organization := &models.Organization{
+		User: &models.User{},
+	}
 	err := r.db.QueryRowContext(ctx, query, id).Scan(
 		&organization.User.ID,
 		&organization.User.Name,

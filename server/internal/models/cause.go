@@ -24,7 +24,7 @@ type Cause struct {
 
 // CreateCauseRequest represents the request payload for creating a cause
 type CreateCauseRequest struct {
-	OrganizationID  uuid.UUID  `json:"organization_id" validate:"required"`
+	OrganizationID  *uuid.UUID `json:"organization_id"`
 	Title           string     `json:"title" validate:"required"`
 	Description     *string    `json:"description,omitempty"`
 	DomainID        uuid.UUID  `json:"domain_id" validate:"required"`

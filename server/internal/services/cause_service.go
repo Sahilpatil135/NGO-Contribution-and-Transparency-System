@@ -2,9 +2,10 @@ package services
 
 import (
 	"context"
-	"github.com/google/uuid"
 	"server/internal/models"
 	"server/internal/repository"
+
+	"github.com/google/uuid"
 )
 
 type CauseService interface {
@@ -31,7 +32,7 @@ func NewCauseService(causeRepo repository.CauseRepository) *causeService {
 func (c *causeService) Create(ctx context.Context, req *models.CreateCauseRequest) (*models.Cause, error) {
 	cause := &models.Cause{
 		ID:              uuid.New(),
-		OrganizationID:  req.OrganizationID,
+		OrganizationID:  ctx.Value("organizationID").(uuid.UUID),
 		Title:           req.Title,
 		Description:     req.Description,
 		DomainID:        req.DomainID,
@@ -84,7 +85,7 @@ func (c *causeService) GetByDomainID(ctx context.Context, domainID uuid.UUID) ([
 }
 
 func (c *causeService) GetByAidTypeID(ctx context.Context, aidTypeID uuid.UUID) ([]*models.Cause, error) {
-	causesResult, err := c.causeRepo.GetByOrganizationID(ctx, aidTypeID)
+	causesResult, err := c.causeRepo.GetByAidTypeID(ctx, aidTypeID)
 
 	if err != nil {
 		return nil, err
