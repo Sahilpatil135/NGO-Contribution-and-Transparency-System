@@ -18,7 +18,7 @@ const Card = () => {
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
     >
-      <Link to="/campaign/1">
+      <Link to="/campaign/1" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
         {/* Image Section */}
         <div className="relative">
           <img

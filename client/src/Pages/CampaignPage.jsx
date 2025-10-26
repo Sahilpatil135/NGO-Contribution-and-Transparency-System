@@ -85,7 +85,7 @@ const CampaignPage = () => {
           </p>
 
           {/* Donate Button */}
-          <Link to="/checkout">
+          <Link to="/checkout" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
             <button className="w-full bg-[#ff6200] hover:bg-[#e45a00] text-white font-semibold py-3 rounded-lg transition cursor-pointer">
               Donate Now
             </button>

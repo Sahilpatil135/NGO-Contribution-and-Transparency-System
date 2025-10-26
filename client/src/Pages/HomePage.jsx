@@ -38,12 +38,12 @@ const HomePage = () => {
                     </p>
 
                     <div className="flex gap-4 pt-2">
-                        <Link to="/makeContribution" className="no-underline">
+                        <Link to="/makeContribution" className="no-underline" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
                             <button className="bg-[#ff6200] text-white text-sm px-6 py-2 rounded-md transition hover:bg-[#e65500] cursor-pointer">
                                 Start Donating
                             </button>
                         </Link>
-                        <Link to="/makecontribution/volunteering" className="no-underline">
+                        <Link to="/makecontribution/volunteering" className="no-underline" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
                             <button className="bg-transparent border border-[#3a0b2e] text-[#3a0b2e] text-sm px-6 py-2 rounded-md transition hover:bg-[#3a0b2e] hover:text-white cursor-pointer">
                                 Join as Volunteer
                             </button>

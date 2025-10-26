@@ -120,27 +120,27 @@ const ContributionsPage = () => {
                         <div className="flex flex-col"><img src={img2} alt=".." /> Goods & Resources Donation</div>
                         <div className="flex flex-col"><img src={img2} alt=".." /> Environmental Support</div> */}
 
-                        <Link to="/makecontribution/monetary" className="flex flex-col items-center cursor-pointer">
+                        <Link to="/makecontribution/monetary" className="flex flex-col items-center cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
                             <img src="/monetary_donations.png" alt="Monetary" className="rounded-lg" />
                             <p className="mt-2 font-semibold text-[#3a0b2e]">Monetary Donations</p>
                         </Link>
 
-                        <Link to="/makecontribution/volunteering" className="flex flex-col items-center cursor-pointer">
+                        <Link to="/makecontribution/volunteering" className="flex flex-col items-center cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
                             <img src="/volunteering.png" alt="Volunteering" className="rounded-lg" />
                             <p className="mt-2 font-semibold text-[#3a0b2e]">Volunteering</p>
                         </Link>
 
-                        <Link to="/makecontribution/blood" className="flex flex-col items-center cursor-pointer">
+                        <Link to="/makecontribution/blood" className="flex flex-col items-center cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
                             <img src="blood_organ_donations.png" alt="Blood Donation" className="rounded-lg" />
                             <p className="mt-2 font-semibold text-[#3a0b2e]">Blood & Organ Donations</p>
                         </Link>
 
-                        <Link to="/makecontribution/goods" className="flex flex-col items-center cursor-pointer">
+                        <Link to="/makecontribution/goods" className="flex flex-col items-center cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
                             <img src="goods_resources.png" alt="Goods" className="rounded-lg" />
                             <p className="mt-2 font-semibold text-[#3a0b2e]">Goods & Resources</p>
                         </Link>
 
-                        <Link to="/makecontribution/environment" className="flex flex-col items-center cursor-pointer">
+                        <Link to="/makecontribution/environment" className="flex flex-col items-center cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
                             <img src="environmental_support.png" alt="Environment" className="rounded-lg" />
                             <p className="mt-2 font-semibold text-[#3a0b2e]">Environmental Support</p>
                         </Link>

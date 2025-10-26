@@ -10,6 +10,7 @@ import ContributionsPage from './Pages/ContributionsPage';
 import CampaignPage from './Pages/CampaignPage';
 import CheckoutPage from './Pages/CheckoutPage';
 import DonationTypePage from './Pages/DonationTypePage';
+import NgoRegistration from './Pages/NgoRegistration';
 
 const AppRoutes = () => {
   const { isAuthenticated, isLoading } = useAuth();
@@ -60,6 +61,7 @@ const AppRoutes = () => {
         <Route path="/campaign/:id" element={isAuthenticated ? <CampaignPage /> : <Navigate to="/login" replace />} />
         <Route path="/checkout" element={isAuthenticated ? <CheckoutPage /> : <Navigate to="/login" replace />} />
         <Route path="/makeContribution/:id" element={isAuthenticated ? <DonationTypePage /> : <Navigate to="/login" replace />} />
+        <Route path="/ngoRegistration" element={isAuthenticated ? <NgoRegistration /> : <Navigate to="/login" replace />} />
       </Routes>
     </>
   );
