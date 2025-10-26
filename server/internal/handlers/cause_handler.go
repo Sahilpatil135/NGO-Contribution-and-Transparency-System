@@ -28,24 +28,32 @@ func NewCauseHandler(causeService services.CauseService, authService services.Au
 	}
 }
 
-func (h *CauseHandler) RegisterRoutes(r chi.Router) {
+func (c *CauseHandler) RegisterRoutes(r chi.Router) {
 	r.Route("/api/causes", func(r chi.Router) {
 
 		r.Group(func(protected chi.Router) {
-			protected.Use(middleware.AuthMiddleware(h.jwtService))
-			protected.Post("/", h.CreateCause)
-			protected.Delete("/{ID}", h.DeleteCause)
+			protected.Use(middleware.AuthMiddleware(c.jwtService))
+			protected.Post("/", c.CreateCause)
+			protected.Delete("/{ID}", c.DeleteCause)
 		})
 
-		r.Get("/", h.GetAll)
-		r.Get("/{ID}", h.GetCauseByID)
-		r.Get("/organization/{ID}", h.GetCauseByOrganizationID)
-		r.Get("/domain/{ID}", h.GetCauseByDomainID)
-		r.Get("/aid/{ID}", h.GetCauseByAidTypeID)
-	})
-}
+		r.Get("/", c.GetAll)
+		r.Get("/{ID}", c.GetCauseByID)
+		r.Get("/organization/{ID}", c.GetCauseByOrganizationID)
 
-func (h *CauseHandler) CreateCause(w http.ResponseWriter, r *http.Request) {
+		r.Get("/domain/{ID}", c.GetCauseByDomainID)
+		r.Get("/aid/{ID}", c.GetCauseByAidTypeID)
+
+		r.Get("/domain/{ID}", c.GetCauseByDomainID)
+		r.Get("/aid/{ID}", c.GetCauseByAidTypeID)
+	})
+
+	r.Get("/api/domains", c.GetDomains)
+	r.Get("/api/aids", c.GetAidTypes)
+	r.Get("/api/domains/{ID}", c.GetDomainByID)
+	r.Get("/api/aids/{ID}", c.GetAidTypeByID)
+}
+func (c *CauseHandler) CreateCause(w http.ResponseWriter, r *http.Request) {
 	var req models.CreateCauseRequest
 
 	req.CreatedAt = time.Now()
@@ -69,7 +77,7 @@ func (h *CauseHandler) CreateCause(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	organization, err := h.authService.GetOrganizationByID(r.Context(), userID)
+	organization, err := c.authService.GetOrganizationByID(r.Context(), userID)
 
 	if err != nil || organization == nil || organization.User.Role != "organization" {
 		http.Error(w, "Not authenticated", http.StatusUnauthorized)
@@ -78,7 +86,7 @@ func (h *CauseHandler) CreateCause(w http.ResponseWriter, r *http.Request) {
 
 	ctx := context.WithValue(r.Context(), "organizationID", organization.ID)
 
-	cause, err := h.causeService.Create(ctx, &req)
+	cause, err := c.causeService.Create(ctx, &req)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -88,7 +96,7 @@ func (h *CauseHandler) CreateCause(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(cause.ToCauseResponse())
 }
 
-func (h *CauseHandler) GetCauseByID(w http.ResponseWriter, r *http.Request) {
+func (c *CauseHandler) GetCauseByID(w http.ResponseWriter, r *http.Request) {
 	ID, err := uuid.Parse(chi.URLParam(r, "ID"))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -100,7 +108,7 @@ func (h *CauseHandler) GetCauseByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cause, err := h.causeService.GetByID(r.Context(), ID)
+	cause, err := c.causeService.GetByID(r.Context(), ID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -110,7 +118,7 @@ func (h *CauseHandler) GetCauseByID(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(cause.ToCauseResponse())
 }
 
-func (h *CauseHandler) GetCauseByOrganizationID(w http.ResponseWriter, r *http.Request) {
+func (c *CauseHandler) GetCauseByOrganizationID(w http.ResponseWriter, r *http.Request) {
 	ID, err := uuid.Parse(chi.URLParam(r, "ID"))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -122,7 +130,7 @@ func (h *CauseHandler) GetCauseByOrganizationID(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	causesResult, err := h.causeService.GetByOrganizationID(r.Context(), ID)
+	causesResult, err := c.causeService.GetByOrganizationID(r.Context(), ID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -132,7 +140,7 @@ func (h *CauseHandler) GetCauseByOrganizationID(w http.ResponseWriter, r *http.R
 	json.NewEncoder(w).Encode(causesResult)
 }
 
-func (h *CauseHandler) GetCauseByDomainID(w http.ResponseWriter, r *http.Request) {
+func (c *CauseHandler) GetCauseByDomainID(w http.ResponseWriter, r *http.Request) {
 	ID, err := uuid.Parse(chi.URLParam(r, "ID"))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -144,7 +152,7 @@ func (h *CauseHandler) GetCauseByDomainID(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	causesResult, err := h.causeService.GetByDomainID(r.Context(), ID)
+	causesResult, err := c.causeService.GetByDomainID(r.Context(), ID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -154,7 +162,7 @@ func (h *CauseHandler) GetCauseByDomainID(w http.ResponseWriter, r *http.Request
 	json.NewEncoder(w).Encode(causesResult)
 }
 
-func (h *CauseHandler) GetCauseByAidTypeID(w http.ResponseWriter, r *http.Request) {
+func (c *CauseHandler) GetCauseByAidTypeID(w http.ResponseWriter, r *http.Request) {
 	ID, err := uuid.Parse(chi.URLParam(r, "ID"))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -166,7 +174,7 @@ func (h *CauseHandler) GetCauseByAidTypeID(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	causesResult, err := h.causeService.GetByAidTypeID(r.Context(), ID)
+	causesResult, err := c.causeService.GetByAidTypeID(r.Context(), ID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -176,8 +184,8 @@ func (h *CauseHandler) GetCauseByAidTypeID(w http.ResponseWriter, r *http.Reques
 	json.NewEncoder(w).Encode(causesResult)
 }
 
-func (h *CauseHandler) GetAll(w http.ResponseWriter, r *http.Request) {
-	causesResult, err := h.causeService.GetAll(r.Context())
+func (c *CauseHandler) GetAll(w http.ResponseWriter, r *http.Request) {
+	causesResult, err := c.causeService.GetAll(r.Context())
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -187,7 +195,7 @@ func (h *CauseHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(causesResult)
 }
 
-func (h *CauseHandler) DeleteCause(w http.ResponseWriter, r *http.Request) {
+func (c *CauseHandler) DeleteCause(w http.ResponseWriter, r *http.Request) {
 	ID, err := uuid.Parse(chi.URLParam(r, "ID"))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -206,20 +214,20 @@ func (h *CauseHandler) DeleteCause(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	organization, err := h.authService.GetOrganizationByID(r.Context(), userID)
+	organization, err := c.authService.GetOrganizationByID(r.Context(), userID)
 	if err != nil || organization == nil || organization.User.Role != "organization" {
 		http.Error(w, "Not authorized", http.StatusUnauthorized)
 		return
 	}
 
-	cause, err := h.causeService.GetByID(r.Context(), ID)
+	cause, err := c.causeService.GetByID(r.Context(), ID)
 
 	if err != nil || cause.OrganizationID != organization.ID {
 		http.Error(w, "Not authorized", http.StatusUnauthorized)
 		return
 	}
 
-	err = h.causeService.Delete(r.Context(), ID)
+	err = c.causeService.Delete(r.Context(), ID)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -230,4 +238,70 @@ func (h *CauseHandler) DeleteCause(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{
 		"message": "deleted cause successfully",
 	})
+}
+
+func (c *CauseHandler) GetDomains(w http.ResponseWriter, r *http.Request) {
+	domainsResult, err := c.causeService.GetDomains(r.Context())
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(domainsResult)
+}
+
+func (c *CauseHandler) GetAidTypes(w http.ResponseWriter, r *http.Request) {
+	aidTypesResults, err := c.causeService.GetAidTypes(r.Context())
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(aidTypesResults)
+}
+
+func (c *CauseHandler) GetDomainByID(w http.ResponseWriter, r *http.Request) {
+	ID, err := uuid.Parse(chi.URLParam(r, "ID"))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if ID.String() == "" {
+		http.Error(w, "CauseID required", http.StatusBadRequest)
+		return
+	}
+
+	domain, err := c.causeService.GetDomainByID(r.Context(), ID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(domain)
+}
+
+func (c *CauseHandler) GetAidTypeByID(w http.ResponseWriter, r *http.Request) {
+	ID, err := uuid.Parse(chi.URLParam(r, "ID"))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if ID.String() == "" {
+		http.Error(w, "CauseID required", http.StatusBadRequest)
+		return
+	}
+
+	aidType, err := c.causeService.GetAidTypeByID(r.Context(), ID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(aidType)
 }

@@ -10,13 +10,20 @@ import (
 
 type CauseService interface {
 	Create(ctx context.Context, req *models.CreateCauseRequest) (*models.Cause, error)
+
 	GetByID(ctx context.Context, id uuid.UUID) (*models.Cause, error)
 	GetByOrganizationID(ctx context.Context, id uuid.UUID) ([]*models.Cause, error)
 	GetByDomainID(ctx context.Context, id uuid.UUID) ([]*models.Cause, error)
 	GetByAidTypeID(ctx context.Context, id uuid.UUID) ([]*models.Cause, error)
 	GetAll(ctx context.Context) ([]*models.Cause, error)
+
 	// Update(ctx context.Context, cause *models.Cause) error
 	Delete(ctx context.Context, id uuid.UUID) error
+
+	GetDomains(ctx context.Context) ([]*models.CauseCategory, error)
+	GetAidTypes(ctx context.Context) ([]*models.CauseCategory, error)
+	GetDomainByID(ctx context.Context, id uuid.UUID) (*models.CauseCategory, error)
+	GetAidTypeByID(ctx context.Context, id uuid.UUID) (*models.CauseCategory, error)
 }
 
 type causeService struct {
@@ -30,13 +37,25 @@ func NewCauseService(causeRepo repository.CauseRepository) *causeService {
 }
 
 func (c *causeService) Create(ctx context.Context, req *models.CreateCauseRequest) (*models.Cause, error) {
+	domain, err := c.GetDomainByID(ctx, req.DomainID)
+
+	if err != nil {
+		return nil, err
+	}
+
+	aidType, err := c.GetAidTypeByID(ctx, req.AidTypeID)
+
+	if err != nil {
+		return nil, err
+	}
+
 	cause := &models.Cause{
 		ID:              uuid.New(),
 		OrganizationID:  ctx.Value("organizationID").(uuid.UUID),
 		Title:           req.Title,
 		Description:     req.Description,
-		DomainID:        req.DomainID,
-		AidTypeID:       req.AidTypeID,
+		Domain:          *domain,
+		AidType:         *aidType,
 		CollectedAmount: req.CollectedAmount,
 		GoalAmount:      req.GoalAmount,
 		Deadline:        req.Deadline,
@@ -45,7 +64,7 @@ func (c *causeService) Create(ctx context.Context, req *models.CreateCauseReques
 		CoverImageURL:   req.CoverImageURL,
 	}
 
-	err := c.causeRepo.Create(ctx, cause)
+	err = c.causeRepo.Create(ctx, cause)
 
 	if err != nil {
 		return nil, err
@@ -112,4 +131,44 @@ func (c *causeService) Delete(ctx context.Context, id uuid.UUID) error {
 	}
 
 	return nil
+}
+
+func (c *causeService) GetDomains(ctx context.Context) ([]*models.CauseCategory, error) {
+	domainResults, err := c.causeRepo.GetDomains(ctx)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return domainResults, err
+}
+
+func (c *causeService) GetAidTypes(ctx context.Context) ([]*models.CauseCategory, error) {
+	aidTypeResults, err := c.causeRepo.GetAidTypes(ctx)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return aidTypeResults, err
+}
+
+func (c *causeService) GetDomainByID(ctx context.Context, id uuid.UUID) (*models.CauseCategory, error) {
+	domain, err := c.causeRepo.GetDomainByID(ctx, id)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return domain, err
+}
+
+func (c *causeService) GetAidTypeByID(ctx context.Context, id uuid.UUID) (*models.CauseCategory, error) {
+	aidType, err := c.causeRepo.GetAidTypeByID(ctx, id)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return aidType, err
 }
