@@ -11,19 +11,20 @@ INSERT INTO cause_aid_types (name, description, icon_url) VALUES
 
 -- DOMAINS
 INSERT INTO cause_domains (name, description, icon_url) VALUES
-('Urgent', 'Critical and time-sensitive causes that require immediate support and action.', '/domains/domain_example.png'),
-('Strays', 'Causes focused on the rescue, care, and welfare of stray and abandoned animals.', '/domains/domain_example.png'), ('Elderly', 'Support for senior citizens including healthcare, companionship, and welfare programs.', '/domains/domain_example.png'),
-('Children', 'Initiatives aimed at child welfare, safety, development, and protection.', '/domains/domain_example.png'),
-('Environmental', 'Causes that focus on environmental protection, sustainability, and climate action.', '/domains/domain_example.png'),
-('Specially-Abled', 'Support for differently-abled individuals through accessibility, care, and empowerment.', '/domains/domain_example.png'),
-('Education', 'Programs that support learning, scholarships, literacy, and digital education access.', '/domains/domain_example.png'),
-('Hunger', 'Initiatives working to eliminate hunger and provide food security for the needy.', '/domains/domain_example.png'),
-('Faith', 'Faith-based aid and community support initiatives across different spiritual groups.', '/domains/domain_example.png'),
-('Health', 'Causes related to medical aid, public health, disease prevention, and treatment.', '/domains/domain_example.png'),
-('Poverty', 'Efforts to uplift underprivileged communities and improve living standards.', '/domains/domain_example.png'),
-('Women', 'Causes that support women empowerment, safety, education, and equality.', '/domains/domain_example.png'),
-('Arts & Culture', 'Initiatives promoting art, heritage preservation, creativity, and cultural development.', '/domains/domain_example.png'),
-('Sports', 'Support for sports development, training, youth engagement, and athletic programs.', '/domains/domain_example.png');
+('Urgent', 'Critical and time-sensitive causes that require immediate support and action.', '/domains/carousel_urgent.png'),
+('Strays', 'Causes focused on the rescue, care, and welfare of stray and abandoned animals.', '/domains/strays.jpeg'), 
+('Elderly', 'Support for senior citizens including healthcare, companionship, and welfare programs.', '/domains/carousel_elderly.png'),
+('Children', 'Initiatives aimed at child welfare, safety, development, and protection.', '/domains/children.jpeg'),
+('Environmental', 'Causes that focus on environmental protection, sustainability, and climate action.', '/domains/carousel_environmental.png'),
+('Specially-Abled', 'Support for differently-abled individuals through accessibility, care, and empowerment.', '/domains/specially-abled.jpeg'),
+('Education', 'Programs that support learning, scholarships, literacy, and digital education access.', '/domains/education.jpeg'),
+('Hunger', 'Initiatives working to eliminate hunger and provide food security for the needy.', '/domains/hunger.jpeg'),
+('Faith', 'Faith-based aid and community support initiatives across different spiritual groups.', '/domains/faith.jpeg'),
+('Health', 'Causes related to medical aid, public health, disease prevention, and treatment.', '/domains/health.jpeg'),
+('Poverty', 'Efforts to uplift underprivileged communities and improve living standards.', '/domains/poverty.jpeg'),
+('Women', 'Causes that support women empowerment, safety, education, and equality.', '/domains/women.jpeg'),
+('Arts & Culture', 'Initiatives promoting art, heritage preservation, creativity, and cultural development.', '/domains/art.jpeg'),
+('Sports', 'Support for sports development, training, youth engagement, and athletic programs.', '/domains/sports.jpeg');
 
 -- USERS
 INSERT INTO users (name, email, password_hash, is_verified, avatar_url)
