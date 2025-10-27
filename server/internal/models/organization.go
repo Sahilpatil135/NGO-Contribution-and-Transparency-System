@@ -4,6 +4,14 @@ import (
 	"github.com/google/uuid"
 )
 
+type RoleType string
+
+const (
+	RoleTypeUser         RoleType = "user"
+	RoleTypeOrganization RoleType = "organization"
+	RoleTypeAdmin        RoleType = "admin"
+)
+
 // Organization represents a organization in the system
 type Organization struct {
 	ID                 uuid.UUID `json:"id" db:"id"`

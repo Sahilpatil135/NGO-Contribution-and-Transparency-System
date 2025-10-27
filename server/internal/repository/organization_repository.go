@@ -46,7 +46,7 @@ func (r *organizationRepository) Create(ctx context.Context, organization *model
 		organization.User.AvatarURL,
 		organization.User.IsActive,
 		organization.User.IsVerified,
-		"organization",
+		string(models.RoleTypeOrganization),
 	)
 
 	organizationQuery := `
@@ -95,7 +95,7 @@ func (r *organizationRepository) GetByEmail(ctx context.Context, email string) (
 		&organization.User.IsVerified,
 		&organization.User.CreatedAt,
 		&organization.User.UpdatedAt,
-		"organization",
+		string(models.RoleTypeOrganization),
 
 		&organization.ID,
 		&organization.OrganizationName,

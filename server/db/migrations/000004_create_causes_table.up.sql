@@ -33,8 +33,13 @@ CREATE TABLE IF NOT EXISTS donations (
     id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     cause_id        UUID NOT NULL REFERENCES causes(id) ON DELETE CASCADE,
     user_id         UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    name	    VARCHAR(255) NOT NULL DEFAULT 'Anonymous',
+    phone	    VARCHAR(15) NOT NULL,
+    billing_address TEXT,
+    pincode	    VARCHAR(7),
     amount	    NUMERIC(12,2) NOT NULL,
     status	    donation_status DEFAULT 'pending',
+    pan_number	    VARCHAR(15),
     payment_id	    VARCHAR(255),
     created_at	    TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );

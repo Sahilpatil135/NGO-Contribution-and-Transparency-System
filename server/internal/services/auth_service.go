@@ -110,7 +110,7 @@ func (a *authService) RegisterOrganization(ctx context.Context, req *models.Crea
 		IsVerified:   false,
 		CreatedAt:    time.Now(),
 		UpdatedAt:    time.Now(),
-		Role:         "organization",
+		Role:         string(models.RoleTypeOrganization),
 	}
 
 	// Create user
@@ -256,7 +256,7 @@ func (a *authService) CreateOrUpdateOAuthUser(ctx context.Context, provider, pro
 		IsVerified: true, // OAuth users are considered verified
 		CreatedAt:  time.Now(),
 		UpdatedAt:  time.Now(),
-		Role:       "user",
+		Role:       string(models.RoleTypeUser),
 	}
 
 	// Save user to database

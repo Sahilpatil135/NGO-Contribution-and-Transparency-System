@@ -79,7 +79,7 @@ func (c *CauseHandler) CreateCause(w http.ResponseWriter, r *http.Request) {
 
 	organization, err := c.authService.GetOrganizationByID(r.Context(), userID)
 
-	if err != nil || organization == nil || organization.User.Role != "organization" {
+	if err != nil || organization == nil || organization.User.Role != string(models.RoleTypeOrganization) {
 		http.Error(w, "Not authenticated", http.StatusUnauthorized)
 		return
 	}
@@ -215,7 +215,7 @@ func (c *CauseHandler) DeleteCause(w http.ResponseWriter, r *http.Request) {
 	}
 
 	organization, err := c.authService.GetOrganizationByID(r.Context(), userID)
-	if err != nil || organization == nil || organization.User.Role != "organization" {
+	if err != nil || organization == nil || organization.User.Role != string(models.RoleTypeOrganization) {
 		http.Error(w, "Not authorized", http.StatusUnauthorized)
 		return
 	}
