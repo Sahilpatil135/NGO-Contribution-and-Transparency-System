@@ -17,6 +17,11 @@ export const API_ENDPOINTS = {
 
   GET_ALL_AID_TYPES: `${API_BASE_URL}/api/aids`,
   GET_ALL_DOMAINS: `${API_BASE_URL}/api/domains`,
+
+  GET_CAUSES: `${API_BASE_URL}/api/causes`,
+  GET_CAUSES_BY_DOMAIN: `${API_BASE_URL}/api/causes/domain`,
+  GET_CAUSES_BY_AID_TYPE: `${API_BASE_URL}/api/causes/aid`,
+  GET_CAUSES_BY_ORGANIZATION: `${API_BASE_URL}/api/causes/organization`,
 };
 
 // API utility functions

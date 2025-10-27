@@ -6,20 +6,25 @@ import (
 	"github.com/google/uuid"
 )
 
+type OrganizationInCause struct {
+	ID   uuid.UUID `json:"id" db:"organization_id"`
+	Name *string   `json:"name" db:"organization_name"`
+}
+
 // Cause represents a cause in the system
 type Cause struct {
-	ID              uuid.UUID     `json:"id" db:"id"`
-	OrganizationID  uuid.UUID     `json:"organization_id" db:"organization_id"`
-	Title           string        `json:"title" db:"title"`
-	Description     *string       `json:"description" db:"description"`
-	Domain          CauseCategory `json:"domain"`
-	AidType         CauseCategory `json:"aid_type"`
-	CollectedAmount float32       `json:"collected_amount" db:"collected_amount"`
-	GoalAmount      *float32      `json:"goal_amount" db:"goal_amount"`
-	Deadline        *time.Time    `json:"deadline" db:"deadline"`
-	CreatedAt       time.Time     `json:"created_at" db:"created_at"`
-	IsActive        bool          `json:"is_active" db:"is_active"`
-	CoverImageURL   *string       `json:"cover_image_url" db:"cover_image_url"`
+	ID              uuid.UUID           `json:"id" db:"id"`
+	Organization    OrganizationInCause `json:"organization" db:"organization"`
+	Title           string              `json:"title" db:"title"`
+	Description     *string             `json:"description" db:"description"`
+	Domain          CauseCategory       `json:"domain"`
+	AidType         CauseCategory       `json:"aid_type"`
+	CollectedAmount float32             `json:"collected_amount" db:"collected_amount"`
+	GoalAmount      *float32            `json:"goal_amount" db:"goal_amount"`
+	Deadline        *time.Time          `json:"deadline" db:"deadline"`
+	CreatedAt       time.Time           `json:"created_at" db:"created_at"`
+	IsActive        bool                `json:"is_active" db:"is_active"`
+	CoverImageURL   *string             `json:"cover_image_url" db:"cover_image_url"`
 }
 
 type CauseCategory struct {
@@ -50,25 +55,25 @@ type CauseByIDRequest struct {
 
 // CauseResponse represents a cause response without sensitive data
 type CauseResponse struct {
-	ID              uuid.UUID     `json:"id"`
-	OrganizationID  uuid.UUID     `json:"organization_id"`
-	Title           string        `json:"title"`
-	Description     *string       `json:"description"`
-	Domain          CauseCategory `json:"domain"`
-	AidType         CauseCategory `json:"aid_type"`
-	CollectedAmount float32       `json:"collected_amount"`
-	GoalAmount      *float32      `json:"goal_amount"`
-	Deadline        *time.Time    `json:"deadline"`
-	CreatedAt       time.Time     `json:"created_at"`
-	IsActive        bool          `json:"is_active"`
-	CoverImageURL   *string       `json:"cover_image_url"`
+	ID              uuid.UUID           `json:"id"`
+	Organization    OrganizationInCause `json:"organization"`
+	Title           string              `json:"title"`
+	Description     *string             `json:"description"`
+	Domain          CauseCategory       `json:"domain"`
+	AidType         CauseCategory       `json:"aid_type"`
+	CollectedAmount float32             `json:"collected_amount"`
+	GoalAmount      *float32            `json:"goal_amount"`
+	Deadline        *time.Time          `json:"deadline"`
+	CreatedAt       time.Time           `json:"created_at"`
+	IsActive        bool                `json:"is_active"`
+	CoverImageURL   *string             `json:"cover_image_url"`
 }
 
 // ToCauseResponse converts a Cause to CauseResponse
 func (c *Cause) ToCauseResponse() CauseResponse {
 	return CauseResponse{
 		ID:              c.ID,
-		OrganizationID:  c.OrganizationID,
+		Organization:    c.Organization,
 		Title:           c.Title,
 		Description:     c.Description,
 		Domain:          c.Domain,

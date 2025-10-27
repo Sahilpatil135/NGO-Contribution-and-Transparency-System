@@ -49,9 +49,13 @@ func (c *causeService) Create(ctx context.Context, req *models.CreateCauseReques
 		return nil, err
 	}
 
+	organization := &models.OrganizationInCause{
+		ID: ctx.Value("organizationID").(uuid.UUID),
+	}
+
 	cause := &models.Cause{
 		ID:              uuid.New(),
-		OrganizationID:  ctx.Value("organizationID").(uuid.UUID),
+		Organization:    *organization,
 		Title:           req.Title,
 		Description:     req.Description,
 		Domain:          *domain,

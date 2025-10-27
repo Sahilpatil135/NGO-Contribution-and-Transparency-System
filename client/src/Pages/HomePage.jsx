@@ -3,6 +3,8 @@ import { Link } from "react-router-dom";
 import heroimg from "/domains/domain_example.png";
 import StatsCounter from '../components/StatsCounter';
 import Card from '../components/Card';
+import { apiRequest, API_ENDPOINTS } from '../config/api';
+import { useEffect, useState } from 'react';
 
 const HomePage = () => {
     const { user } = useAuth();
@@ -10,6 +12,24 @@ const HomePage = () => {
     if (!user) {
         return null;
     }
+
+    const [loading, setLoading] = useState(true)
+    const [featuredCauses, setFeaturedCauses] = useState([])
+
+    useEffect(() => {
+        const fetchData = async () => {
+            const causeResult = await apiRequest(`${API_ENDPOINTS.GET_CAUSES}/?limit=3`)
+
+            if (causeResult.success && causeResult.data) {
+                setFeaturedCauses(causeResult.data)
+                setLoading(false)
+            }
+        }
+
+        fetchData()
+    }, [])
+
+
     return (
         <div className="w-full">
             {/* Hero Section */}
@@ -131,9 +151,13 @@ const HomePage = () => {
                 </h1>
                 <p className="text-gray-500 max-w-lg mx-auto my-0 leading-relaxed">Discover impactful charity campaigns verified on our transparent blockchain network.</p>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-12 w-full my-8">
-                    <Card />
-                    <Card />
-                    <Card />
+                    {!loading ? (
+                        featuredCauses.map((cause, idx) => (
+                            <Card key={idx} cause={cause} />
+                        ))
+                    ) : (
+                        <h1>LOADING</h1>
+                    )}
                 </div>
             </section>
 

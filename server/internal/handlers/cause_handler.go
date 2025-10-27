@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"strconv"
 	"time"
 
 	"server/internal/middleware"
@@ -37,7 +38,7 @@ func (c *CauseHandler) RegisterRoutes(r chi.Router) {
 			protected.Delete("/{ID}", c.DeleteCause)
 		})
 
-		r.Get("/", c.GetAll)
+		r.Get("/", c.GetAllCauses)
 		r.Get("/{ID}", c.GetCauseByID)
 		r.Get("/organization/{ID}", c.GetCauseByOrganizationID)
 
@@ -184,8 +185,23 @@ func (c *CauseHandler) GetCauseByAidTypeID(w http.ResponseWriter, r *http.Reques
 	json.NewEncoder(w).Encode(causesResult)
 }
 
-func (c *CauseHandler) GetAll(w http.ResponseWriter, r *http.Request) {
-	causesResult, err := c.causeService.GetAll(r.Context())
+func (c *CauseHandler) GetAllCauses(w http.ResponseWriter, r *http.Request) {
+	limit := r.URL.Query().Get("limit")
+
+	var ctx context.Context
+
+	if limit != "" {
+		_, err := strconv.Atoi(limit)
+		if err != nil {
+			http.Error(w, "Limit Parameter is invalid", http.StatusBadRequest)
+			return
+		}
+		ctx = context.WithValue(r.Context(), "limit", limit)
+	} else {
+		ctx = r.Context()
+	}
+
+	causesResult, err := c.causeService.GetAll(ctx)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -222,7 +238,7 @@ func (c *CauseHandler) DeleteCause(w http.ResponseWriter, r *http.Request) {
 
 	cause, err := c.causeService.GetByID(r.Context(), ID)
 
-	if err != nil || cause.OrganizationID != organization.ID {
+	if err != nil || cause.Organization.ID != organization.ID {
 		http.Error(w, "Not authorized", http.StatusUnauthorized)
 		return
 	}

@@ -5,12 +5,33 @@ import { BiUpvote, BiDownvote, BiGroup } from "react-icons/bi";
 import { IoMdTime } from "react-icons/io";
 import { Link } from "react-router-dom";
 
-const Card = () => {
-  const raised = 2000;
-  const goal = 5000;
+const Card = ({ cause }) => {
+  const raised = parseFloat(cause.collected_amount);
+
+  let goal
+
+  if (cause.goal_amount) {
+    goal = parseFloat(cause.goal_amount)
+  } else {
+    goal = 2 * raised
+  }
+
   const progress = Math.min((raised / goal) * 100, 100);
 
   const [hover, setHover] = useState(false);
+
+  const getDaysLeft = (targetTimestamp) => {
+    const now = Date.now();
+    const targetTime = new Date(targetTimestamp).getTime();
+
+    const differenceInMs = targetTime - now;
+
+    // Convert milliseconds to days
+    const millisecondsPerDay = 1000 * 60 * 60 * 24;
+    const daysLeft = Math.ceil(differenceInMs / millisecondsPerDay);
+
+    return daysLeft;
+  }
 
   return (
     <div
@@ -18,7 +39,7 @@ const Card = () => {
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
     >
-      <Link to="/campaign/1" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
+      <Link to={`/campaign/${cause.id}`} onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
         {/* Image Section */}
         <div className="relative">
           <img
@@ -46,13 +67,15 @@ const Card = () => {
 
         {/* Text and Progress Section */}
         <div className="px-6 py-4 text-left">
-          <h1 className="text-xl font-bold text-gray-800">Helping Hands Foundation</h1>
-          <p className="text-md text-gray-500 mb-3">by Campaign Name</p>
+          <h1 className="text-xl font-bold text-gray-800">{cause.title}</h1>
+          <p className="text-sm text-gray-500 mb-3">{cause.domain.name} | {cause.aid_type.name}</p>
+          <p className="text-md text-gray-500 mb-3">By {cause.organization.name}</p>
+          {/*<p className="text-md text-gray-500 mb-3">by Campaign Name</p>*/}
 
           {/* Donations & Time Left */}
           <div className="flex justify-between text-sm text-gray-600 mb-2">
-            <p className="flex"><BiGroup className="h-5 mr-1 text-lg" />100 Donations</p>
-            <p className="flex"><IoMdTime className="h-5 text-lg mr-1" />3 Days Left</p>
+            <p className="flex"><BiGroup className="h-5 mr-1 text-lg" />1000+ Donations</p>
+            <p className="flex"><IoMdTime className="h-5 text-lg mr-1" />{getDaysLeft(cause.deadline) + 50} Days Left</p>
           </div>
 
           {/* Hover Logic: hide details, show donate button */}
@@ -83,7 +106,7 @@ const Card = () => {
           )}
         </div>
       </Link>
-    </div>
+    </div >
   );
 };
 
