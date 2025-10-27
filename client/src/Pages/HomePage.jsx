@@ -1,7 +1,6 @@
-import React from 'react'
 import { useAuth } from '../contexts/AuthContext';
 import { Link } from "react-router-dom";
-import heroimg from "/img1.png"
+import heroimg from "../../public/domains/domain_example.png";
 import StatsCounter from '../components/StatsCounter';
 import Card from '../components/Card';
 
@@ -11,8 +10,6 @@ const HomePage = () => {
     if (!user) {
         return null;
     }
-    console.log(user)
-
     return (
         <div className="w-full">
             {/* Hero Section */}
@@ -80,7 +77,7 @@ const HomePage = () => {
                     {/* Left Image */}
                     <div className="md:w-1/2 w-full">
                         <img
-                            src="/img1.png"
+                            src="/domains/domain_example.png"
                             alt="Our Mission"
                             className="w-full h-[380px] object-cover rounded-2xl shadow-lg"
                         />

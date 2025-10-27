@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import img1 from "/img1.png";
+import img1 from "../../public/domains/domain_example.png";
 import { LuLock } from "react-icons/lu";
 import DonateButton from "../components/DonateButton";
 

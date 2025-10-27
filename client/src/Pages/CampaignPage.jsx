@@ -1,5 +1,5 @@
 import React from "react";
-import img1 from "/img1.png";
+import img1 from "../../public/domains/domain_example.png";
 import { Link } from "react-router-dom";
 
 const campaign = {

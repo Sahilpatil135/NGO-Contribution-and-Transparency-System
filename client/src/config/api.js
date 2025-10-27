@@ -11,6 +11,12 @@ export const API_ENDPOINTS = {
   ME: `${API_BASE_URL}/api/auth/me`,
   GOOGLE_AUTH: `${API_BASE_URL}/api/auth/google`,
   GOOGLE_CALLBACK: `${API_BASE_URL}/api/auth/google/callback`,
+
+  CREATE_ORDER: `${API_BASE_URL}/api/payment/create-order`,
+  VERIFY_PAYMENT: `${API_BASE_URL}/api/payment/verify`,
+
+  GET_ALL_AID_TYPES: `${API_BASE_URL}/api/aids`,
+  GET_ALL_DOMAINS: `${API_BASE_URL}/api/domains`,
 };
 
 // API utility functions

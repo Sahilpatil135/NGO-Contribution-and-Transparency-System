@@ -1,11 +1,10 @@
 import axios from "axios";
-
-const API_BASE = "http://localhost:8080/api/payment"; // adjust your backend port
+import { API_ENDPOINTS } from "../config/api";
 
 export const createOrder = async (amount) => {
   const receipt = "rcpt_" + Math.floor(Math.random() * 100000);
   try {
-    const response = await axios.post(`${API_BASE}/create-order`, {
+    const response = await axios.post(API_ENDPOINTS.CREATE_ORDER, {
       amount,
       receipt,
     });
@@ -18,7 +17,7 @@ export const createOrder = async (amount) => {
 
 export const verifyPayment = async (data) => {
   try {
-    const response = await axios.post(`${API_BASE}/verify`, data);
+    const response = await axios.post(API_ENDPOINTS.VERIFY_PAYMENT, data);
     return response;
   } catch (error) {
     console.error("Error verifying payment:", error);
