@@ -25,6 +25,76 @@ INSERT INTO cause_domains (name, description, icon_url) VALUES
 ('Arts & Culture', 'Initiatives promoting art, heritage preservation, creativity, and cultural development.', '/domains/domain_example.png'),
 ('Sports', 'Support for sports development, training, youth engagement, and athletic programs.', '/domains/domain_example.png');
 
+-- USERS
+INSERT INTO users (name, email, password_hash, is_verified, avatar_url)
+VALUES
+('Asha Mehta', 'asha.mehta@gmail.com', 'bcrypt$2b$12$examplehash1', true, 'https://example.com/avatars/asha.jpg'),
+('Ravi Kapoor', 'ravi.kapoor@yahoo.com', 'bcrypt$2b$12$examplehash2', true, 'https://example.com/avatars/ravi.jpg'),
+('Priya Sharma', 'priya.sharma@outlook.com', 'bcrypt$2b$12$examplehash3', false, NULL),
+('Anil Deshmukh', 'anil.deshmukh@gmail.com', 'bcrypt$2b$12$examplehash4', true, NULL),
+('Neha Reddy', 'neha.reddy@mail.com', 'bcrypt$2b$12$examplehash5', false, NULL),
+
+-- NGO / organization admin users (these 5 will have organizations attached)
+('contact@sevasagar.org', 'contact@sevasagar.org', 'bcrypt$2b$12$orghash1', true, 'https://example.com/avatars/seva.jpg'),
+('admin@jalraksha.org', 'admin@jalraksha.org', 'bcrypt$2b$12$orghash2', true, 'https://example.com/avatars/jal.jpg'),
+('info@careforstrays.org', 'info@careforstrays.org', 'bcrypt$2b$12$orghash3', true, 'https://example.com/avatars/strays.jpg'),
+('hello@narirutthan.org', 'hello@narirutthan.org', 'bcrypt$2b$12$orghash4', true, 'https://example.com/avatars/nari.jpg'),
+('greenearth.india@gmail.com', 'greenearth.india@gmail.com', 'bcrypt$2b$12$orghash5', true, 'https://example.com/avatars/green.jpg');
+
+-- ORGANIZATIONS
+INSERT INTO organizations (user_id, organization_name, registration_number, organization_type, about, website_url, is_approved, address)
+VALUES
+(
+  (SELECT id FROM users WHERE email = 'contact@sevasagar.org'),
+  'Seva Sagar Trust',
+  'IN-REG-5501',
+  'NGO',
+  'Community welfare organisation working on elderly care, hunger relief and urgent support in Mumbai slums.',
+  'https://sevasagar.org',
+  true,
+  'Andheri East, Mumbai, Maharashtra'
+),
+(
+  (SELECT id FROM users WHERE email = 'admin@jalraksha.org'),
+  'Jal Raksha Initiative',
+  'IN-REG-5502',
+  'NGO',
+  'Works on water security, clean drinking water projects and environmental restoration in rural Maharashtra.',
+  'https://jalraksha.org',
+  true,
+  'Pune, Maharashtra'
+),
+(
+  (SELECT id FROM users WHERE email = 'info@careforstrays.org'),
+  'Care for Strays Collective',
+  'IN-REG-5503',
+  'NGO',
+  'Rescue, medical care and adoption support for stray animals across urban centres.',
+  'https://careforstrays.org',
+  true,
+  'Bandra West, Mumbai, Maharashtra'
+),
+(
+  (SELECT id FROM users WHERE email = 'hello@narirutthan.org'),
+  'Nari Utthan Foundation',
+  'IN-REG-5504',
+  'NGO',
+  'Women empowerment, vocational training and legal awareness programs for women in semi-urban areas.',
+  'https://narirutthan.org',
+  true,
+  'Nagpur, Maharashtra'
+),
+(
+  (SELECT id FROM users WHERE email = 'greenearth.india@gmail.com'),
+  'Green Earth India',
+  'IN-REG-5505',
+  'NGO',
+  'Environmental campaigns, tree planting drives and sustainability education across schools.',
+  'https://greenearth.in',
+  true,
+  'Pune, Maharashtra'
+);
+
 -- CAUSES
 INSERT INTO causes (organization_id, title, description, domain_id, aid_type_id, goal_amount, collected_amount, deadline, cover_image_url)
 VALUES
