@@ -1,10 +1,10 @@
 -- AID TYPES
 INSERT INTO cause_aid_types (name, description, icon_url) VALUES
-('Monetary Donations', 'Provide financial contributions to support causes, relief efforts, and organizations.', 'https://example.com/icons/monetary.png'),
-('Volunteering', 'Offer your time and skills to directly assist in events, campaigns, or on-ground operations.', 'https://example.com/icons/volunteering.png'),
-('Blood & Organ Donations', 'Donate blood, plasma, or organs to save lives and support critical medical needs.', 'https://example.com/icons/blood-organ.png'),
-('Goods & Resources', 'Contribute essential goods like food, clothing, medicine, and other relief materials.', 'https://example.com/icons/goods-resources.png'),
-('Environmental Support', 'Participate in tree planting, cleanup drives, wildlife protection, and eco-support initiatives.', 'https://example.com/icons/environmental.png'),
+('Monetary Donations', 'Provide financial contributions to support causes, relief efforts, and organizations.', '/aid_types/monetary.png'),
+('Volunteering', 'Offer your time and skills to directly assist in events, campaigns, or on-ground operations.', '/aid_types/volunteering.png'),
+('Blood & Organ Donations', 'Donate blood, plasma, or organs to save lives and support critical medical needs.', '/aid_types/blood-organ.png'),
+('Goods & Resources', 'Contribute essential goods like food, clothing, medicine, and other relief materials.', '/aid_types/goods-resources.png'),
+('Environmental Support', 'Participate in tree planting, cleanup drives, wildlife protection, and eco-support initiatives.', '/aid_types/environmental.png'),
 ('Disaster Relief Assistance', 'Provide emergency aid, rescue support, shelter, and recovery assistance in disaster-hit areas.', 'https://example.com/icons/disaster-relief.png'),
 ('Educational Support', 'Support education through books, digital resources, mentorship, or scholarships.', 'https://example.com/icons/education.png'),
 ('Medical Assistance', 'Help with medicines, medical equipment, health camps, and caregiving support.', 'https://example.com/icons/medical.png');

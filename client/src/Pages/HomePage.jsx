@@ -1,6 +1,6 @@
 import { useAuth } from '../contexts/AuthContext';
 import { Link } from "react-router-dom";
-import heroimg from "../../public/domains/domain_example.png";
+import heroimg from "/domains/domain_example.png";
 import StatsCounter from '../components/StatsCounter';
 import Card from '../components/Card';
 
