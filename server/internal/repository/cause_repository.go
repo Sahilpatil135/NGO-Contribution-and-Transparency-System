@@ -403,6 +403,7 @@ func (c *causeRepository) GetDomains(ctx context.Context) ([]*models.CauseCatego
 	query := `
 		SELECT id, name, description, icon_url
 		FROM cause_domains
+		ORDER BY name DESC
 	`
 
 	result, err := c.db.QueryContext(ctx, query)

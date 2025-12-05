@@ -2,7 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Login from './components/auth/Login';
 import Signup from './components/auth/Signup';
-import OAuthCallback from './pages/OAuthCallback';
+import OAuthCallback from './Pages/OAuthCallback';
 import './App.css';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
@@ -57,7 +57,7 @@ const AppRoutes = () => {
         <Route path="/campaign/:causeID" element={isAuthenticated ? <CampaignPage /> : <Navigate to="/login" replace />} />
         <Route path="/checkout" element={isAuthenticated ? <CheckoutPage /> : <Navigate to="/login" replace />} />
         <Route path="/makeContribution/:category/:slug" element={isAuthenticated ? <DonationTypePage /> : <Navigate to="/login" replace />} />
-        <Route path="/ngoRegistration" element={isAuthenticated ? <NgoRegistration /> : <Navigate to="/login" replace />} />
+        <Route path="/ngoRegistration" element={<NgoRegistration />} />
         <Route path="/createCampaign" element={isAuthenticated ? <CreateCampaign /> : <Navigate to="/login" replace />} />
       </Routes>
 

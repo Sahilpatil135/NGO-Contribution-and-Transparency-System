@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import img1 from "/makeContributionbanner.jpg"
+import img2 from "/banner_main.jpeg"
 import CausesCarousel from '../components/CausesCarousel';
 import Card from '../components/Card';
 import { Link } from 'react-router-dom';
@@ -46,7 +47,7 @@ const ContributionsPage = () => {
         <div className="w-full">
             {/* Hero section  */}
             <section>
-                <img src={img1} alt="..." />
+                <img src={img2} alt="..." className="w-full" />
             </section>
 
             {/* Types of Donations section  */}

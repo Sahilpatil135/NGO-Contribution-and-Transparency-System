@@ -7,21 +7,21 @@ const statsData = [
     {
         id: 1,
         title: "Causes Accomplished",
-        image: "/cause_accomplished.png", // update paths based on your assets
+        image: "/causes_accomplished.jpg", // update paths based on your assets
         end: 5000,
         desc: "Empowering real change through successfully funded charity campaigns worldwide.",
     },
     {
         id: 2,
         title: "NGO's Listed",
-        image: "/ngo_listed.png",
+        image: "/ngos_listed.jpg",
         end: 1200,
         desc: "Trusted organizations verified and connected through our transparent blockchain network.",
     },
     {
         id: 3,
         title: "Donations Tracked",
-        image: "/donations_tracked.png",
+        image: "/donations_tracked.jpg",
         end: 50,
         desc: "Every contribution recorded securely — bringing complete visibility to where help goes.",
     },

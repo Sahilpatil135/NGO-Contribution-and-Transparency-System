@@ -97,8 +97,8 @@ const Card = ({ cause }) => {
             </div>
           ) : (
             <div className="flex justify-center items-center h-12">
-              <Link to="/checkout" className="w-full">
-                <button className="bg-green-600 hover:bg-green-700 w-full text-white font-semibold py-2 px-6 mx-2 rounded-full transition cursor-pointer">
+              <Link to="/checkout" className="w-full" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
+                <button className="bg-green-600 hover:bg-green-700 w-full text-white font-semibold py-2 px-6 mx-2 rounded-full transition cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
                   Donate
                 </button>
               </Link>

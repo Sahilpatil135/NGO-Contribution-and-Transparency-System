@@ -131,15 +131,23 @@ const Login = () => {
         </button>
 
         <div className="auth-footer">
+          <br />
           <p>
             Don't have an account?{' '}
             <Link to="/signup" className="auth-link">
               Sign up
             </Link>
           </p>
+          <br />
+          <p className="mt-1">
+            Sign up as an Organization{' '}
+            <Link to="/ngoRegistration" className="auth-link">
+              Sign up
+            </Link>
+          </p>
         </div>
       </div>
-    </div>
+    </div >
   );
 };
 
