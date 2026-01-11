@@ -62,8 +62,8 @@ func (c *causeRepository) Create(ctx context.Context, cause *models.Cause) error
 	return err
 }
 
-func (c *causeRepository) GetByID(ctx context.Context, id uuid.UUID) (*models.Cause, error) {
-	query := `
+func GetCauseByColumnID(c *causeRepository, ctx context.Context, id uuid.UUID, column string) (*models.Cause, error) {
+	query := fmt.Sprintf(`
 		SELECT 
 			c.id, c.title, c.description, c.collected_amount,
 			c.goal_amount, c.deadline, c.is_active, c.cover_image_url, c.created_at,
@@ -74,8 +74,8 @@ func (c *causeRepository) GetByID(ctx context.Context, id uuid.UUID) (*models.Ca
 		LEFT JOIN cause_domains cd on cd.id = c.domain_id
 		LEFT JOIN cause_aid_types ca on ca.id = c.aid_type_id
 		LEFT JOIN organizations o on o.id = c.organization_id
-		WHERE c.id = $1
-	`
+		WHERE c.%s = $1
+		`, column)
 
 	cause := &models.Cause{
 		Domain:       models.CauseCategory{},
@@ -118,8 +118,8 @@ func (c *causeRepository) GetByID(ctx context.Context, id uuid.UUID) (*models.Ca
 	return cause, nil
 }
 
-func (c *causeRepository) GetByOrganizationID(ctx context.Context, organizationId uuid.UUID) ([]*models.Cause, error) {
-	query := `
+func GetCausesByColumnID(c *causeRepository, ctx context.Context, id uuid.UUID, column string) ([]*models.Cause, error) {
+	query := fmt.Sprintf(`
 		SELECT 
 			c.id, c.title, c.description, c.collected_amount,
 			c.goal_amount, c.deadline, c.is_active, c.cover_image_url, c.created_at,
@@ -130,10 +130,10 @@ func (c *causeRepository) GetByOrganizationID(ctx context.Context, organizationI
 		LEFT JOIN cause_domains cd on cd.id = c.domain_id
 		LEFT JOIN cause_aid_types ca on ca.id = c.aid_type_id
 		LEFT JOIN organizations o on o.id = c.organization_id
-		WHERE organization_id = $1
-	`
+		WHERE %s = $1
+	`, column)
 
-	result, err := c.db.QueryContext(ctx, query, organizationId)
+	result, err := c.db.QueryContext(ctx, query, id)
 
 	if err != nil && err != sql.ErrNoRows {
 		return nil, err
@@ -181,136 +181,22 @@ func (c *causeRepository) GetByOrganizationID(ctx context.Context, organizationI
 	}
 
 	return causesResult, nil
+}
+
+func (c *causeRepository) GetByID(ctx context.Context, id uuid.UUID) (*models.Cause, error) {
+	return GetCauseByColumnID(c, ctx, id, "id")
+}
+
+func (c *causeRepository) GetByOrganizationID(ctx context.Context, organizationId uuid.UUID) ([]*models.Cause, error) {
+	return GetCausesByColumnID(c, ctx, organizationId, "organization_id")
 }
 
 func (c *causeRepository) GetByDomainID(ctx context.Context, domainID uuid.UUID) ([]*models.Cause, error) {
-	query := `
-		SELECT 
-			c.id, c.title, c.description, c.collected_amount,
-			c.goal_amount, c.deadline, c.is_active, c.cover_image_url, c.created_at,
-			cd.id, cd.name, cd.description, cd.icon_url,
-			ca.id, ca.name, ca.description, ca.icon_url,
-			o.id, o.organization_name
-		FROM causes c 
-		LEFT JOIN cause_domains cd on cd.id = c.domain_id
-		LEFT JOIN cause_aid_types ca on ca.id = c.aid_type_id
-		LEFT JOIN organizations o on o.id = c.organization_id
-		WHERE domain_id = $1
-	`
-
-	result, err := c.db.QueryContext(ctx, query, domainID)
-
-	if err != nil && err != sql.ErrNoRows {
-		return nil, err
-	}
-
-	var causesResult []*models.Cause = make([]*models.Cause, 0, 5)
-
-	for result.Next() {
-		cause := &models.Cause{
-			Domain:       models.CauseCategory{},
-			AidType:      models.CauseCategory{},
-			Organization: models.OrganizationInCause{},
-		}
-
-		err = result.Scan(
-			&cause.ID,
-			&cause.Title,
-			&cause.Description,
-			&cause.CollectedAmount,
-			&cause.GoalAmount,
-			&cause.Deadline,
-			&cause.IsActive,
-			&cause.CoverImageURL,
-			&cause.CreatedAt,
-
-			&cause.Domain.ID,
-			&cause.Domain.Name,
-			&cause.Domain.Description,
-			&cause.Domain.IconURL,
-
-			&cause.AidType.ID,
-			&cause.AidType.Name,
-			&cause.AidType.Description,
-			&cause.AidType.IconURL,
-
-			&cause.Organization.ID,
-			&cause.Organization.Name,
-		)
-
-		if err != nil {
-			return nil, err
-		}
-
-		causesResult = append(causesResult, cause)
-	}
-
-	return causesResult, nil
+	return GetCausesByColumnID(c, ctx, domainID, "domain_id")
 }
 
 func (c *causeRepository) GetByAidTypeID(ctx context.Context, aidTypeId uuid.UUID) ([]*models.Cause, error) {
-	query := `
-		SELECT 
-			c.id, c.title, c.description, c.collected_amount,
-			c.goal_amount, c.deadline, c.is_active, c.cover_image_url, c.created_at,
-			cd.id, cd.name, cd.description, cd.icon_url,
-			ca.id, ca.name, ca.description, ca.icon_url,
-			o.id, o.organization_name
-		FROM causes c 
-		LEFT JOIN cause_domains cd on cd.id = c.domain_id
-		LEFT JOIN cause_aid_types ca on ca.id = c.aid_type_id
-		LEFT JOIN organizations o on o.id = c.organization_id
-		WHERE aid_type_id = $1
-	`
-
-	result, err := c.db.QueryContext(ctx, query, aidTypeId)
-
-	if err != nil && err != sql.ErrNoRows {
-		return nil, err
-	}
-
-	var causesResult []*models.Cause = make([]*models.Cause, 0, 5)
-
-	for result.Next() {
-		cause := &models.Cause{
-			Domain:       models.CauseCategory{},
-			AidType:      models.CauseCategory{},
-			Organization: models.OrganizationInCause{},
-		}
-
-		err = result.Scan(
-			&cause.ID,
-			&cause.Title,
-			&cause.Description,
-			&cause.CollectedAmount,
-			&cause.GoalAmount,
-			&cause.Deadline,
-			&cause.IsActive,
-			&cause.CoverImageURL,
-			&cause.CreatedAt,
-
-			&cause.Domain.ID,
-			&cause.Domain.Name,
-			&cause.Domain.Description,
-			&cause.Domain.IconURL,
-
-			&cause.AidType.ID,
-			&cause.AidType.Name,
-			&cause.AidType.Description,
-			&cause.AidType.IconURL,
-
-			&cause.Organization.ID,
-			&cause.Organization.Name,
-		)
-
-		if err != nil {
-			return nil, err
-		}
-
-		causesResult = append(causesResult, cause)
-	}
-
-	return causesResult, nil
+	return GetCausesByColumnID(c, ctx, aidTypeId, "aid_type_id")
 }
 
 func (c *causeRepository) GetAll(ctx context.Context) ([]*models.Cause, error) {
