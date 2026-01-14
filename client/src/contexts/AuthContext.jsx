@@ -73,7 +73,7 @@ export const AuthProvider = ({ children }) => {
     try {
       const result = await apiRequest(API_ENDPOINTS.REGISTER, {
         method: 'POST',
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify({ name, email, password, role: 'user' }),
       });
 
       if (result.success && result.data) {

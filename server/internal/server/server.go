@@ -2,11 +2,12 @@ package server
 
 import (
 	"fmt"
-	_ "github.com/joho/godotenv/autoload"
 	"net/http"
 	"os"
 	"strconv"
 	"time"
+
+	_ "github.com/joho/godotenv/autoload"
 
 	"server/internal/config"
 	"server/internal/database"
@@ -48,6 +49,7 @@ func NewServer() *http.Server {
 	authHandler := handlers.NewAuthHandler(authService, jwtService)
 	causeHandler := handlers.NewCauseHandler(causeService, authService, jwtService)
 	donationHandler := handlers.NewDonationHandler(donationService, authService, jwtService)
+	proofHandler := handlers.NewProofHandler(jwtService)
 
 	// Configure OAuth
 	config.ConfigureOAuth()
@@ -62,7 +64,7 @@ func NewServer() *http.Server {
 	// Declare Server config
 	httpServer := &http.Server{
 		Addr:         fmt.Sprintf(":%d", port),
-		Handler:      server.RegisterRoutes(authHandler, causeHandler, donationHandler),
+		Handler:      server.RegisterRoutes(authHandler, causeHandler, donationHandler, proofHandler),
 		IdleTimeout:  time.Minute,
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 30 * time.Second,

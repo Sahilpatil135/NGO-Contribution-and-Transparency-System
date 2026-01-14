@@ -13,6 +13,8 @@ import CheckoutPage from './Pages/CheckoutPage';
 import DonationTypePage from './Pages/DonationTypePage';
 import NgoRegistration from './Pages/NgoRegistration';
 import CreateCampaign from './Pages/CreateCampaign';
+import UploadProof from './Pages/Ngo/UploadProof';
+import MobileProofCapture from './Pages/MobileProofCapture';
 
 const AppRoutes = () => {
   const { isAuthenticated, isLoading } = useAuth();
@@ -57,8 +59,14 @@ const AppRoutes = () => {
         <Route path="/campaign/:causeID" element={isAuthenticated ? <CampaignPage /> : <Navigate to="/login" replace />} />
         <Route path="/checkout" element={isAuthenticated ? <CheckoutPage /> : <Navigate to="/login" replace />} />
         <Route path="/makeContribution/:category/:slug" element={isAuthenticated ? <DonationTypePage /> : <Navigate to="/login" replace />} />
+        
         <Route path="/ngoRegistration" element={<NgoRegistration />} />
+        
+        {/* This routes are only for NGOs. */}
         <Route path="/createCampaign" element={isAuthenticated ? <CreateCampaign /> : <Navigate to="/login" replace />} />
+        {/* <Route path="/uploadProof" element={isAuthenticated ? <UploadProof /> : <Navigate to="/login" replace />} /> */}
+        <Route path="/uploadProof" element={<UploadProof />} />
+        <Route path="/mobile/proof/:sessionID" element={<MobileProofCapture />} />
       </Routes>
 
       {isAuthenticated && <Footer />}

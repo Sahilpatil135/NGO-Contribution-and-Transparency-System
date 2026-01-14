@@ -12,7 +12,7 @@ import (
 	"github.com/go-chi/cors"
 )
 
-func (s *Server) RegisterRoutes(authHandler *handlers.AuthHandler, causeHandler *handlers.CauseHandler, donationHandler *handlers.DonationHandler) http.Handler {
+func (s *Server) RegisterRoutes(authHandler *handlers.AuthHandler, causeHandler *handlers.CauseHandler, donationHandler *handlers.DonationHandler, proofHandler *handlers.ProofHandler) http.Handler {
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 
@@ -38,6 +38,12 @@ func (s *Server) RegisterRoutes(authHandler *handlers.AuthHandler, causeHandler 
 
 	// Register payment routes
 	s.registerPaymentRoutes(r)
+
+	// Register proof routes
+	proofHandler.RegisterRoutes(r)
+
+	// Serve static files for uploads
+	r.Handle("/uploads/*", http.StripPrefix("/uploads/", http.FileServer(http.Dir("uploads"))))
 
 	return r
 }

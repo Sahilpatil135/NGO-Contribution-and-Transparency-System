@@ -61,6 +61,7 @@ func (a *authService) RegisterUser(ctx context.Context, req *models.CreateUserRe
 		IsVerified:   false,
 		CreatedAt:    time.Now(),
 		UpdatedAt:    time.Now(),
+		Role:         string(models.RoleTypeUser),
 	}
 
 	// Save user to database
