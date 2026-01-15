@@ -228,7 +228,7 @@ export default function MobileProofCapture() {
               Uploading...
             </span>
           ) : (
-            "📷 Capture & Upload"
+            "Capture & Upload"
           )}
         </button>
 
