@@ -128,9 +128,14 @@ func (a *authService) RegisterOrganization(ctx context.Context, req *models.Crea
 		IsApproved:         false,
 	}
 
-	// Save user to database
+	// Save user and organization to database
 	if err := a.organizationRepo.Create(ctx, organization); err != nil {
 		return nil, fmt.Errorf("failed to create organization: %w", err)
+	}
+
+	// Save primary contact to organization_contacts
+	if err := a.organizationRepo.CreatePrimaryContact(ctx, organization.ID, req.Name, req.ContactRole, req.Email, req.ContactPhone); err != nil {
+		return nil, fmt.Errorf("failed to create primary contact: %w", err)
 	}
 
 	// Generate JWT token

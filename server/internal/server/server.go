@@ -38,18 +38,21 @@ func NewServer() *http.Server {
 	organizationRepo := repository.NewOrganizationRepository(sqlDB)
 	causeRepo := repository.NewCauseRepository(sqlDB)
 	donationRepo := repository.NewDonationRepository(sqlDB)
+	proofSessionRepo := repository.NewProofSessionRepository(sqlDB)
+	proofImageRepo := repository.NewProofImageRepository(sqlDB)
 
 	// Initialize services
 	jwtService := services.NewJWTService()
 	authService := services.NewAuthService(userRepo, organizationRepo, jwtService)
 	causeService := services.NewCauseService(causeRepo)
 	donationService := services.NewDonationService(donationRepo)
+	proofService := services.NewProofService(proofSessionRepo, proofImageRepo, causeRepo)
 
 	// Initialize handlers
 	authHandler := handlers.NewAuthHandler(authService, jwtService)
 	causeHandler := handlers.NewCauseHandler(causeService, authService, jwtService)
 	donationHandler := handlers.NewDonationHandler(donationService, authService, jwtService)
-	proofHandler := handlers.NewProofHandler(jwtService)
+	proofHandler := handlers.NewProofHandler(jwtService, proofService, organizationRepo)
 
 	// Configure OAuth
 	config.ConfigureOAuth()

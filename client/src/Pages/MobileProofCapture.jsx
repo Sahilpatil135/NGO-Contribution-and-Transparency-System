@@ -87,9 +87,11 @@ export default function MobileProofCapture() {
         }
       }
 
-      // Create form data
+      // Create form data (timestamp = capture/upload time for server validation)
       const form = new FormData();
-      form.append("file", file, `proof-${Date.now()}.jpg`);
+      const now = new Date();
+      form.append("file", file, `proof-${now.getTime()}.jpg`);
+      form.append("timestamp", now.toISOString());
       
       let latValue = "";
       let lngValue = "";

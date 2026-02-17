@@ -18,8 +18,8 @@ type Organization struct {
 	UserID             uuid.UUID `json:"user_id" db:"user_id"`
 	User               *User     `json:"user,omitempty" db:"-"`
 	OrganizationName   string    `json:"organization_name" db:"organization_name"`
-	OrganizationType   *string   `json:"organization_type" db:"organization_type"`
 	RegistrationNumber *string   `json:"registration_number" db:"registration_number"`
+	OrganizationType   *string   `json:"organization_type" db:"organization_type"`
 	About              *string   `json:"about" db:"about"`
 	WebsiteUrl         *string   `json:"website_url" db:"website_url"`
 	Address            *string   `json:"address" db:"address"`
@@ -32,11 +32,13 @@ type CreateOrganizationRequest struct {
 	Email              string  `json:"email" validate:"required,email"`
 	Password           string  `json:"password" validate:"required,min=6"`
 	OrganizationName   string  `json:"organization_name" validate:"required"`
-	OrganizationType   *string `json:"organization_type,omitempty"`
 	RegistrationNumber *string `json:"registration_number,omitempty"`
+	OrganizationType   *string `json:"organization_type,omitempty"`	
 	About              *string `json:"about,omitempty"`
 	WebsiteUrl         *string `json:"website_url,omitempty"`
 	Address            *string `json:"address,omitempty"`
+	ContactRole        string  `json:"contact_role,omitempty"`
+	ContactPhone       string  `json:"contact_phone,omitempty"`
 }
 
 // OrganizationResponse represents a user response without sensitive data
@@ -45,8 +47,8 @@ type OrganizationResponse struct {
 	UserID             uuid.UUID `json:"user_id" db:"user_id"`
 	User               *User     `json:"user"`
 	OrganizationName   string    `json:"organization_name" db:"organization_name"`
-	OrganizationType   *string   `json:"organization_type" db:"organization_type"`
 	RegistrationNumber *string   `json:"registration_number" db:"registration_number"`
+	OrganizationType   *string   `json:"organization_type" db:"organization_type"`	
 	About              *string   `json:"about" db:"about"`
 	WebsiteUrl         *string   `json:"website_url" db:"website_url"`
 	Address            *string   `json:"address" db:"address"`
@@ -60,8 +62,8 @@ func (o *Organization) ToOrganizationResponse() OrganizationResponse {
 		User:               o.User,
 		UserID:             o.UserID,
 		OrganizationName:   o.OrganizationName,
-		OrganizationType:   o.OrganizationType,
 		RegistrationNumber: o.RegistrationNumber,
+		OrganizationType:   o.OrganizationType,		
 		About:              o.About,
 		WebsiteUrl:         o.WebsiteUrl,
 		Address:            o.Address,

@@ -19,6 +19,9 @@ type CauseRepository interface {
 	GetByAidTypeID(ctx context.Context, id uuid.UUID) ([]*models.Cause, error)
 	GetAll(ctx context.Context) ([]*models.Cause, error)
 
+	// GetCauseExecution returns execution window and location for proof validation
+	GetCauseExecution(ctx context.Context, causeID uuid.UUID) (*models.CauseExecution, error)
+
 	// Update(ctx context.Context, cause *models.Cause) error
 	Delete(ctx context.Context, id uuid.UUID) error
 
@@ -40,8 +43,9 @@ func (c *causeRepository) Create(ctx context.Context, cause *models.Cause) error
 	query := `
 		INSERT INTO causes (
 			id, organization_id, title, description, domain_id, aid_type_id,
-			collected_amount, goal_amount, deadline, is_active, cover_image_url, created_at 
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+			collected_amount, goal_amount, deadline, is_active, cover_image_url, created_at,
+			execution_lat, execution_lng, execution_radius_meters, execution_start_time, execution_end_time, funding_status
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
 	`
 
 	_, err := c.db.ExecContext(ctx, query,
@@ -57,6 +61,12 @@ func (c *causeRepository) Create(ctx context.Context, cause *models.Cause) error
 		cause.IsActive,
 		cause.CoverImageURL,
 		cause.CreatedAt,
+		cause.ExecutionLat,
+		cause.ExecutionLng,
+		cause.ExecutionRadiusMeters,
+		cause.ExecutionStartTime,
+		cause.ExecutionEndTime,
+		cause.FundingStatus,
 	)
 
 	return err
@@ -67,6 +77,7 @@ func GetCauseByColumnID(c *causeRepository, ctx context.Context, id uuid.UUID, c
 		SELECT 
 			c.id, c.title, c.description, c.collected_amount,
 			c.goal_amount, c.deadline, c.is_active, c.cover_image_url, c.created_at,
+			c.execution_lat, c.execution_lng, c.execution_radius_meters, c.execution_start_time, c.execution_end_time, c.funding_status,
 			cd.id, cd.name, cd.description, cd.icon_url,
 			ca.id, ca.name, ca.description, ca.icon_url,
 			o.id, o.organization_name
@@ -93,6 +104,12 @@ func GetCauseByColumnID(c *causeRepository, ctx context.Context, id uuid.UUID, c
 		&cause.IsActive,
 		&cause.CoverImageURL,
 		&cause.CreatedAt,
+		&cause.ExecutionLat,
+		&cause.ExecutionLng,
+		&cause.ExecutionRadiusMeters,
+		&cause.ExecutionStartTime,
+		&cause.ExecutionEndTime,
+		&cause.FundingStatus,
 
 		&cause.Domain.ID,
 		&cause.Domain.Name,
@@ -123,6 +140,7 @@ func GetCausesByColumnID(c *causeRepository, ctx context.Context, id uuid.UUID, 
 		SELECT 
 			c.id, c.title, c.description, c.collected_amount,
 			c.goal_amount, c.deadline, c.is_active, c.cover_image_url, c.created_at,
+			c.execution_lat, c.execution_lng, c.execution_radius_meters, c.execution_start_time, c.execution_end_time, c.funding_status,
 			cd.id, cd.name, cd.description, cd.icon_url,
 			ca.id, ca.name, ca.description, ca.icon_url,
 			o.id, o.organization_name
@@ -158,6 +176,12 @@ func GetCausesByColumnID(c *causeRepository, ctx context.Context, id uuid.UUID, 
 			&cause.IsActive,
 			&cause.CoverImageURL,
 			&cause.CreatedAt,
+			&cause.ExecutionLat,
+			&cause.ExecutionLng,
+			&cause.ExecutionRadiusMeters,
+			&cause.ExecutionStartTime,
+			&cause.ExecutionEndTime,
+			&cause.FundingStatus,
 
 			&cause.Domain.ID,
 			&cause.Domain.Name,
@@ -187,6 +211,32 @@ func (c *causeRepository) GetByID(ctx context.Context, id uuid.UUID) (*models.Ca
 	return GetCauseByColumnID(c, ctx, id, "id")
 }
 
+func (c *causeRepository) GetCauseExecution(ctx context.Context, causeID uuid.UUID) (*models.CauseExecution, error) {
+	query := `
+		SELECT id, execution_lat, execution_lng, execution_radius_meters, execution_start_time, execution_end_time
+		FROM causes
+		WHERE id = $1
+	`
+	ex := &models.CauseExecution{}
+	var id uuid.UUID
+	err := c.db.QueryRowContext(ctx, query, causeID).Scan(
+		&id,
+		&ex.ExecutionLat,
+		&ex.ExecutionLng,
+		&ex.ExecutionRadiusMeters,
+		&ex.ExecutionStartTime,
+		&ex.ExecutionEndTime,
+	)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+		return nil, err
+	}
+	ex.CauseID = id
+	return ex, nil
+}
+
 func (c *causeRepository) GetByOrganizationID(ctx context.Context, organizationId uuid.UUID) ([]*models.Cause, error) {
 	return GetCausesByColumnID(c, ctx, organizationId, "organization_id")
 }
@@ -204,6 +254,7 @@ func (c *causeRepository) GetAll(ctx context.Context) ([]*models.Cause, error) {
 		SELECT 
 			c.id, c.title, c.description, c.collected_amount,
 			c.goal_amount, c.deadline, c.is_active, c.cover_image_url, c.created_at,
+			c.execution_lat, c.execution_lng, c.execution_radius_meters, c.execution_start_time, c.execution_end_time, c.funding_status,
 			cd.id, cd.name, cd.description, cd.icon_url,
 			ca.id, ca.name, ca.description, ca.icon_url,
 			o.id, o.organization_name
@@ -250,6 +301,12 @@ func (c *causeRepository) GetAll(ctx context.Context) ([]*models.Cause, error) {
 			&cause.IsActive,
 			&cause.CoverImageURL,
 			&cause.CreatedAt,
+			&cause.ExecutionLat,
+			&cause.ExecutionLng,
+			&cause.ExecutionRadiusMeters,
+			&cause.ExecutionStartTime,
+			&cause.ExecutionEndTime,
+			&cause.FundingStatus,
 
 			&cause.Domain.ID,
 			&cause.Domain.Name,

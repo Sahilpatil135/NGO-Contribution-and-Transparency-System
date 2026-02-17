@@ -1,4 +1,6 @@
- import React, { useState } from "react";
+import React, { useState } from "react";
+import { Link } from "react-router-dom";
+import { API_ENDPOINTS } from "../config/api";
 
 const NgoRegistration = () => {
   const [formData, setFormData] = useState({
@@ -15,6 +17,8 @@ const NgoRegistration = () => {
     role: "",
     email: "",
     phone: "",
+    password: "",
+    confirmPassword: "",
   });
 
   const [documents, setDocuments] = useState({
@@ -24,8 +28,9 @@ const NgoRegistration = () => {
   });
 
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
 
-  // handle input changes
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
@@ -43,45 +48,66 @@ const NgoRegistration = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
 
-    // basic validation
-    if (!formData.organization_name || !primaryContact.email) {
-      alert("Please fill all required fields");
+    if (!formData.organization_name || !primaryContact.email || !primaryContact.name) {
+      setError("Please fill Organization name, Primary contact name and email.");
+      return;
+    }
+
+    if (!primaryContact.password) {
+      setError("Please set a password for login.");
+      return;
+    }
+
+    if (primaryContact.password.length < 6) {
+      setError("Password must be at least 6 characters long.");
+      return;
+    }
+
+    if (primaryContact.password !== primaryContact.confirmPassword) {
+      setError("Password and Confirm password do not match.");
       return;
     }
 
     setLoading(true);
 
-    const data = new FormData();
-    data.append("organization_name", formData.organization_name);
-    data.append("registration_number", formData.registration_number);
-    data.append("organization_type", formData.organization_type);
-    data.append("about", formData.about);
-    data.append("website_url", formData.website_url);
-    data.append("address", formData.address);
+    const payload = {
+      name: primaryContact.name,
+      email: primaryContact.email,
+      password: primaryContact.password,
+      organization_name: formData.organization_name,
+      registration_number: formData.registration_number || undefined,
+      organization_type: formData.organization_type || undefined,
+      about: formData.about || undefined,
+      website_url: formData.website_url || undefined,
+      address: formData.address || undefined,
+      contact_role: primaryContact.role || undefined,
+      contact_phone: primaryContact.phone || undefined,
+    };
 
-    // Contact details
-    data.append("contact_name", primaryContact.name);
-    data.append("contact_role", primaryContact.role);
-    data.append("contact_email", primaryContact.email);
-    data.append("contact_phone", primaryContact.phone);
-
-    // Documents
-    if (documents.registration_certificate)
-      data.append("registration_certificate", documents.registration_certificate);
-    if (documents.pan_card)
-      data.append("pan_card", documents.pan_card);
-    if (documents.other_docs)
-      data.append("other_docs", documents.other_docs);
+    // Remove undefined fields so backend receives clean JSON
+    Object.keys(payload).forEach((k) => payload[k] === undefined && delete payload[k]);
 
     try {
-      const res = await fetch("http://localhost:8080/api/ngo/register", {
+      const res = await fetch(API_ENDPOINTS.REGISTER_ORGANIZATION, {
         method: "POST",
-        body: data,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
       });
 
+      let errorMessage = "Error registering NGO. Please try again.";
+      if (!res.ok) {
+        try {
+          const data = await res.json();
+          errorMessage = data.message || data.error || errorMessage;
+        } catch {
+          errorMessage = await res.text() || errorMessage;
+        }
+      }
+
       if (res.ok) {
-        alert("✅ NGO registered successfully!");
+        setSuccess(true);
         setFormData({
           organization_name: "",
           registration_number: "",
@@ -90,14 +116,21 @@ const NgoRegistration = () => {
           website_url: "",
           address: "",
         });
-        setPrimaryContact({ name: "", role: "", email: "", phone: "" });
+        setPrimaryContact({
+          name: "",
+          role: "",
+          email: "",
+          phone: "",
+          password: "",
+          confirmPassword: "",
+        });
         setDocuments({ registration_certificate: null, pan_card: null, other_docs: null });
       } else {
-        alert("❌ Error registering NGO");
+        setError(errorMessage);
       }
-    } catch (error) {
-      console.error(error);
-      alert("Error connecting to server");
+    } catch (err) {
+      console.error(err);
+      setError("Error connecting to server.");
     } finally {
       setLoading(false);
     }
@@ -109,6 +142,21 @@ const NgoRegistration = () => {
         <h1 className="text-3xl font-bold text-[#3a0b2e] mb-8 text-center">
           Register Your NGO / Organization
         </h1>
+
+        {success && (
+          <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg text-green-800">
+            <p className="font-medium">NGO registered successfully!</p>
+            <p className="text-sm mt-1">
+              You can now <Link to="/login" className="underline font-medium">log in</Link> with your primary contact email and password.
+            </p>
+          </div>
+        )}
+
+        {error && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+            {error}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-8">
 
@@ -202,14 +250,19 @@ const NgoRegistration = () => {
             </div>
           </section>
 
-          {/* --- Primary Contact --- */}
+          {/* --- Primary Contact (email = login email) --- */}
           <section>
             <h2 className="text-xl font-semibold text-[#ff6200] mb-4">
               Primary Contact Details
             </h2>
+            <p className="text-sm text-gray-600 mb-4">
+              This email will be used to log in to your NGO account. Set a password below.
+            </p>
             <div className="grid md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium mb-2">Name</label>
+                <label className="block text-sm font-medium mb-2">
+                  Name <span className="text-red-500">*</span>
+                </label>
                 <input
                   type="text"
                   name="name"
@@ -233,7 +286,9 @@ const NgoRegistration = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-2">Email</label>
+                <label className="block text-sm font-medium mb-2">
+                  Email (login email) <span className="text-red-500">*</span>
+                </label>
                 <input
                   type="email"
                   name="email"
@@ -254,6 +309,36 @@ const NgoRegistration = () => {
                   className="w-full border rounded-md p-2 focus:outline-none focus:border-[#ff6200]"
                   placeholder="10-digit phone number"
                   maxLength="10"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Password <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="password"
+                  name="password"
+                  value={primaryContact.password}
+                  onChange={handleContactChange}
+                  className="w-full border rounded-md p-2 focus:outline-none focus:border-[#ff6200]"
+                  placeholder="Min 6 characters"
+                  minLength={6}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Confirm Password <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="password"
+                  name="confirmPassword"
+                  value={primaryContact.confirmPassword}
+                  onChange={handleContactChange}
+                  className="w-full border rounded-md p-2 focus:outline-none focus:border-[#ff6200]"
+                  placeholder="Re-enter password"
+                  minLength={6}
                 />
               </div>
             </div>

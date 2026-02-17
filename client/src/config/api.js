@@ -9,6 +9,7 @@ export const WS_BASE_URL = ENV.WS_BASE_URL;
 export const API_ENDPOINTS = {
   // Authentication endpoints
   REGISTER: `${API_BASE_URL}/api/auth/register`,
+  REGISTER_ORGANIZATION: `${API_BASE_URL}/api/auth/register/organization`,
   LOGIN: `${API_BASE_URL}/api/auth/login`,
   LOGOUT: `${API_BASE_URL}/api/auth/logout`,
   ME: `${API_BASE_URL}/api/auth/me`,
@@ -25,9 +26,11 @@ export const API_ENDPOINTS = {
 
   // Causes
   GET_CAUSES: `${API_BASE_URL}/api/causes`,
+  CREATE_CAUSE: `${API_BASE_URL}/api/causes`,
   GET_CAUSES_BY_DOMAIN: `${API_BASE_URL}/api/causes/domain`,
   GET_CAUSES_BY_AID_TYPE: `${API_BASE_URL}/api/causes/aid`,
   GET_CAUSES_BY_ORGANIZATION: `${API_BASE_URL}/api/causes/organization`,
+  ME_ORGANIZATION: `${API_BASE_URL}/api/auth/me/organization`,
 
   // PROOF OF WORK (NEW)
   CREATE_PROOF_SESSION: `${API_BASE_URL}/api/proof/session`,

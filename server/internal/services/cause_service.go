@@ -54,18 +54,24 @@ func (c *causeService) Create(ctx context.Context, req *models.CreateCauseReques
 	}
 
 	cause := &models.Cause{
-		ID:              uuid.New(),
-		Organization:    *organization,
-		Title:           req.Title,
-		Description:     req.Description,
-		Domain:          *domain,
-		AidType:         *aidType,
-		CollectedAmount: req.CollectedAmount,
-		GoalAmount:      req.GoalAmount,
-		Deadline:        req.Deadline,
-		CreatedAt:       req.CreatedAt,
-		IsActive:        req.IsActive,
-		CoverImageURL:   req.CoverImageURL,
+		ID:                    uuid.New(),
+		Organization:          *organization,
+		Title:                 req.Title,
+		Description:           req.Description,
+		Domain:                *domain,
+		AidType:               *aidType,
+		CollectedAmount:       req.CollectedAmount,
+		GoalAmount:            req.GoalAmount,
+		Deadline:              req.Deadline,
+		CreatedAt:             req.CreatedAt,
+		IsActive:              req.IsActive,
+		CoverImageURL:         req.CoverImageURL,
+		ExecutionLat:          req.ExecutionLat,
+		ExecutionLng:          req.ExecutionLng,
+		ExecutionRadiusMeters: req.ExecutionRadiusMeters,
+		ExecutionStartTime:    req.ExecutionStartTime,
+		ExecutionEndTime:      req.ExecutionEndTime,
+		FundingStatus:         req.FundingStatus,
 	}
 
 	err = c.causeRepo.Create(ctx, cause)

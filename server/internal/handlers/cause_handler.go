@@ -57,14 +57,14 @@ func (c *CauseHandler) RegisterRoutes(r chi.Router) {
 func (c *CauseHandler) CreateCause(w http.ResponseWriter, r *http.Request) {
 	var req models.CreateCauseRequest
 
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request body: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
 	req.CreatedAt = time.Now()
 	req.CollectedAmount = 0
 	req.IsActive = true
-
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
-		return
-	}
 
 	if req.Title == "" || req.DomainID.String() == "" || req.AidTypeID.String() == "" {
 		http.Error(w, "Title, domainID, aidTypeId required", http.StatusBadRequest)

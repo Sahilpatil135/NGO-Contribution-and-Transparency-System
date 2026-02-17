@@ -13,6 +13,7 @@ import (
 
 type OrganizationRepository interface {
 	Create(ctx context.Context, organization *models.Organization) error
+	CreatePrimaryContact(ctx context.Context, organizationID uuid.UUID, name, role, email, phone string) error
 	GetByEmail(ctx context.Context, email string) (*models.Organization, error)
 	GetByID(ctx context.Context, id uuid.UUID) (*models.Organization, error)
 	GetByProviderID(ctx context.Context, provider, providerID string) (*models.Organization, error)
@@ -59,8 +60,8 @@ func (r *organizationRepository) Create(ctx context.Context, organization *model
 		organization.ID,
 		organization.User.ID,
 		organization.OrganizationName,
-		organization.OrganizationType,
 		organization.RegistrationNumber,
+		organization.OrganizationType,		
 		organization.About,
 		organization.WebsiteUrl,
 		organization.IsApproved,
@@ -70,11 +71,20 @@ func (r *organizationRepository) Create(ctx context.Context, organization *model
 	return err
 }
 
+func (r *organizationRepository) CreatePrimaryContact(ctx context.Context, organizationID uuid.UUID, name, role, email, phone string) error {
+	query := `
+		INSERT INTO organization_contacts (id, organization_id, name, role, email, phone, is_primary, created_at)
+		VALUES (gen_random_uuid(), $1, $2, NULLIF($3, ''), NULLIF($4, ''), NULLIF($5, ''), true, NOW())
+	`
+	_, err := r.db.ExecContext(ctx, query, organizationID, name, role, email, phone)
+	return err
+}
+
 func (r *organizationRepository) GetByEmail(ctx context.Context, email string) (*models.Organization, error) {
 	query := `
 		SELECT 
 		u.id as user_id, u.name, u.email, u.password_hash, u.provider, u.provider_id, u.avatar_url, u.is_active, u.is_verified, u.created_at, u.updated_at, u.role,
-		o.id as id, o.organization_name, o.organization_type, o.registration_number, o.about, o.website_url, o.address, o.is_approved
+		o.id as id, o.organization_name, o.registration_number, o.organization_type, o.about, o.website_url, o.address, o.is_approved
 		FROM users u
 		FULL JOIN organizations o ON o.user_id = u.id
 		WHERE email = $1 AND is_active = true AND u.role = 'organization'
@@ -99,8 +109,8 @@ func (r *organizationRepository) GetByEmail(ctx context.Context, email string) (
 
 		&organization.ID,
 		&organization.OrganizationName,
-		&organization.OrganizationType,
 		&organization.RegistrationNumber,
+		&organization.OrganizationType,
 		&organization.About,
 		&organization.WebsiteUrl,
 		&organization.Address,
@@ -121,7 +131,7 @@ func (r *organizationRepository) GetByID(ctx context.Context, id uuid.UUID) (*mo
 	query := `
 		SELECT 
 		u.id as user_id, u.name, u.email, u.password_hash, u.provider, u.provider_id, u.avatar_url, u.is_active, u.is_verified, u.created_at, u.updated_at, u.role,
-		o.id as id, o.organization_name, o.organization_type, o.registration_number, o.about, o.website_url, o.address, o.is_approved
+		o.id as id, o.organization_name, o.registration_number, o.organization_type, o.about, o.website_url, o.address, o.is_approved
 		FROM users u
 		FULL JOIN organizations o ON o.user_id = u.id
 		WHERE u.id = $1 AND u.role = 'organization'
@@ -146,8 +156,8 @@ func (r *organizationRepository) GetByID(ctx context.Context, id uuid.UUID) (*mo
 
 		&organization.ID,
 		&organization.OrganizationName,
-		&organization.OrganizationType,
 		&organization.RegistrationNumber,
+		&organization.OrganizationType,
 		&organization.About,
 		&organization.WebsiteUrl,
 		&organization.Address,
@@ -168,7 +178,7 @@ func (r *organizationRepository) GetByProviderID(ctx context.Context, provider, 
 	query := `
 		SELECT 
 		u.id as user_id, u.name, u.email, u.password_hash, u.provider, u.provider_id, u.avatar_url, u.is_active, u.is_verified, u.created_at, u.updated_at, u.role,
-		o.id as id, o.organization_name, o.organization_type, o.registration_number, o.about, o.website_url, o.address, o.is_approved
+		o.id as id, o.organization_name, o.registration_number, o.organization_type, o.about, o.website_url, o.address, o.is_approved
 		FROM users u
 		FULL JOIN organizations o ON o.user_id = u.id
 		WHERE u.provider_id = $1 AND u.role = 'organization'
@@ -191,8 +201,8 @@ func (r *organizationRepository) GetByProviderID(ctx context.Context, provider, 
 
 		&organization.ID,
 		&organization.OrganizationName,
-		&organization.OrganizationType,
 		&organization.RegistrationNumber,
+		&organization.OrganizationType,
 		&organization.About,
 		&organization.WebsiteUrl,
 		&organization.Address,
