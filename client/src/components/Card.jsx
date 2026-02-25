@@ -4,6 +4,7 @@ import { FaRegHeart } from "react-icons/fa";
 import { BiUpvote, BiDownvote, BiGroup } from "react-icons/bi";
 import { IoMdTime } from "react-icons/io";
 import { Link } from "react-router-dom";
+import { getCauseImage } from "../utils/imageHelper";
 
 const Card = ({ cause }) => {
   const raised = parseFloat(cause.collected_amount);
@@ -32,6 +33,8 @@ const Card = ({ cause }) => {
 
     return daysLeft;
   }
+  
+  const imageSrc = getCauseImage(cause.cover_image_url, heroimg);
 
   return (
     <div
@@ -43,8 +46,8 @@ const Card = ({ cause }) => {
         {/* Image Section */}
         <div className="relative">
           <img
-            src={heroimg}
-            alt="Campaign"
+            src={imageSrc}
+            alt={cause.title}
             className="w-full h-56 object-cover"
           />
 

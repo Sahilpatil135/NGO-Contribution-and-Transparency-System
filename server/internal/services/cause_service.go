@@ -53,6 +53,8 @@ func (c *causeService) Create(ctx context.Context, req *models.CreateCauseReques
 		ID: ctx.Value("organizationID").(uuid.UUID),
 	}
 
+	now := req.CreatedAt
+
 	cause := &models.Cause{
 		ID:                    uuid.New(),
 		Organization:          *organization,
@@ -63,7 +65,7 @@ func (c *causeService) Create(ctx context.Context, req *models.CreateCauseReques
 		CollectedAmount:       req.CollectedAmount,
 		GoalAmount:            req.GoalAmount,
 		Deadline:              req.Deadline,
-		CreatedAt:             req.CreatedAt,
+		CreatedAt:             now,
 		IsActive:              req.IsActive,
 		CoverImageURL:         req.CoverImageURL,
 		ExecutionLat:          req.ExecutionLat,
@@ -72,12 +74,44 @@ func (c *causeService) Create(ctx context.Context, req *models.CreateCauseReques
 		ExecutionStartTime:    req.ExecutionStartTime,
 		ExecutionEndTime:      req.ExecutionEndTime,
 		FundingStatus:         req.FundingStatus,
+
+		BeneficiariesCount: valueOrDefaultInt(req.BeneficiariesCount, 0),
+		ExecutionLocation:  req.ExecutionLocation,
+		ImpactGoal:         req.ImpactGoal,
+		ProblemStatement:   req.ProblemStatement,
+		ExecutionPlan:      req.ExecutionPlan,
+		DonorCount:         0,
+		UpdatedAt:          now,
 	}
 
 	err = c.causeRepo.Create(ctx, cause)
 
 	if err != nil {
 		return nil, err
+	}
+
+	// Optionally create structured products if provided
+	if len(req.Products) > 0 {
+		for _, p := range req.Products {
+			if p == nil {
+				continue
+			}
+			product := &models.CauseProduct{
+				ID:             uuid.New(),
+				CauseID:        cause.ID,
+				Name:           p.Name,
+				Description:    p.Description,
+				PricePerUnit:   p.PricePerUnit,
+				QuantityNeeded: p.QuantityNeeded,
+				QuantityFunded: 0,
+				ImageURL:       valueOrDefaultString(p.ImageURL, ""),
+				CreatedAt:      now,
+			}
+			if err := c.causeRepo.CreateProduct(ctx, product); err != nil {
+				return nil, err
+			}
+			cause.Products = append(cause.Products, product)
+		}
 	}
 
 	return cause, nil
@@ -88,6 +122,14 @@ func (c *causeService) GetByID(ctx context.Context, id uuid.UUID) (*models.Cause
 
 	if err != nil {
 		return nil, err
+	}
+
+	// Attach products and updates for detailed campaign page
+	if products, err := c.causeRepo.GetProductsByCauseID(ctx, id); err == nil {
+		cause.Products = products
+	}
+	if updates, err := c.causeRepo.GetUpdatesByCauseID(ctx, id); err == nil {
+		cause.Updates = updates
 	}
 
 	return cause, nil
@@ -182,3 +224,18 @@ func (c *causeService) GetAidTypeByID(ctx context.Context, id uuid.UUID) (*model
 
 	return aidType, err
 }
+
+func valueOrDefaultInt(v *int, def int) int {
+	if v == nil {
+		return def
+	}
+	return *v
+}
+
+func valueOrDefaultString(v *string, def string) string {
+	if v == nil {
+		return def
+	}
+	return *v
+}
+

@@ -3,8 +3,14 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"io"
+	"mime"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 
 	"server/internal/middleware"
@@ -35,6 +41,8 @@ func (c *CauseHandler) RegisterRoutes(r chi.Router) {
 		r.Group(func(protected chi.Router) {
 			protected.Use(middleware.AuthMiddleware(c.jwtService))
 			protected.Post("/", c.CreateCause)
+			protected.Post("/cover/upload", c.UploadCoverImage)
+			protected.Post("/products/upload", c.UploadProductImage)
 			protected.Delete("/{ID}", c.DeleteCause)
 		})
 
@@ -321,3 +329,173 @@ func (c *CauseHandler) GetAidTypeByID(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(aidType)
 }
+
+// UploadCoverImage handles secure upload of a single campaign cover image.
+// It validates image content type and stores the file under uploads/covers,
+// returning a public URL path that can be saved as cover_image_url.
+func (c *CauseHandler) UploadCoverImage(w http.ResponseWriter, r *http.Request) {
+	// Ensure requester is an authenticated organization (same as CreateCause)
+	userID, ok := middleware.GetUserIDFromContext(r.Context())
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	org, err := c.authService.GetOrganizationByID(r.Context(), userID)
+	if err != nil || org == nil || org.User.Role != string(models.RoleTypeOrganization) {
+		http.Error(w, "Not authorized", http.StatusUnauthorized)
+		return
+	}
+
+	if err := r.ParseMultipartForm(10 << 20); err != nil {
+		http.Error(w, "Invalid form", http.StatusBadRequest)
+		return
+	}
+
+	file, header, err := r.FormFile("file")
+	if err != nil {
+		http.Error(w, "Cover image required", http.StatusBadRequest)
+		return
+	}
+	defer file.Close()
+
+	// Read a small buffer to detect content type safely
+	sniff := make([]byte, 512)
+	n, err := file.Read(sniff)
+	if err != nil && !errors.Is(err, io.EOF) {
+		http.Error(w, "Failed to read image", http.StatusBadRequest)
+		return
+	}
+	if n == 0 {
+		http.Error(w, "Empty image", http.StatusBadRequest)
+		return
+	}
+
+	contentType := http.DetectContentType(sniff)
+	if !strings.HasPrefix(contentType, "image/") {
+		http.Error(w, "Only image uploads are allowed", http.StatusBadRequest)
+		return
+	}
+
+	// Reset reader to include the sniffed bytes
+	imageBytes, err := io.ReadAll(io.MultiReader(strings.NewReader(string(sniff[:n])), file))
+	if err != nil {
+		http.Error(w, "Failed to read full image", http.StatusBadRequest)
+		return
+	}
+
+	// Derive safe extension
+	exts, _ := mime.ExtensionsByType(contentType)
+	ext := ""
+	if len(exts) > 0 {
+		ext = exts[0]
+	}
+	if ext == "" {
+		ext = filepath.Ext(header.Filename)
+	}
+	if ext == "" {
+		ext = ".img"
+	}
+
+	dir := "uploads/covers"
+	_ = os.MkdirAll(dir, 0755)
+
+	filename := uuid.New().String() + ext
+	path := filepath.Join(dir, filename)
+
+	if err := os.WriteFile(path, imageBytes, 0644); err != nil {
+		http.Error(w, "Failed to save file", http.StatusInternalServerError)
+		return
+	}
+
+	publicPath := filepath.ToSlash(filepath.Join("uploads", "covers", filename))
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{
+		"url": "/" + publicPath,
+	})
+}
+
+// UploadProductImage handles secure upload of a single product image for a cause.
+// It mirrors the cover image upload but stores under uploads/products and returns
+// a URL that can be saved in the cause_products.image_url column.
+func (c *CauseHandler) UploadProductImage(w http.ResponseWriter, r *http.Request) {
+	// Reuse the same authentication as CreateCause
+	userID, ok := middleware.GetUserIDFromContext(r.Context())
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	org, err := c.authService.GetOrganizationByID(r.Context(), userID)
+	if err != nil || org == nil || org.User.Role != string(models.RoleTypeOrganization) {
+		http.Error(w, "Not authorized", http.StatusUnauthorized)
+		return
+	}
+
+	if err := r.ParseMultipartForm(10 << 20); err != nil {
+		http.Error(w, "Invalid form", http.StatusBadRequest)
+		return
+	}
+
+	file, header, err := r.FormFile("file")
+	if err != nil {
+		http.Error(w, "Product image required", http.StatusBadRequest)
+		return
+	}
+	defer file.Close()
+
+	sniff := make([]byte, 512)
+	n, err := file.Read(sniff)
+	if err != nil && !errors.Is(err, io.EOF) {
+		http.Error(w, "Failed to read image", http.StatusBadRequest)
+		return
+	}
+	if n == 0 {
+		http.Error(w, "Empty image", http.StatusBadRequest)
+		return
+	}
+
+	contentType := http.DetectContentType(sniff)
+	if !strings.HasPrefix(contentType, "image/") {
+		http.Error(w, "Only image uploads are allowed", http.StatusBadRequest)
+		return
+	}
+
+	imageBytes, err := io.ReadAll(io.MultiReader(strings.NewReader(string(sniff[:n])), file))
+	if err != nil {
+		http.Error(w, "Failed to read full image", http.StatusBadRequest)
+		return
+	}
+
+	exts, _ := mime.ExtensionsByType(contentType)
+	ext := ""
+	if len(exts) > 0 {
+		ext = exts[0]
+	}
+	if ext == "" {
+		ext = filepath.Ext(header.Filename)
+	}
+	if ext == "" {
+		ext = ".img"
+	}
+
+	dir := "uploads/products"
+	_ = os.MkdirAll(dir, 0755)
+
+	filename := uuid.New().String() + ext
+	path := filepath.Join(dir, filename)
+
+	if err := os.WriteFile(path, imageBytes, 0644); err != nil {
+		http.Error(w, "Failed to save file", http.StatusInternalServerError)
+		return
+	}
+
+	publicPath := filepath.ToSlash(filepath.Join("uploads", "products", filename))
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{
+		"url": "/" + publicPath,
+	})
+}
+

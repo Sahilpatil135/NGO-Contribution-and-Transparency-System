@@ -27,6 +27,8 @@ export const API_ENDPOINTS = {
   // Causes
   GET_CAUSES: `${API_BASE_URL}/api/causes`,
   CREATE_CAUSE: `${API_BASE_URL}/api/causes`,
+  UPLOAD_CAUSE_COVER: `${API_BASE_URL}/api/causes/cover/upload`,
+  UPLOAD_PRODUCT_IMAGE: `${API_BASE_URL}/api/causes/products/upload`,
   GET_CAUSES_BY_DOMAIN: `${API_BASE_URL}/api/causes/domain`,
   GET_CAUSES_BY_AID_TYPE: `${API_BASE_URL}/api/causes/aid`,
   GET_CAUSES_BY_ORGANIZATION: `${API_BASE_URL}/api/causes/organization`,
