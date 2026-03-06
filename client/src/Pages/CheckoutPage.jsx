@@ -252,9 +252,9 @@ const CheckoutPage = () => {
 
               {/* Hidden DonateButton trigger */}
               <div className="hidden">
-                <DonateButton 
-                  id="rzp-trigger" 
-                  amount={amount} 
+                <DonateButton
+                  id="rzp-trigger"
+                  amount={amount}
                   donorInfo={{
                     name: form.name,
                     email: form.email,

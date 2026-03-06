@@ -7,16 +7,14 @@ export const ENV = {
   // Server details (NEW)
   SERVER_IP: import.meta.env.VITE_SERVER_IP || 'localhost',
   BACKEND_PORT: import.meta.env.VITE_BACKEND_PORT || '8080',
-  FRONTEND_PORT: import.meta.env.VITE_FRONTEND_PORT || '3000',
+  FRONTEND_PORT: import.meta.env.VITE_FRONTEND_PORT || '5173',
 
   // Derived URLs (NEW)
-  WS_BASE_URL: `ws://${import.meta.env.VITE_SERVER_IP || 'localhost'}:${
-    import.meta.env.VITE_BACKEND_PORT || '8080'
-  }`,
+  WS_BASE_URL: `ws://${import.meta.env.VITE_SERVER_IP || 'localhost'}:${import.meta.env.VITE_BACKEND_PORT || '8080'
+    }`,
 
-  FRONTEND_BASE_URL: `http://${import.meta.env.VITE_SERVER_IP || 'localhost'}:${
-    import.meta.env.VITE_FRONTEND_PORT || '3000'
-  }`,
+  FRONTEND_BASE_URL: `http://${import.meta.env.VITE_SERVER_IP || 'localhost'}:${import.meta.env.VITE_FRONTEND_PORT || '5173'
+    }`,
 
   // Environment
   NODE_ENV: import.meta.env.NODE_ENV || 'development',

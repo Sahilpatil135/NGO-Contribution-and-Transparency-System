@@ -59,9 +59,9 @@ const AppRoutes = () => {
         <Route path="/campaign/:causeID" element={isAuthenticated ? <CampaignPage /> : <Navigate to="/login" replace />} />
         <Route path="/checkout" element={isAuthenticated ? <CheckoutPage /> : <Navigate to="/login" replace />} />
         <Route path="/makeContribution/:category/:slug" element={isAuthenticated ? <DonationTypePage /> : <Navigate to="/login" replace />} />
-        
+
         <Route path="/ngoRegistration" element={<NgoRegistration />} />
-        
+
         {/* This routes are only for NGOs. */}
         <Route path="/createCampaign" element={isAuthenticated ? <CreateCampaign /> : <Navigate to="/login" replace />} />
         {/* <Route path="/uploadProof" element={isAuthenticated ? <UploadProof /> : <Navigate to="/login" replace />} /> */}
