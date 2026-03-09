@@ -1,0 +1,163 @@
+[
+  {
+    "inputs": [
+      {
+        "internalType": "bytes16",
+        "name": "",
+        "type": "bytes16"
+      }
+    ],
+    "name": "donations",
+    "outputs": [
+      {
+        "internalType": "bytes16",
+        "name": "causeId",
+        "type": "bytes16"
+      },
+      {
+        "internalType": "bytes16",
+        "name": "donorId",
+        "type": "bytes16"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "timestamp",
+        "type": "uint256"
+      },
+      {
+        "internalType": "string",
+        "name": "paymentRef",
+        "type": "string"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes16",
+        "name": "",
+        "type": "bytes16"
+      },
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "donationsByCause",
+    "outputs": [
+      {
+        "internalType": "bytes16",
+        "name": "",
+        "type": "bytes16"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes16",
+        "name": "donationId",
+        "type": "bytes16"
+      }
+    ],
+    "name": "getDonation",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "bytes16",
+            "name": "causeId",
+            "type": "bytes16"
+          },
+          {
+            "internalType": "bytes16",
+            "name": "donorId",
+            "type": "bytes16"
+          },
+          {
+            "internalType": "uint256",
+            "name": "amount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "timestamp",
+            "type": "uint256"
+          },
+          {
+            "internalType": "string",
+            "name": "paymentRef",
+            "type": "string"
+          }
+        ],
+        "internalType": "struct DonationLedger.Donation",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes16",
+        "name": "causeId",
+        "type": "bytes16"
+      }
+    ],
+    "name": "getDonationsByCause",
+    "outputs": [
+      {
+        "internalType": "bytes16[]",
+        "name": "",
+        "type": "bytes16[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes16",
+        "name": "donationId",
+        "type": "bytes16"
+      },
+      {
+        "internalType": "bytes16",
+        "name": "causeId",
+        "type": "bytes16"
+      },
+      {
+        "internalType": "bytes16",
+        "name": "donorId",
+        "type": "bytes16"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "string",
+        "name": "paymentRef",
+        "type": "string"
+      }
+    ],
+    "name": "recordDonation",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+]

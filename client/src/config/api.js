@@ -20,6 +20,9 @@ export const API_ENDPOINTS = {
   CREATE_ORDER: `${API_BASE_URL}/api/payment/create-order`,
   VERIFY_PAYMENT: `${API_BASE_URL}/api/payment/verify`,
 
+  // Donations
+  CREATE_DONATION: `${API_BASE_URL}/api/donations`,
+
   // Data
   GET_ALL_AID_TYPES: `${API_BASE_URL}/api/aids`,
   GET_ALL_DOMAINS: `${API_BASE_URL}/api/domains`,
@@ -33,6 +36,10 @@ export const API_ENDPOINTS = {
   GET_CAUSES_BY_AID_TYPE: `${API_BASE_URL}/api/causes/aid`,
   GET_CAUSES_BY_ORGANIZATION: `${API_BASE_URL}/api/causes/organization`,
   ME_ORGANIZATION: `${API_BASE_URL}/api/auth/me/organization`,
+
+  // Donations (on-chain)
+  GET_CAUSE_CHAIN_DONATIONS: (causeId) =>
+    `${API_BASE_URL}/api/donations/chain/cause/${causeId}`,
 
   // PROOF OF WORK (NEW)
   CREATE_PROOF_SESSION: `${API_BASE_URL}/api/proof/session`,

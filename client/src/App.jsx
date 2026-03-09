@@ -11,6 +11,7 @@ import ContributionsPage from './Pages/ContributionsPage';
 import CampaignPage from './Pages/CampaignPage';
 import CheckoutPage from './Pages/CheckoutPage';
 import DonationTypePage from './Pages/DonationTypePage';
+import DonationSuccess from './Pages/DonationSuccess';
 import NgoRegistration from './Pages/NgoRegistration';
 import CreateCampaign from './Pages/CreateCampaign';
 import UploadProof from './Pages/Ngo/UploadProof';
@@ -58,6 +59,7 @@ const AppRoutes = () => {
         <Route path="/makeContribution" element={isAuthenticated ? <ContributionsPage /> : <Navigate to="/login" replace />} />
         <Route path="/campaign/:causeID" element={isAuthenticated ? <CampaignPage /> : <Navigate to="/login" replace />} />
         <Route path="/checkout" element={isAuthenticated ? <CheckoutPage /> : <Navigate to="/login" replace />} />
+        <Route path="/donation/success" element={isAuthenticated ? <DonationSuccess /> : <Navigate to="/login" replace />} />
         <Route path="/makeContribution/:category/:slug" element={isAuthenticated ? <DonationTypePage /> : <Navigate to="/login" replace />} />
 
         <Route path="/ngoRegistration" element={<NgoRegistration />} />

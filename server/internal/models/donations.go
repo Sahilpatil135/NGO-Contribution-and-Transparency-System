@@ -1,6 +1,9 @@
 package models
 
 import (
+	"math/big"
+	"server/internal/blockchain"
+	"server/internal/blockchain/contracts"
 	"time"
 
 	"github.com/google/uuid"
@@ -26,6 +29,7 @@ type Donation struct {
 	Status         DonationStatus `json:"status" db:"status"`
 	PanNumber      *string        `json:"pan_number,omitempty" db:"pan_number"`
 	PaymentID      *string        `json:"payment_id,omitempty" db:"payment_id"`
+	TxHash         *string        `json:"tx_hash,omitempty" db:"tx_hash"`
 	CreatedAt      time.Time      `json:"created_at" db:"created_at"`
 }
 
@@ -51,6 +55,15 @@ type CreateDonationResponse struct {
 	Pincode        *string        `json:"pincode,omitempty"`
 	Amount         float32        `json:"amount"`
 	Status         DonationStatus `json:"status"`
+	TxHash         *string        `json:"tx_hash,omitempty"`
+}
+
+type DonationLedgerResponse struct {
+	CauseId    uuid.UUID
+	DonorId    uuid.UUID
+	Amount     *big.Int
+	Timestamp  *big.Int
+	PaymentRef string
 }
 
 func (d *Donation) ToDonationResponse() *CreateDonationResponse {
@@ -64,5 +77,16 @@ func (d *Donation) ToDonationResponse() *CreateDonationResponse {
 		Pincode:        d.Pincode,
 		Amount:         d.Amount,
 		Status:         d.Status,
+		TxHash:         d.TxHash,
+	}
+}
+
+func ToDonationLedgerResponse(d *contracts.DonationLedgerDonation) *DonationLedgerResponse {
+	return &DonationLedgerResponse{
+		CauseId:    blockchain.Bytes16ToUUID(d.CauseId),
+		DonorId:    blockchain.Bytes16ToUUID(d.DonorId),
+		Amount:     d.Amount,
+		Timestamp:  d.Timestamp,
+		PaymentRef: d.PaymentRef,
 	}
 }

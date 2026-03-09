@@ -2,6 +2,9 @@ package services
 
 import (
 	"context"
+	"math/big"
+	"server/internal/blockchain"
+	"server/internal/blockchain/contracts"
 	"server/internal/models"
 	"server/internal/repository"
 	"time"
@@ -16,17 +19,25 @@ type DonationService interface {
 	GetByCauseID(ctx context.Context, id uuid.UUID) ([]*models.Donation, error)
 	GetByPaymentID(ctx context.Context, id uuid.UUID) (*models.Donation, error)
 
+	GetFromChainByID(ctx context.Context, id uuid.UUID) (*contracts.DonationLedgerDonation, error)
+	GetFromChainByCauseID(ctx context.Context, id uuid.UUID) ([]*contracts.DonationLedgerDonation, error)
+
 	// Update(ctx context.Context, donation *models.Donation) error
 	// Delete(ctx context.Context, id uuid.UUID) error
 }
 
 type donationService struct {
 	donationRepo repository.DonationRepository
+	chainService blockchain.DonationChainService
 }
 
-func NewDonationService(donationRepo repository.DonationRepository) *donationService {
+func NewDonationService(
+	donationRepo repository.DonationRepository,
+	chainService blockchain.DonationChainService,
+) *donationService {
 	return &donationService{
 		donationRepo: donationRepo,
+		chainService: chainService,
 	}
 }
 
@@ -46,9 +57,21 @@ func (c *donationService) Create(ctx context.Context, req *models.CreateDonation
 		CreatedAt:      time.Now(),
 	}
 
-	err := c.donationRepo.Create(ctx, donation)
-
+	txHash, err := c.chainService.RecordDonation(
+		ctx,
+		donation.ID,
+		donation.CauseID,
+		donation.UserID,
+		big.NewInt(int64(donation.Amount)),
+		*donation.PaymentID,
+	)
 	if err != nil {
+		return nil, err
+	}
+
+	donation.TxHash = &txHash
+
+	if err := c.donationRepo.Create(ctx, donation); err != nil {
 		return nil, err
 	}
 
@@ -83,6 +106,29 @@ func (c *donationService) GetByPaymentID(ctx context.Context, id uuid.UUID) (*mo
 	}
 
 	return donation, nil
+}
+
+func (c *donationService) GetFromChainByID(ctx context.Context, id uuid.UUID) (*contracts.DonationLedgerDonation, error) {
+	return c.chainService.GetDonation(ctx, id)
+}
+
+func (c *donationService) GetFromChainByCauseID(ctx context.Context, id uuid.UUID) ([]*contracts.DonationLedgerDonation, error) {
+	donations, err := c.chainService.GetDonationsByCause(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	var result []*contracts.DonationLedgerDonation
+
+	for _, donation := range donations {
+		donationLedger, err := c.chainService.GetDonation(ctx, donation)
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, donationLedger)
+	}
+
+	return result, nil
 }
 
 // func (c *donationService) Delete(ctx context.Context, id uuid.UUID) error {

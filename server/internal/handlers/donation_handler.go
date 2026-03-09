@@ -38,6 +38,9 @@ func (c *DonationHandler) RegisterRoutes(r chi.Router) {
 		r.Get("/{ID}", c.GetDonationByID)
 		r.Get("/cause/{ID}", c.GetDonationByCauseID)
 		r.Get("/payment/{ID}", c.GetDonationByPaymentID)
+
+		r.Get("/chain/{ID}", c.GetDonationFromChainByID)
+		r.Get("/chain/cause/{ID}", c.GetDonationFromChainByCauseID)
 		// r.Get("/user/{ID}", c.GetDonationByUserID)
 	})
 }
@@ -81,20 +84,26 @@ func (c *DonationHandler) CreateDonation(w http.ResponseWriter, r *http.Request)
 	json.NewEncoder(w).Encode(donation.ToDonationResponse())
 }
 
-func (c *DonationHandler) GetDonationByID(w http.ResponseWriter, r *http.Request) {
+func GetIDFromURL(w http.ResponseWriter, r *http.Request) (*uuid.UUID, error) {
 	ID, err := uuid.Parse(chi.URLParam(r, "ID"))
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
+		return nil, err
 	}
 
 	if ID.String() == "" {
 		http.Error(w, "DonationID required", http.StatusBadRequest)
-		return
+		return nil, err
 	}
 
-	donation, err := c.donationService.GetByID(r.Context(), ID)
+	return &ID, err
+}
+
+func (c *DonationHandler) GetDonationByID(w http.ResponseWriter, r *http.Request) {
+	ID, err := GetIDFromURL(w, r)
+
+	donation, err := c.donationService.GetByID(r.Context(), *ID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -105,18 +114,9 @@ func (c *DonationHandler) GetDonationByID(w http.ResponseWriter, r *http.Request
 }
 
 func (c *DonationHandler) GetDonationByCauseID(w http.ResponseWriter, r *http.Request) {
-	ID, err := uuid.Parse(chi.URLParam(r, "ID"))
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
+	ID, err := GetIDFromURL(w, r)
 
-	if ID.String() == "" {
-		http.Error(w, "DonationID required", http.StatusBadRequest)
-		return
-	}
-
-	donationResult, err := c.donationService.GetByCauseID(r.Context(), ID)
+	donationResult, err := c.donationService.GetByCauseID(r.Context(), *ID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -127,18 +127,9 @@ func (c *DonationHandler) GetDonationByCauseID(w http.ResponseWriter, r *http.Re
 }
 
 func (c *DonationHandler) GetDonationByPaymentID(w http.ResponseWriter, r *http.Request) {
-	ID, err := uuid.Parse(chi.URLParam(r, "ID"))
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
+	ID, err := GetIDFromURL(w, r)
 
-	if ID.String() == "" {
-		http.Error(w, "DonationID required", http.StatusBadRequest)
-		return
-	}
-
-	donation, err := c.donationService.GetByPaymentID(r.Context(), ID)
+	donation, err := c.donationService.GetByPaymentID(r.Context(), *ID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -146,4 +137,39 @@ func (c *DonationHandler) GetDonationByPaymentID(w http.ResponseWriter, r *http.
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(donation.ToDonationResponse())
+}
+
+func (c *DonationHandler) GetDonationFromChainByID(w http.ResponseWriter, r *http.Request) {
+	ID, err := GetIDFromURL(w, r)
+
+	donation, err := c.donationService.GetFromChainByID(r.Context(), *ID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(models.ToDonationLedgerResponse(donation))
+}
+
+func (c *DonationHandler) GetDonationFromChainByCauseID(w http.ResponseWriter, r *http.Request) {
+	ID, err := GetIDFromURL(w, r)
+
+	donations, err := c.donationService.GetFromChainByCauseID(r.Context(), *ID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	var donationLedgerResponses []*models.DonationLedgerResponse
+
+	for _, donation := range donations {
+		donationLedgerResponses = append(
+			donationLedgerResponses,
+			models.ToDonationLedgerResponse(donation),
+		)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(donationLedgerResponses)
 }

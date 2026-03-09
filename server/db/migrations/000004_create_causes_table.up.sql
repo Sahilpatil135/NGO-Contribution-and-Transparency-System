@@ -41,5 +41,6 @@ CREATE TABLE IF NOT EXISTS donations (
     status	    donation_status DEFAULT 'pending',
     pan_number	    VARCHAR(15),
     payment_id	    VARCHAR(255),
+    tx_hash	    VARCHAR(66),
     created_at	    TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );

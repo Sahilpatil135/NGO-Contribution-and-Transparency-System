@@ -3,6 +3,7 @@ import img1 from "../../public/domains/domain_example.png";
 import { Link, useParams } from "react-router-dom";
 import { apiRequest, API_ENDPOINTS, API_BASE_URL } from "../config/api";
 import { getCauseImage } from "../utils/imageHelper";
+import { LuLink2, LuLock, LuShieldCheck } from "react-icons/lu";
 
 const PRODUCT_AID_TYPE_NAMES = [
   "Goods & Resources",
@@ -17,6 +18,9 @@ const CampaignPage = () => {
   const [loading, setLoading] = useState(true);
   const [cause, setCause] = useState({});
   const [activeTab, setActiveTab] = useState("project");
+  const [donations, setDonations] = useState([]);
+  const [donationsLoading, setDonationsLoading] = useState(true);
+  const [donationsError, setDonationsError] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -28,6 +32,18 @@ const CampaignPage = () => {
         setCause(causeResult.data);
         setLoading(false);
       }
+
+      const donationsResult = await apiRequest(
+        API_ENDPOINTS.GET_CAUSE_CHAIN_DONATIONS(causeID)
+      );
+
+      if (donationsResult.success && donationsResult.data) {
+        setDonations(donationsResult.data || []);
+      } else if (!donationsResult.success && donationsResult.error) {
+        setDonationsError(donationsResult.error);
+      }
+
+      setDonationsLoading(false);
     };
 
     fetchData();
@@ -69,6 +85,7 @@ const CampaignPage = () => {
     ...(showProductsTab ? [{ id: "products", label: "Products" }] : []),
     { id: "project", label: "Project" },
     { id: "updates", label: "Updates" },
+    { id: "donations", label: "Donations" },
   ];
 
   // Set default active tab when products tab is not available
@@ -77,6 +94,31 @@ const CampaignPage = () => {
       setActiveTab("project");
     }
   }, [showProductsTab, activeTab]);
+
+  const formatDonationAmount = (amount) => {
+    if (!amount) return "-";
+    const numeric = Number(amount);
+
+    if (!Number.isFinite(numeric) || Number.isNaN(numeric)) {
+      return amount.toString();
+    }
+
+    return `₹${numeric.toFixed(2)}`;
+  };
+
+  const formatDonationTimestamp = (timestamp) => {
+    if (!timestamp) return "";
+    const numeric = Number(timestamp);
+
+    if (!Number.isFinite(numeric) || Number.isNaN(numeric)) {
+      return "";
+    }
+
+    // On-chain timestamps are usually in seconds
+    const date = new Date(numeric * 1000);
+    if (Number.isNaN(date.getTime())) return "";
+    return date.toLocaleString();
+  };
 
   if (loading) {
     return (
@@ -342,6 +384,186 @@ const CampaignPage = () => {
                 <p className="text-gray-600">
                   No updates yet. Be the first to support the campaign!
                 </p>
+              )}
+            </div>
+          )}
+
+          {activeTab === "donations" && (
+            <div className="mt-6">
+              {donationsLoading ? (
+                <div className="space-y-4">
+                  <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+                    <div className="h-1 bg-gradient-to-r from-[#ff6200] via-amber-300 to-[#3a0b2e] opacity-80" />
+                    <div className="p-5">
+                      <div className="flex items-start justify-between gap-4 flex-wrap">
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <div className="h-9 w-9 rounded-lg bg-amber-50 border border-amber-100 flex items-center justify-center">
+                              <LuShieldCheck className="text-[#ff6200]" />
+                            </div>
+                            <div>
+                              <p className="text-sm font-semibold text-[#3a0b2e]">
+                                Blockchain-secured donations
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                Verified on-chain • Tamper-resistant • Transparent
+                              </p>
+                            </div>
+                          </div>
+                          <p className="text-sm text-gray-600">
+                            Loading the latest on-chain donations…
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2 text-xs font-semibold text-green-700 bg-green-50 border border-green-100 px-3 py-1.5 rounded-full">
+                          <span className="relative flex h-2 w-2">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                          </span>
+                          Live ledger
+                        </div>
+                      </div>
+
+                      <div className="mt-5 space-y-3 animate-pulse">
+                        <div className="h-16 rounded-lg bg-gray-100 border border-gray-200" />
+                        <div className="h-16 rounded-lg bg-gray-100 border border-gray-200" />
+                        <div className="h-16 rounded-lg bg-gray-100 border border-gray-200" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : donationsError ? (
+                <p className="text-red-500 text-sm">
+                  Could not load donations: {donationsError}
+                </p>
+              ) : donations && donations.length > 0 ? (
+                <div className="space-y-4">
+                  <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+                    <div className="h-1 bg-gradient-to-r from-[#ff6200] via-amber-300 to-[#3a0b2e] opacity-80" />
+                    <div className="p-5">
+                      <div className="flex items-start justify-between gap-4 flex-wrap">
+                        <div className="flex items-start gap-3">
+                          <div className="h-10 w-10 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-center">
+                            <LuShieldCheck className="text-[#ff6200] text-lg" />
+                          </div>
+                          <div>
+                            <h3 className="text-lg font-semibold text-[#3a0b2e]">
+                              On-chain Donations
+                            </h3>
+                            <p className="text-sm text-gray-600">
+                              These records are written to the blockchain, making them secure and immutable.
+                            </p>
+                            <div className="mt-2 flex flex-wrap gap-2">
+                              <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-green-700 bg-green-50 border border-green-100 px-2.5 py-1 rounded-full">
+                                <LuLock className="text-green-700" />
+                                Secure
+                              </span>
+                              <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-100 px-2.5 py-1 rounded-full">
+                                <LuLink2 className="text-amber-700" />
+                                Verified on-chain
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="text-xs text-gray-500">
+                          Showing latest{" "}
+                          <span className="font-semibold text-gray-700">
+                            {Math.min(10, donations.length)}
+                          </span>{" "}
+                          donations
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {donations
+                    .slice(-10)
+                    .reverse()
+                    .map((d, index) => (
+                      <div
+                        key={d.PaymentRef || `${d.DonorId}-${index}`}
+                        className="border rounded-xl p-4 bg-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:border-amber-200"
+                      >
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex items-start gap-3">
+                            <div className="mt-0.5">
+                              <div className="relative h-9 w-9 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-center">
+                                <LuLink2 className="text-[#ff6200]" />
+                                <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-green-500 ring-2 ring-white" />
+                              </div>
+                            </div>
+
+                            <div>
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <h4 className="font-semibold text-[#3a0b2e]">
+                                  Donation recorded on-chain
+                                </h4>
+                                <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-green-700 bg-green-50 border border-green-100 px-2 py-0.5 rounded-full">
+                                  <span className="relative flex h-2 w-2">
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                                  </span>
+                                  Verified
+                                </span>
+                              </div>
+
+                              <p className="text-sm text-gray-500 mt-1">
+                                {formatDonationTimestamp(d.Timestamp) ||
+                                  "Timestamp not available"}
+                              </p>
+
+                              <div className="mt-3 text-xs text-gray-500 space-y-1">
+                                {d.PaymentRef && (
+                                  <p>
+                                    Payment Ref{" "}
+                                    <span className="text-gray-400">•</span>{" "}
+                                    <span className="font-mono break-all text-gray-700">
+                                      {d.PaymentRef}
+                                    </span>
+                                  </p>
+                                )}
+                                {d.DonorId && (
+                                  <p>
+                                    Donor ID{" "}
+                                    <span className="text-gray-400">•</span>{" "}
+                                    <span className="font-mono break-all text-gray-700">
+                                      {d.DonorId}
+                                    </span>
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="text-right">
+                            <p className="text-lg font-extrabold text-[#ff6200]">
+                              {formatDonationAmount(d.Amount)}
+                            </p>
+                            <p className="text-xs text-gray-500 mt-1 flex items-center justify-end gap-1.5">
+                              <LuLock className="text-gray-400" />
+                              Immutable record
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              ) : (
+                <div className="rounded-xl border border-gray-200 bg-white shadow-sm p-6">
+                  <div className="flex items-start gap-3">
+                    <div className="h-10 w-10 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-center">
+                      <LuShieldCheck className="text-[#ff6200] text-lg" />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-[#3a0b2e]">
+                        No on-chain donations yet
+                      </h4>
+                      <p className="text-gray-600 text-sm mt-1">
+                        Once a donation is made and verified, it will appear here as a secure blockchain record.
+                      </p>
+                    </div>
+                  </div>
+                </div>
               )}
             </div>
           )}

@@ -1,9 +1,12 @@
 import React, { useState } from "react";
 import img1 from "../../public/domains/domain_example.png";
 import { LuLock } from "react-icons/lu";
+import { useLocation } from "react-router-dom";
 import DonateButton from "../components/DonateButton";
 
 const CheckoutPage = () => {
+  const location = useLocation();
+  const causeId = location.state?.causeID;
   const [amount, setAmount] = useState(500);
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [isIndianCitizen, setIsIndianCitizen] = useState(false);
@@ -254,12 +257,16 @@ const CheckoutPage = () => {
               <div className="hidden">
                 <DonateButton
                   id="rzp-trigger"
-                  amount={amount}
+                  amount={parseInt(amount)}
                   donorInfo={{
                     name: form.name,
                     email: form.email,
-                    mobile: form.mobile
+                    mobile: form.mobile,
+                    address: form.address,
+                    pincode: form.pincode,
+                    pan: form.pan,
                   }}
+                  causeId={causeId}
                 />
               </div>
 

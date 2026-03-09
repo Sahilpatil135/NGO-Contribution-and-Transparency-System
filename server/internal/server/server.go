@@ -2,6 +2,7 @@ package server
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"strconv"
@@ -9,6 +10,7 @@ import (
 
 	_ "github.com/joho/godotenv/autoload"
 
+	"server/internal/blockchain"
 	"server/internal/config"
 	"server/internal/database"
 	"server/internal/handlers"
@@ -33,6 +35,12 @@ func NewServer() *http.Server {
 	// Get underlying sql.DB for repositories
 	sqlDB := dbService.GetDB()
 
+	// Initialize Blockchain ETH Client
+	blockchainClient, err := blockchain.NewClient()
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	// Initialize repositories
 	userRepo := repository.NewUserRepository(sqlDB)
 	organizationRepo := repository.NewOrganizationRepository(sqlDB)
@@ -45,8 +53,15 @@ func NewServer() *http.Server {
 	jwtService := services.NewJWTService()
 	authService := services.NewAuthService(userRepo, organizationRepo, jwtService)
 	causeService := services.NewCauseService(causeRepo)
-	donationService := services.NewDonationService(donationRepo)
 	proofService := services.NewProofService(proofSessionRepo, proofImageRepo, causeRepo)
+	chainService, err := blockchain.NewDonationChainService(
+		blockchainClient,
+		os.Getenv("CONTRACT_ADDRESS_1"),
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+	donationService := services.NewDonationService(donationRepo, *chainService)
 
 	// Initialize handlers
 	authHandler := handlers.NewAuthHandler(authService, jwtService)

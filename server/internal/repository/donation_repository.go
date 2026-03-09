@@ -33,8 +33,8 @@ func (d *donationRepository) Create(ctx context.Context, donation *models.Donati
 	query := `
 		INSERT INTO donations (
 			id, cause_id, user_id, name, phone, billing_address,
-			pincode, amount, status, pan_number, payment_id, created_at
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+			pincode, amount, status, pan_number, payment_id, tx_hash, created_at
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
 	`
 
 	_, err := d.db.ExecContext(ctx, query,
@@ -49,8 +49,17 @@ func (d *donationRepository) Create(ctx context.Context, donation *models.Donati
 		donation.Status,
 		donation.PanNumber,
 		donation.PaymentID,
+		donation.TxHash,
 		donation.CreatedAt,
 	)
+
+	query = `
+		UPDATE causes 
+		SET collected_amount = collected_amount + $1
+		WHERE id = $2
+	`
+
+	_, err = d.db.ExecContext(ctx, query, donation.Amount, donation.CauseID)
 
 	return err
 }
@@ -61,7 +70,7 @@ func GetDonationByColumnID(d *donationRepository, ctx context.Context, ID uuid.U
 			c.id, c.cause_id, c.user_id, c.name,
 			c.phone, c.billing_address, c.pincode,
 			c.amount, c.status, c.pan_number,
-			c.payment_id, c.created_at
+			c.payment_id, c.tx_hash, c.created_at
 		FROM donations c
 		WHERE c.%s = $1
 		`, column)
@@ -80,6 +89,7 @@ func GetDonationByColumnID(d *donationRepository, ctx context.Context, ID uuid.U
 		&donation.Status,
 		&donation.PanNumber,
 		&donation.PaymentID,
+		&donation.TxHash,
 		&donation.CreatedAt,
 	)
 
@@ -96,7 +106,7 @@ func GetDonationsByColumnID(d *donationRepository, ctx context.Context, ID uuid.
 			c.id, c.cause_id, c.user_id, c.name,
 			c.phone, c.billing_address, c.pincode,
 			c.amount, c.status, c.pan_number,
-			c.payment_id, c.created_at
+			c.payment_id, c.tx_hash, c.created_at
 		FROM donations c
 		WHERE c.%s = $1
 		`, column)
@@ -127,6 +137,7 @@ func GetDonationsByColumnID(d *donationRepository, ctx context.Context, ID uuid.
 			&donation.Status,
 			&donation.PanNumber,
 			&donation.PaymentID,
+			&donation.TxHash,
 			&donation.CreatedAt,
 		)
 
