@@ -151,3 +151,6 @@ bundle/
 
 # pnpm publish summary (generated during release process)
 pnpm-publish-summary.json
+# Python virtual environment
+venv
+__pycache__

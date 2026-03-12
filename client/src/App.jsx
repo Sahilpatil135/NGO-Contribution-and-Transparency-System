@@ -57,7 +57,7 @@ const AppRoutes = () => {
           element={<OAuthCallback />}
         />
         <Route path="/makeContribution" element={isAuthenticated ? <ContributionsPage /> : <Navigate to="/login" replace />} />
-        <Route path="/campaign/:causeID" element={isAuthenticated ? <CampaignPage /> : <Navigate to="/login" replace />} />
+        <Route path="/campaign/:causeID" element={isAuthenticated ? <CampaignPage key={location.pathname} /> : <Navigate to="/login" replace />} />
         <Route path="/checkout" element={isAuthenticated ? <CheckoutPage /> : <Navigate to="/login" replace />} />
         <Route path="/donation/success" element={isAuthenticated ? <DonationSuccess /> : <Navigate to="/login" replace />} />
         <Route path="/makeContribution/:category/:slug" element={isAuthenticated ? <DonationTypePage /> : <Navigate to="/login" replace />} />
@@ -67,7 +67,7 @@ const AppRoutes = () => {
         {/* This routes are only for NGOs. */}
         <Route path="/createCampaign" element={isAuthenticated ? <CreateCampaign /> : <Navigate to="/login" replace />} />
         {/* <Route path="/uploadProof" element={isAuthenticated ? <UploadProof /> : <Navigate to="/login" replace />} /> */}
-        <Route path="/uploadProof" element={<UploadProof />} />
+        <Route path="/uploadProof/:causeID" element={<UploadProof />} />
         <Route path="/mobile/proof/:sessionID" element={<MobileProofCapture />} />
       </Routes>
 

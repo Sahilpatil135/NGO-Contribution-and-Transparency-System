@@ -26,13 +26,15 @@ type ProofHandler struct {
 	jwtService     services.JWTService
 	proofService   services.ProofService
 	organizationRepo repository.OrganizationRepository
+	causeRepo 	repository.CauseRepository
 }
 
-func NewProofHandler(jwt services.JWTService, proofService services.ProofService, organizationRepo repository.OrganizationRepository) *ProofHandler {
+func NewProofHandler(jwt services.JWTService, proofService services.ProofService, organizationRepo repository.OrganizationRepository, causeRepo repository.CauseRepository) *ProofHandler {
 	return &ProofHandler{
 		jwtService:       jwt,
 		proofService:     proofService,
 		organizationRepo: organizationRepo,
+		causeRepo:        causeRepo,
 	}
 }
 
@@ -212,18 +214,64 @@ func (h *ProofHandler) UploadProofImage(w http.ResponseWriter, r *http.Request) 
 				return
 			}
 		} else {
-			// DB path: emit WS and return score response
+			// DB path: process metadata + AI validation and broadcast over WebSocket
+			// resp := models.UploadProofResponse{
+			// 	Status:       "uploaded",
+			// 	Score:        score,
+			// 	IsDuplicate:  isDup,
+			// 	ValidationOK: validationOK,
+			// }
+
+			// Get session to retrieve causeID
+			session, err := h.proofService.GetSession(r.Context(), sessionIDParsed)
+			if err != nil || session == nil {
+				http.Error(w, "Session not found", http.StatusBadRequest)
+				return
+			}
+
+			// Fetch cause
+			cause, err := h.causeRepo.GetByID(r.Context(), session.CauseID)
+			if err != nil || cause == nil {
+				http.Error(w, "Cause not found", http.StatusBadRequest)
+				return
+			}
+
+			aiResult, _ := services.CallAIService(path, cause.Title)
+			aiStatus := "unknown"
+			flags := []string{}
+
+			if aiResult != nil {
+				if status, ok := aiResult["validation_status"].(string); ok {
+					aiStatus = status
+				}
+
+				if flagsInterface, ok := aiResult["flags"].([]interface{}); ok {
+					for _, f := range flagsInterface {
+						if flagStr, ok := f.(string); ok {
+							flags = append(flags, flagStr)
+						}
+					}
+				}
+			}
+
+			// Send WebSocket update including AI status/flags so the NGO
+			// dashboard can reflect verification in real-time.
 			h.emitToSession(sessionIDStr, models.ProofUploadEvent{
 				ImagePath: relativePath,
 				Latitude:  lat,
 				Longitude: lng,
 				Timestamp: captureTime,
+				AIStatus:  aiStatus,
+				Flags:     flags,
 			})
+
 			resp := models.UploadProofResponse{
 				Status:       "uploaded",
 				Score:        score,
 				IsDuplicate:  isDup,
 				ValidationOK: validationOK,
+				AIStatus:     aiStatus,
+				Flags:        flags,
 			}
 			if img != nil {
 				resp.Score = img.MetadataScore

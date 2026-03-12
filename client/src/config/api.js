@@ -43,6 +43,7 @@ export const API_ENDPOINTS = {
 
   // PROOF OF WORK (NEW)
   CREATE_PROOF_SESSION: `${API_BASE_URL}/api/proof/session`,
+  CREATE_CAUSE_PROOF_SESSION: `${API_BASE_URL}/api/proof/session/cause`,
   UPLOAD_PROOF_IMAGE: (sessionId) =>
     `${API_BASE_URL}/api/proof/upload/${sessionId}`,
 };

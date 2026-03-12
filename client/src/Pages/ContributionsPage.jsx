@@ -54,13 +54,7 @@ const ContributionsPage = () => {
             <section className="mt-30">
                 <div className="w-11/12 flex flex-col items-center justify-between mx-auto my-6">
                     <h1 className="text-5xl font-bold mb-16">Where Do <span className="text-[#ff6200] italic">YOU</span> Want To <span className="text-[#ff6200] italic">Contribute</span> ?</h1>
-                    <div className="grid grid-cols-1 md:grid-cols-5 gap-8 w-full my-8">
-                        {/* will replace by clickable div's with links to respective pages */}
-                        {/* <div className="flex flex-col"><img src={img2} alt=".." /> Monetary Donations</div>
-                        <div className="flex flex-col"><img src={img2} alt=".." /> Voluntering</div>
-                        <div className="flex flex-col"><img src={img2} alt=".." /> Blood & Organ Donations</div>
-                        <div className="flex flex-col"><img src={img2} alt=".." /> Goods & Resources Donation</div>
-                        <div className="flex flex-col"><img src={img2} alt=".." /> Environmental Support</div> */}
+                    <div className="grid grid-cols-1 md:grid-cols-5 gap-8 w-full my-8">                    
 
                         {!loadingAidTypes ? aidTypes.map((aidType, idx) => (
                             <Link key={idx} to={`/makecontribution/aidType/${slugFromName(aidType.name)}`} className="flex flex-col items-center cursor-pointer">
@@ -69,7 +63,6 @@ const ContributionsPage = () => {
                             </Link>)) : (
                             <h1>loading</h1>
                         )}
-
 
                     </div>
                 </div >

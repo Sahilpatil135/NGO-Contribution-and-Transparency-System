@@ -13,12 +13,22 @@ export const useAuth = () => {
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
+  const [organization, setOrganization] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchCurrentUser = async () => {
     const result = await apiRequest(API_ENDPOINTS.ME);
     if (result.success && result.data) {
       setUser(result.data);
+      return { success: true, data: result.data };
+    }
+    return { success: false, error: result.error };
+  };
+
+  const fetchCurrentOrganization = async () => {
+    const result = await apiRequest(API_ENDPOINTS.ME_ORGANIZATION);
+    if (result.success && result.data) {
+      setOrganization(result.data);
       return { success: true, data: result.data };
     }
     return { success: false, error: result.error };
@@ -35,6 +45,9 @@ export const AuthProvider = ({ children }) => {
           if (!me.success) {
             // Token is invalid, remove it
             localStorage.removeItem('authToken');
+          } else if (me.data.role === 'organization') {
+            // Load organization details for organization users
+            await fetchCurrentOrganization();
           }
         }
       } catch (error) {
@@ -59,6 +72,12 @@ export const AuthProvider = ({ children }) => {
         const { user: userData, token } = result.data;
         localStorage.setItem('authToken', token);
         setUser(userData);
+
+        // If this is an organization user, also fetch organization details
+        if (userData.role === 'organization') {
+          await fetchCurrentOrganization();
+        }
+
         return { success: true };
       } else {
         return { success: false, error: result.error || 'Login failed. Please try again.' };
@@ -80,6 +99,12 @@ export const AuthProvider = ({ children }) => {
         const { user: userData, token } = result.data;
         localStorage.setItem('authToken', token);
         setUser(userData);
+
+        // If this is an organization signup, also fetch organization details
+        if (userData.role === 'organization') {
+          await fetchCurrentOrganization();
+        }
+
         return { success: true };
       } else {
         return { success: false, error: result.error || 'Signup failed. Please try again.' };
@@ -107,17 +132,20 @@ export const AuthProvider = ({ children }) => {
       // Always clear local storage and user state
       localStorage.removeItem('authToken');
       setUser(null);
+      setOrganization(null);
     }
   };
 
   const value = {
     user,
+    organization,
     isLoading,
     login,
     signup,
     googleAuth,
     logout,
     fetchCurrentUser,
+    fetchCurrentOrganization,
     isAuthenticated: !!user
   };
 

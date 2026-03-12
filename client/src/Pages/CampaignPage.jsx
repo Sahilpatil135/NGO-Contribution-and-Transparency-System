@@ -4,6 +4,7 @@ import { Link, useParams } from "react-router-dom";
 import { apiRequest, API_ENDPOINTS, API_BASE_URL } from "../config/api";
 import { getCauseImage } from "../utils/imageHelper";
 import { LuLink2, LuLock, LuShieldCheck } from "react-icons/lu";
+import { useAuth } from "../contexts/AuthContext";
 
 const PRODUCT_AID_TYPE_NAMES = [
   "Goods & Resources",
@@ -14,6 +15,7 @@ const PRODUCT_AID_TYPE_NAMES = [
 ];
 
 const CampaignPage = () => {
+  const { user, organization } = useAuth();
   const { causeID } = useParams();
   const [loading, setLoading] = useState(true);
   const [cause, setCause] = useState({});
@@ -87,6 +89,14 @@ const CampaignPage = () => {
     { id: "updates", label: "Updates" },
     { id: "donations", label: "Donations" },
   ];
+
+  const isOwner =
+    user?.role === "organization" &&
+    organization?.id &&
+    cause?.organization?.id &&
+    String(organization.id) === String(cause.organization.id);
+
+  const canDonate = fundingStatus !== "Fully Funded" && fundingStatus !== "Closed";
 
   // Set default active tab when products tab is not available
   useEffect(() => {
@@ -619,7 +629,7 @@ const CampaignPage = () => {
             Raised of ₹{goal.toLocaleString()} goal
           </p>
 
-          {fundingStatus !== "Fully Funded" &&
+          {/* {fundingStatus !== "Fully Funded" &&
             fundingStatus !== "Closed" && (
               <Link
                 to="/checkout"
@@ -630,7 +640,24 @@ const CampaignPage = () => {
                   Donate Now
                 </button>
               </Link>
-            )}
+            )} */}
+
+          {isOwner ? (
+            <Link to={`/uploadProof/${cause.id}`} onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
+              <button className="w-full bg-[#3a0b2e] hover:bg-[#6d1f57] text-white font-semibold py-3 rounded-lg transition cursor-pointer">
+                Upload Proof
+              </button>
+            </Link>
+          ) : (
+            canDonate && (
+              <Link to="/checkout" state={{ causeID: cause.id }} onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
+                <button className="w-full bg-[#ff6200] hover:bg-[#e45a00] text-white font-semibold py-3 rounded-lg transition cursor-pointer">
+                  Donate Now
+                </button>
+              </Link>
+            )
+          )}
+
         </div>
       </div>
     </div>

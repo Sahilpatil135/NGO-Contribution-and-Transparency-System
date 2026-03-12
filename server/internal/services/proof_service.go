@@ -23,6 +23,7 @@ const (
 type ProofService interface {
 	CreateSession(ctx context.Context, causeID, organizationID uuid.UUID) (*models.ProofSession, error)
 	ProcessUpload(ctx context.Context, sessionID uuid.UUID, lat, lng float64, timestamp time.Time, imageBytes []byte) (*models.ProofImage, int, bool, bool, error)
+	GetSession(ctx context.Context, id uuid.UUID) (*models.ProofSession, error)
 }
 
 type proofService struct {
@@ -130,12 +131,17 @@ func (s *proofService) ProcessUpload(ctx context.Context, sessionID uuid.UUID, l
 		MetadataScore: score,
 		CreatedAt:     time.Now(),
 	}
+
 	if err := s.imageRepo.Create(ctx, img); err != nil {
 		return nil, 0, false, false, fmt.Errorf("store proof image: %w", err)
 	}
 
 	validationOK := timeValid && locationValid
 	return img, score, false, validationOK, nil
+}
+
+func (s *proofService) GetSession(ctx context.Context, id uuid.UUID) (*models.ProofSession, error) {
+	return s.sessionRepo.GetByID(ctx, id)
 }
 
 func hashImage(data []byte) string {

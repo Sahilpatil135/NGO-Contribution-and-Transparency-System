@@ -17,6 +17,8 @@ type ProofUploadEvent struct {
 	Latitude  string    `json:"lat"`
 	Longitude string    `json:"lng"`
 	Timestamp time.Time `json:"timestamp"`
+	AIStatus  string    `json:"aiStatus"`
+	Flags     []string  `json:"flags,omitempty"`
 }
 
 // ProofSession is a DB-backed proof session linked to a cause
@@ -58,8 +60,10 @@ type CauseExecution struct {
 
 // UploadProofResponse returned after processing proof upload
 type UploadProofResponse struct {
-	Status       string `json:"status"`
-	Score        int    `json:"score,omitempty"`
-	IsDuplicate  bool   `json:"isDuplicate,omitempty"`
-	ValidationOK bool   `json:"validationOk,omitempty"`
+	Status        string `json:"status"`
+	Score         int    `json:"score,omitempty"`
+	IsDuplicate   bool   `json:"isDuplicate,omitempty"`
+	ValidationOK  bool   `json:"validationOk,omitempty"`
+	AIStatus      string   `json:"aiStatus,omitempty"`
+    Flags         []string `json:"flags,omitempty"`
 }

@@ -1,35 +1,53 @@
 import { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
 import QRCode from "react-qr-code";
 
-import { API_ENDPOINTS, WS_BASE_URL } from '@/config/api';
+import { apiRequest, API_ENDPOINTS, WS_BASE_URL } from '@/config/api';
 import { ENV } from '@/config/environment';
 
 export default function UploadProof() {
+  const { causeID } = useParams();
+  const [cause, setCause] = useState({});
   const [session, setSession] = useState(null);
   const [captures, setCaptures] = useState([]);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Create proof session
+  // Fetch Cause Data 
+  useEffect(() => {
+    const fetchData = async () => {
+      const causeResult = await apiRequest(
+        `${API_ENDPOINTS.GET_CAUSES}/${causeID}`
+      );
+
+      if (causeResult.success && causeResult.data) {
+        setCause(causeResult.data);
+      }
+    };
+
+    fetchData();
+  }, [causeID]);
+
+  // Create DB-backed proof session for this cause (NGO flow)
   useEffect(() => {
     const createSession = async () => {
       try {
         setLoading(true);
         setError(null);
-        const response = await fetch(API_ENDPOINTS.CREATE_PROOF_SESSION, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        });
 
-        if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(`Failed to create session: ${errorText}`);
+        const result = await apiRequest(
+          API_ENDPOINTS.CREATE_CAUSE_PROOF_SESSION,
+          {
+            method: "POST",
+            body: JSON.stringify({ causeId: causeID }),
+          }
+        );
+
+        if (!result.success || !result.data) {
+          throw new Error(result.error || "Failed to create session");
         }
 
-        const data = await response.json();
-        setSession(data.sessionId);
+        setSession(result.data.sessionId);
       } catch (err) {
         console.error("Error creating session:", err);
         setError(err.message);
@@ -39,7 +57,7 @@ export default function UploadProof() {
     };
 
     createSession();
-  }, []);
+  }, [causeID]);
 
   // WebSocket listener
   useEffect(() => {
@@ -114,6 +132,9 @@ export default function UploadProof() {
 
   return (
     <div className="p-6 max-w-4xl mx-auto">
+      <h1 className="text-3xl md:text-4xl mb-4 font-bold text-[#3a0b2e]">
+        {cause.title}
+      </h1>
       <h1 className="text-2xl font-bold mb-4">Upload Proof</h1>
       <p className="text-gray-600 mb-6">
         Scan this QR code with your mobile device to capture proof images with location and timestamp.
@@ -150,6 +171,29 @@ export default function UploadProof() {
                     e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Crect fill='%23ddd' width='200' height='200'/%3E%3Ctext fill='%23999' font-family='sans-serif' font-size='14' x='50%25' y='50%25' text-anchor='middle' dy='.3em'%3EImage not found%3C/text%3E%3C/svg%3E";
                   }}
                 />
+                
+                <div className="mt-2 text-sm">
+                  <p className="font-medium">Verification:</p>
+
+                  {c.aiStatus === "verified" && (
+                    <span className="text-green-600 font-semibold">Verified</span>
+                  )}
+
+                  {c.aiStatus === "review" && (
+                    <span className="text-yellow-600 font-semibold">Needs Review</span>
+                  )}
+
+                  {c.aiStatus === "rejected" && (
+                    <span className="text-red-600 font-semibold">Rejected</span>
+                  )}
+
+                  {c.flags && c.flags.length > 0 && (
+                    <div className="text-xs text-red-500 mt-1">
+                      {c.flags.join(", ")}
+                    </div>
+                  )}
+                </div>
+
                 <div className="mt-2 text-sm">
                   <p className="font-medium">Location:</p>
                   <p className="text-gray-600">
