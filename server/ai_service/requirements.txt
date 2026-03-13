@@ -6,3 +6,6 @@ pillow
 imagehash
 torch
 transformers
+easyocr
+numpy
+pdf2image
