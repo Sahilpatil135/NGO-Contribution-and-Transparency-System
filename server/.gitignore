@@ -154,3 +154,6 @@ pnpm-publish-summary.json
 # Python virtual environment
 venv
 __pycache__
+
+# yolo model file 
+yolov8n.pt

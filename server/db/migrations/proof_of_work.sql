@@ -103,3 +103,16 @@ CREATE TABLE proof_images (
     metadata_score INT,
     created_at TIMESTAMP DEFAULT NOW()
 );
+
+--  Added on 16/3/2026
+ALTER TABLE cause_updates
+ADD COLUMN proof_session_id UUID REFERENCES proof_sessions(id);
+
+ALTER TABLE proof_images 
+ADD COLUMN final_score NUMERIC(5,2), 
+ADD COLUMN verification_score TEXT;
+
+ALTER TABLE proof_sessions
+ADD COLUMN total_images INTEGER DEFAULT 0,
+ADD COLUMN verified_images INTEGER DEFAULT 0,
+ADD COLUMN session_score NUMERIC(5,2);
