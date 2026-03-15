@@ -499,7 +499,6 @@ const CampaignPage = () => {
                             <div className="mt-0.5">
                               <div className="relative h-9 w-9 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-center">
                                 <LuLink2 className="text-[#ff6200]" />
-                                <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-green-500 ring-2 ring-white" />
                               </div>
                             </div>
 
@@ -591,7 +590,7 @@ const CampaignPage = () => {
               </div>
               <div>
                 <p className="text-2xl font-extrabold text-[#3a0b2e]">
-                  {cause.donor_count ?? 0}
+                  {donations ? donations.length : 0}
                 </p>
                 <p className="text-gray-600 text-sm">Donors</p>
               </div>

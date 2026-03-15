@@ -7,6 +7,9 @@ import DonateButton from "../components/DonateButton";
 const CheckoutPage = () => {
   const location = useLocation();
   const causeId = location.state?.causeID;
+
+  console.log(causeId)
+
   const [amount, setAmount] = useState(500);
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [isIndianCitizen, setIsIndianCitizen] = useState(false);

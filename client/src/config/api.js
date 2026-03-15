@@ -13,6 +13,7 @@ export const API_ENDPOINTS = {
   LOGIN: `${API_BASE_URL}/api/auth/login`,
   LOGOUT: `${API_BASE_URL}/api/auth/logout`,
   ME: `${API_BASE_URL}/api/auth/me`,
+  UPDATE_PROFILE: `${API_BASE_URL}/api/auth/me`,
   GOOGLE_AUTH: `${API_BASE_URL}/api/auth/google`,
   GOOGLE_CALLBACK: `${API_BASE_URL}/api/auth/google/callback`,
 
@@ -22,6 +23,7 @@ export const API_ENDPOINTS = {
 
   // Donations
   CREATE_DONATION: `${API_BASE_URL}/api/donations`,
+  GET_MY_DONATIONS: `${API_BASE_URL}/api/donations/user/me`,
 
   // Data
   GET_ALL_AID_TYPES: `${API_BASE_URL}/api/aids`,

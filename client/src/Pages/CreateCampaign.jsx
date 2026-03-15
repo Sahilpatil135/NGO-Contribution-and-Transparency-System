@@ -485,7 +485,7 @@ const CreateCampaign = () => {
           name="title"
           value={formData.title}
           onChange={handleChange}
-          className="w-full border rounded-md p-2 focus:outline-none focus:border-[#ff6200]"
+          className="w-full border rounded-md p-2 focus:outline-none focus:border-[#ff6200] placeholder-gray-500"
           placeholder="e.g. Support post-surgery care for elderly patients"
         />
         <p className="text-xs text-gray-500 mt-1">
@@ -502,7 +502,7 @@ const CreateCampaign = () => {
           value={formData.description}
           onChange={handleChange}
           rows="5"
-          className="w-full border rounded-md p-2 focus:outline-none focus:border-[#ff6200]"
+          className="w-full border rounded-md p-2 focus:outline-none focus:border-[#ff6200] placeholder-gray-500"
           placeholder="Describe your campaign purpose, who it helps, and how donations will be used (min 100 characters)."
         ></textarea>
       </div>
@@ -557,7 +557,7 @@ const CreateCampaign = () => {
             name="goal_amount"
             value={formData.goal_amount}
             onChange={handleChange}
-            className="w-full border rounded-md p-2 focus:outline-none focus:border-[#ff6200] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+            className="w-full border rounded-md p-2 focus:outline-none focus:border-[#ff6200] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none placeholder-gray-500"
             placeholder="e.g. 500000"
           />
           <p className="text-xs text-gray-500 mt-1">
@@ -574,7 +574,7 @@ const CreateCampaign = () => {
             name="deadline"
             value={formData.deadline}
             onChange={handleChange}
-            className="w-full border rounded-md p-2 focus:outline-none focus:border-[#ff6200]"
+            className="w-full border rounded-md p-2 focus:outline-none focus:border-[#ff6200] placeholder-gray-500"
           />
           <p className="text-xs text-gray-500 mt-1">
             Must be at least 7 days from today.
@@ -590,7 +590,7 @@ const CreateCampaign = () => {
           type="file"
           accept="image/*"
           onChange={handleCoverChange}
-          className="w-full border rounded-md p-2 focus:outline-none focus:border-[#ff6200]"
+          className="w-full border rounded-md p-2 focus:outline-none focus:border-[#ff6200] placeholder-gray-500"
         />
         {coverUploading && (
           <p className="text-xs text-gray-500 mt-1">
@@ -629,7 +629,7 @@ const CreateCampaign = () => {
           value={formData.execution_plan}
           onChange={handleChange}
           rows="5"
-          className="w-full border rounded-md p-2 focus:outline-none focus:border-[#ff6200]"
+          className="w-full border rounded-md p-2 focus:outline-none focus:border-[#ff6200] placeholder-gray-500"
           placeholder="Describe how you will execute this campaign (steps, partners, timelines) (min 150 characters)."
         ></textarea>
       </div>
@@ -644,7 +644,7 @@ const CreateCampaign = () => {
             name="beneficiaries_count"
             value={formData.beneficiaries_count}
             onChange={handleChange}
-            className="w-full border rounded-md p-2 focus:outline-none focus:border-[#ff6200]"
+            className="w-full border rounded-md p-2 focus:outline-none focus:border-[#ff6200] placeholder-gray-500"
             placeholder="e.g. 150"
           />
         </div>
@@ -658,7 +658,7 @@ const CreateCampaign = () => {
             name="execution_location"
             value={formData.execution_location}
             onChange={handleChange}
-            className="w-full border rounded-md p-2 focus:outline-none focus:border-[#ff6200]"
+            className="w-full border rounded-md p-2 focus:outline-none focus:border-[#ff6200] placeholder-gray-500"
             placeholder="City / Area / Site"
           />
         </div>
@@ -674,7 +674,7 @@ const CreateCampaign = () => {
             name="execution_start_time"
             value={formData.execution_start_time}
             onChange={handleChange}
-            className="w-full border rounded-md p-2 focus:outline-none focus:border-[#ff6200]"
+            className="w-full border rounded-md p-2 focus:outline-none focus:border-[#ff6200] placeholder-gray-500"
           />
         </div>
 
@@ -687,7 +687,7 @@ const CreateCampaign = () => {
             name="execution_end_time"
             value={formData.execution_end_time}
             onChange={handleChange}
-            className="w-full border rounded-md p-2 focus:outline-none focus:border-[#ff6200]"
+            className="w-full border rounded-md p-2 focus:outline-none focus:border-[#ff6200] placeholder-gray-500"
           />
         </div>
       </div>
@@ -701,7 +701,7 @@ const CreateCampaign = () => {
           value={formData.impact_goal}
           onChange={handleChange}
           rows="3"
-          className="w-full border rounded-md p-2 focus:outline-none focus:border-[#ff6200]"
+          className="w-full border rounded-md p-2 focus:outline-none focus:border-[#ff6200] placeholder-gray-500"
           placeholder="What measurable impact do you aim to achieve? (min 50 characters)."
         ></textarea>
       </div>
@@ -982,7 +982,7 @@ const CreateCampaign = () => {
           <div className="flex items-center space-x-4 text-sm font-medium">
             <span
               className={
-                currentStep === 1 ? "text-[#ff6200]" : "text-gray-400"
+                currentStep === 1 ? "text-[#ff6200]" : "text-gray-500"
               }
             >
               1. Basic Details
@@ -990,7 +990,7 @@ const CreateCampaign = () => {
             <span>›</span>
             <span
               className={
-                currentStep === 2 ? "text-[#ff6200]" : "text-gray-400"
+                currentStep === 2 ? "text-[#ff6200]" : "text-gray-500"
               }
             >
               2. Project
@@ -1000,7 +1000,7 @@ const CreateCampaign = () => {
                 <span>›</span>
                 <span
                   className={
-                    currentStep === 3 ? "text-[#ff6200]" : "text-gray-400"
+                    currentStep === 3 ? "text-[#ff6200]" : "text-gray-500"
                   }
                 >
                   3. Products
@@ -1010,7 +1010,7 @@ const CreateCampaign = () => {
             <span>›</span>
             <span
               className={
-                currentStep === 4 ? "text-[#ff6200]" : "text-gray-400"
+                currentStep === 4 ? "text-[#ff6200]" : "text-gray-500"
               }
             >
               4. Review & Publish

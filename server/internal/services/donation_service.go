@@ -18,6 +18,7 @@ type DonationService interface {
 	GetByID(ctx context.Context, id uuid.UUID) (*models.Donation, error)
 	GetByCauseID(ctx context.Context, id uuid.UUID) ([]*models.Donation, error)
 	GetByPaymentID(ctx context.Context, id uuid.UUID) (*models.Donation, error)
+	GetByUserID(ctx context.Context, id uuid.UUID) ([]*models.Donation, error)
 
 	GetFromChainByID(ctx context.Context, id uuid.UUID) (*contracts.DonationLedgerDonation, error)
 	GetFromChainByCauseID(ctx context.Context, id uuid.UUID) ([]*contracts.DonationLedgerDonation, error)
@@ -51,7 +52,7 @@ func (c *donationService) Create(ctx context.Context, req *models.CreateDonation
 		BillingAddress: req.BillingAddress,
 		Pincode:        req.Pincode,
 		Amount:         req.Amount,
-		Status:         models.DonationStatusPending,
+		Status:         models.DonationStatusCompleted,
 		PanNumber:      req.PanNumber,
 		PaymentID:      req.PaymentID,
 		CreatedAt:      time.Now(),
@@ -106,6 +107,16 @@ func (c *donationService) GetByPaymentID(ctx context.Context, id uuid.UUID) (*mo
 	}
 
 	return donation, nil
+}
+
+func (c *donationService) GetByUserID(ctx context.Context, id uuid.UUID) ([]*models.Donation, error) {
+	donationsResult, err := c.donationRepo.GetByUserID(ctx, id)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return donationsResult, nil
 }
 
 func (c *donationService) GetFromChainByID(ctx context.Context, id uuid.UUID) (*contracts.DonationLedgerDonation, error) {

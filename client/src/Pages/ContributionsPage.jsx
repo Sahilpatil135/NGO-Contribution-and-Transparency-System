@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import img1 from "/makeContributionbanner.jpg"
 import img2 from "/banner_main.jpeg"
 import CausesCarousel from '../components/CausesCarousel';
 import Card from '../components/Card';

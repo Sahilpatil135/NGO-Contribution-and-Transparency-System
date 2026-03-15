@@ -1,7 +1,7 @@
 import React from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { NavLink, useNavigate } from "react-router-dom";
-import heroimg from "/default_user_avatar.jpg";
+import default_avatar from "/default_user_avatar.jpg";
 
 const Navbar = () => {
     const { user, logout } = useAuth();
@@ -56,19 +56,25 @@ const Navbar = () => {
                 <div className="flex items-center gap-5">
                     {user ? (
                         <div className="flex items-center gap-5">
-                            <div className="text-right leading-tight hidden sm:block">
-                                <p className="text-sm text-gray-800 font-medium">
-                                    Welcome, {toTitleCase(user.name)}
-                                </p>
-                                <p className="text-xs text-gray-500">
-                                    Role: {toTitleCase(user.role)}
-                                </p>
-                            </div>
-                            <img
-                                src={user.avatar_url || heroimg}
-                                alt="User Avatar"
-                                className="w-10 h-10 rounded-full border border-gray-300 object-cover"
-                            />
+                            <NavLink
+                                to="/profile"
+                                className="flex items-center gap-3 text-right leading-tight hidden sm:block hover:opacity-80 transition"
+                            >
+                                <div>
+                                    <p className="text-sm text-gray-800 font-medium">
+                                        Welcome, {toTitleCase(user.name)}
+                                    </p>
+                                    <p className="text-xs text-gray-500">
+                                        Role: {toTitleCase(user.role)}
+                                    </p>
+                                </div>
+                            </NavLink>
+                            <NavLink to="/profile" className="hover:opacity-90 transition">
+                                <img
+                                    src={user.avatar_url || default_avatar}
+                                    className="w-10 h-10 rounded-full border border-gray-300 object-cover"
+                                />
+                            </NavLink>
                             <button
                                 onClick={handleLogout}
                                 className="bg-[#ff6200] text-white text-sm px-4 py-2 rounded-md transition hover:bg-[#e65500] cursor-pointer"

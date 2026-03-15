@@ -32,6 +32,7 @@ func (c *DonationHandler) RegisterRoutes(r chi.Router) {
 		r.Group(func(protected chi.Router) {
 			protected.Use(middleware.AuthMiddleware(c.jwtService))
 			protected.Post("/", c.CreateDonation)
+			protected.Get("/user/me", c.GetDonationByUserID)
 			// protected.Delete("/{ID}", c.DeleteDonation)
 		})
 
@@ -41,29 +42,33 @@ func (c *DonationHandler) RegisterRoutes(r chi.Router) {
 
 		r.Get("/chain/{ID}", c.GetDonationFromChainByID)
 		r.Get("/chain/cause/{ID}", c.GetDonationFromChainByCauseID)
-		// r.Get("/user/{ID}", c.GetDonationByUserID)
 	})
 }
-func (c *DonationHandler) CreateDonation(w http.ResponseWriter, r *http.Request) {
-	var req models.CreateDonationRequest
 
+func GetUserFromContext(w http.ResponseWriter, r *http.Request, c *DonationHandler) (*models.User, error) {
 	userID, ok := middleware.GetUserIDFromContext(r.Context())
+
 	if !ok {
 		http.Error(w, "User not found", http.StatusUnauthorized)
 	}
 
-	req.UserID = userID
-
 	user, err := c.authService.GetUserByID(r.Context(), userID)
 	if err != nil {
 		http.Error(w, "User not available", http.StatusBadRequest)
-		return
+		return nil, err
 	}
+	return user, nil
+}
+
+func (c *DonationHandler) CreateDonation(w http.ResponseWriter, r *http.Request) {
+	var req models.CreateDonationRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
+
+	user, err := GetUserFromContext(w, r, c)
 
 	if *req.Name == "" {
 		req.Name = &user.Name
@@ -116,14 +121,20 @@ func (c *DonationHandler) GetDonationByID(w http.ResponseWriter, r *http.Request
 func (c *DonationHandler) GetDonationByCauseID(w http.ResponseWriter, r *http.Request) {
 	ID, err := GetIDFromURL(w, r)
 
-	donationResult, err := c.donationService.GetByCauseID(r.Context(), *ID)
+	donationsResult, err := c.donationService.GetByCauseID(r.Context(), *ID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(donationResult)
+
+	var donationsResponse []*models.CreateDonationResponse
+	for _, donation := range donationsResult {
+		donationsResponse = append(donationsResponse, donation.ToDonationResponse())
+	}
+
+	json.NewEncoder(w).Encode(donationsResponse)
 }
 
 func (c *DonationHandler) GetDonationByPaymentID(w http.ResponseWriter, r *http.Request) {
@@ -137,6 +148,25 @@ func (c *DonationHandler) GetDonationByPaymentID(w http.ResponseWriter, r *http.
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(donation.ToDonationResponse())
+}
+
+func (c *DonationHandler) GetDonationByUserID(w http.ResponseWriter, r *http.Request) {
+	user, err := GetUserFromContext(w, r, c)
+
+	donationsResult, err := c.donationService.GetByUserID(r.Context(), user.ID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+
+	var donationsResponse []*models.CreateDonationResponse
+	for _, donation := range donationsResult {
+		donationsResponse = append(donationsResponse, donation.ToDonationResponse())
+	}
+
+	json.NewEncoder(w).Encode(donationsResponse)
 }
 
 func (c *DonationHandler) GetDonationFromChainByID(w http.ResponseWriter, r *http.Request) {
@@ -162,7 +192,6 @@ func (c *DonationHandler) GetDonationFromChainByCauseID(w http.ResponseWriter, r
 	}
 
 	var donationLedgerResponses []*models.DonationLedgerResponse
-
 	for _, donation := range donations {
 		donationLedgerResponses = append(
 			donationLedgerResponses,
