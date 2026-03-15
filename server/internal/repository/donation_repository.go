@@ -16,6 +16,7 @@ type DonationRepository interface {
 	GetByID(ctx context.Context, id uuid.UUID) (*models.Donation, error)
 	GetByCauseID(ctx context.Context, id uuid.UUID) ([]*models.Donation, error)
 	GetByPaymentID(ctx context.Context, id uuid.UUID) (*models.Donation, error)
+	GetByUserID(ctx context.Context, id uuid.UUID) ([]*models.Donation, error)
 
 	// Update(ctx context.Context, donation *models.Donation) error
 	// Delete(ctx context.Context, id uuid.UUID) error
@@ -156,11 +157,15 @@ func (d *donationRepository) GetByID(ctx context.Context, id uuid.UUID) (*models
 }
 
 func (d *donationRepository) GetByCauseID(ctx context.Context, id uuid.UUID) ([]*models.Donation, error) {
-	return GetDonationsByColumnID(d, ctx, id, "cause_Id")
+	return GetDonationsByColumnID(d, ctx, id, "cause_id")
 }
 
 func (d *donationRepository) GetByPaymentID(ctx context.Context, id uuid.UUID) (*models.Donation, error) {
 	return GetDonationByColumnID(d, ctx, id, "payment_id")
+}
+
+func (d *donationRepository) GetByUserID(ctx context.Context, id uuid.UUID) ([]*models.Donation, error) {
+	return GetDonationsByColumnID(d, ctx, id, "user_id")
 }
 
 // // func (r *donationRepository) Update(ctx context.Context, donation *models.Donation) error { }

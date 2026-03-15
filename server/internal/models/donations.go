@@ -55,7 +55,9 @@ type CreateDonationResponse struct {
 	Pincode        *string        `json:"pincode,omitempty"`
 	Amount         float32        `json:"amount"`
 	Status         DonationStatus `json:"status"`
+	PaymentID      *string        `json:"payment_id,omitempty"`
 	TxHash         *string        `json:"tx_hash,omitempty"`
+	CreatedAt      time.Time      `json:"created_at"`
 }
 
 type DonationLedgerResponse struct {
@@ -78,6 +80,8 @@ func (d *Donation) ToDonationResponse() *CreateDonationResponse {
 		Amount:         d.Amount,
 		Status:         d.Status,
 		TxHash:         d.TxHash,
+		PaymentID:      d.PaymentID,
+		CreatedAt:      d.CreatedAt,
 	}
 }
 

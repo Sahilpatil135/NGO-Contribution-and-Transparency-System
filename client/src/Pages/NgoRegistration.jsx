@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { API_ENDPOINTS } from "../config/api";
 
 const NgoRegistration = () => {
@@ -30,6 +30,8 @@ const NgoRegistration = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+
+  const navigate = useNavigate()
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -125,6 +127,13 @@ const NgoRegistration = () => {
           confirmPassword: "",
         });
         setDocuments({ registration_certificate: null, pan_card: null, other_docs: null });
+
+        window.scrollTo({
+          top: 0, left: 0, behavior: "smooth"
+        })
+
+        navigate('/login')
+
       } else {
         setError(errorMessage);
       }

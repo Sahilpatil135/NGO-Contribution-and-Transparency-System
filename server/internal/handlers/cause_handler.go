@@ -498,4 +498,3 @@ func (c *CauseHandler) UploadProductImage(w http.ResponseWriter, r *http.Request
 		"url": "/" + publicPath,
 	})
 }
-
