@@ -366,29 +366,61 @@ const CampaignPage = () => {
           {activeTab === "updates" && (
             <div className="mt-6">
               {cause.updates && cause.updates.length > 0 ? (
-                <div className="space-y-4">
-                  {cause.updates.map((u) => (
-                    <div
-                      key={u.id}
-                      className="border rounded-lg p-4 bg-white shadow-sm"
-                    >
-                      <div className="flex items-center gap-2 mb-2">
-                        <h4 className="font-semibold text-[#3a0b2e]">
-                          {u.title}
-                        </h4>
-                        {u.is_verified && (
-                          <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded">
-                            Verified
-                          </span>
+                <div className="space-y-4">                  
+                  {cause.updates.map((u) => {
+                    const receipts =
+                      Array.isArray(u.media) && u.media.length > 0
+                        ? u.media.filter((m) => m.media_type === "receipt")
+                        : [];
+                    return (
+                      <div
+                        key={u.id}
+                        className="border rounded-lg p-4 bg-white shadow-sm"
+                      >
+                        <div className="flex items-center gap-2 mb-2">
+                          <h4 className="font-semibold text-[#3a0b2e]">
+                            {u.title}
+                          </h4>
+                          {u.is_verified && (
+                            <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded">
+                              Verified
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-gray-600 text-sm mb-2">
+                          {u.description}
+                        </p>
+                        <p className="text-xs text-gray-400 mb-2">
+                          {new Date(u.created_at).toLocaleDateString()}
+                          {u.update_type && ` • ${u.update_type}`}
+                          {u.funding_percentage != null &&
+                            ` • ${u.funding_percentage}% funded`}
+                        </p>
+                        {u.update_type === "Execution" && receipts.length > 0 && (
+                          <div className="mt-2">
+                            <p className="text-xs font-semibold text-gray-700 mb-1">
+                              Receipts
+                            </p>
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                              {receipts.map((m) => {
+                                const src = m.media_url.startsWith("http")
+                                  ? m.media_url
+                                  : `${API_BASE_URL}${m.media_url}`;
+                                return (
+                                  <img
+                                    key={m.id}
+                                    src={src}
+                                    alt="Receipt"
+                                    className="w-full h-24 object-cover rounded border"
+                                  />
+                                );
+                              })}
+                            </div>
+                          </div>
                         )}
                       </div>
-                      <p className="text-gray-600 text-sm mb-2">{u.description}</p>
-                      <p className="text-xs text-gray-400">
-                        {new Date(u.created_at).toLocaleDateString()}
-                        {u.update_type && ` • ${u.update_type}`}
-                      </p>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               ) : (
                 <p className="text-gray-600">
@@ -642,11 +674,11 @@ const CampaignPage = () => {
             )} */}
 
           {isOwner ? (
-            <Link to={`/uploadProof/${cause.id}`} onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
+            <Link to={`/campaign/${cause.id}/update`} onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
               <button className="w-full bg-[#3a0b2e] hover:bg-[#6d1f57] text-white font-semibold py-3 rounded-lg transition cursor-pointer">
-                Upload Proof
+                Post Update
               </button>
-            </Link>
+            </Link> 
           ) : (
             canDonate && (
               <Link to="/checkout" state={{ causeID: cause.id }} onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>

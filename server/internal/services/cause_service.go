@@ -2,6 +2,9 @@ package services
 
 import (
 	"context"
+	"strings"
+	"time"
+
 	"server/internal/models"
 	"server/internal/repository"
 
@@ -19,6 +22,9 @@ type CauseService interface {
 
 	// Update(ctx context.Context, cause *models.Cause) error
 	Delete(ctx context.Context, id uuid.UUID) error
+
+	// Structured updates
+	CreateUpdate(ctx context.Context, causeID uuid.UUID, req *models.CreateCauseUpdateRequest) (*models.CauseUpdate, error)
 
 	GetDomains(ctx context.Context) ([]*models.CauseCategory, error)
 	GetAidTypes(ctx context.Context) ([]*models.CauseCategory, error)
@@ -223,6 +229,48 @@ func (c *causeService) GetAidTypeByID(ctx context.Context, id uuid.UUID) (*model
 	}
 
 	return aidType, err
+}
+
+func (c *causeService) CreateUpdate(ctx context.Context, causeID uuid.UUID, req *models.CreateCauseUpdateRequest) (*models.CauseUpdate, error) {
+	now := time.Now()
+
+	update := &models.CauseUpdate{
+		ID:                uuid.New(),
+		CauseID:           causeID,
+		Title:             strings.TrimSpace(req.Title),
+		Description:       strings.TrimSpace(req.Description),
+		UpdateType:        req.UpdateType,
+		FundingPercentage: req.FundingPercentage,
+		IsVerified:        false,
+		CreatedAt:         now,
+	}
+
+	if err := c.causeRepo.CreateUpdate(ctx, update); err != nil {
+		return nil, err
+	}
+
+	// Attach receipt media only for execution updates (business rule)
+	if strings.EqualFold(req.UpdateType, "Execution") && len(req.ReceiptURLs) > 0 {
+		for _, url := range req.ReceiptURLs {
+			u := strings.TrimSpace(url)
+			if u == "" {
+				continue
+			}
+			media := &models.UpdateMedia{
+				ID:        uuid.New(),
+				UpdateID:  update.ID,
+				MediaType: "receipt",
+				MediaURL:  u,
+				CreatedAt: now,
+			}
+			if err := c.causeRepo.AddUpdateMedia(ctx, media); err != nil {
+				return nil, err
+			}
+			update.Media = append(update.Media, media)
+		}
+	}
+
+	return update, nil
 }
 
 func valueOrDefaultInt(v *int, def int) int {

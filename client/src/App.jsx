@@ -16,6 +16,7 @@ import ProfilePage from './Pages/ProfilePage';
 import NgoRegistration from './Pages/NgoRegistration';
 import CreateCampaign from './Pages/CreateCampaign';
 import UploadProof from './Pages/Ngo/UploadProof';
+import UploadUpdate from './Pages/Ngo/UploadUpdate';
 import MobileProofCapture from './Pages/MobileProofCapture';
 
 const AppRoutes = () => {
@@ -68,6 +69,7 @@ const AppRoutes = () => {
 
         {/* This routes are only for NGOs. */}
         <Route path="/createCampaign" element={isAuthenticated ? <CreateCampaign /> : <Navigate to="/login" replace />} />
+        <Route path="/campaign/:causeID/update" element={isAuthenticated ? <UploadUpdate /> : <Navigate to="/login" replace />} />
         {/* <Route path="/uploadProof" element={isAuthenticated ? <UploadProof /> : <Navigate to="/login" replace />} /> */}
         <Route path="/uploadProof/:causeID" element={<UploadProof />} />
         <Route path="/mobile/proof/:sessionID" element={<MobileProofCapture />} />

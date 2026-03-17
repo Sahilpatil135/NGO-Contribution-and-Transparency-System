@@ -43,6 +43,8 @@ func (c *CauseHandler) RegisterRoutes(r chi.Router) {
 			protected.Post("/", c.CreateCause)
 			protected.Post("/cover/upload", c.UploadCoverImage)
 			protected.Post("/products/upload", c.UploadProductImage)
+			protected.Post("/updates/upload/receipt", c.UploadUpdateReceipt)
+			protected.Post("/{ID}/updates", c.CreateCauseUpdate)
 			protected.Delete("/{ID}", c.DeleteCause)
 		})
 
@@ -328,6 +330,151 @@ func (c *CauseHandler) GetAidTypeByID(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(aidType)
+}
+
+// UploadUpdateReceipt handles upload of receipt images for execution updates.
+// Works similarly to UploadProductImage but stores under uploads/receipts.
+func (c *CauseHandler) UploadUpdateReceipt(w http.ResponseWriter, r *http.Request) {
+	userID, ok := middleware.GetUserIDFromContext(r.Context())
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	org, err := c.authService.GetOrganizationByID(r.Context(), userID)
+	if err != nil || org == nil || org.User.Role != string(models.RoleTypeOrganization) {
+		http.Error(w, "Not authorized", http.StatusUnauthorized)
+		return
+	}
+
+	if err := r.ParseMultipartForm(10 << 20); err != nil {
+		http.Error(w, "Invalid form", http.StatusBadRequest)
+		return
+	}
+
+	file, header, err := r.FormFile("file")
+	if err != nil {
+		http.Error(w, "Receipt image required", http.StatusBadRequest)
+		return
+	}
+	defer file.Close()
+
+	sniff := make([]byte, 512)
+	n, err := file.Read(sniff)
+	if err != nil && !errors.Is(err, io.EOF) {
+		http.Error(w, "Failed to read image", http.StatusBadRequest)
+		return
+	}
+	if n == 0 {
+		http.Error(w, "Empty image", http.StatusBadRequest)
+		return
+	}
+
+	contentType := http.DetectContentType(sniff)
+	if !strings.HasPrefix(contentType, "image/") {
+		http.Error(w, "Only image uploads are allowed", http.StatusBadRequest)
+		return
+	}
+
+	imageBytes, err := io.ReadAll(io.MultiReader(strings.NewReader(string(sniff[:n])), file))
+	if err != nil {
+		http.Error(w, "Failed to read full image", http.StatusBadRequest)
+		return
+	}
+
+	exts, _ := mime.ExtensionsByType(contentType)
+	ext := ""
+	if len(exts) > 0 {
+		ext = exts[0]
+	}
+	if ext == "" {
+		ext = filepath.Ext(header.Filename)
+	}
+	if ext == "" {
+		ext = ".img"
+	}
+
+	dir := "uploads/receipts"
+	_ = os.MkdirAll(dir, 0755)
+
+	filename := uuid.New().String() + ext
+	path := filepath.Join(dir, filename)
+
+	if err := os.WriteFile(path, imageBytes, 0644); err != nil {
+		http.Error(w, "Failed to save file", http.StatusInternalServerError)
+		return
+	}
+
+	publicPath := filepath.ToSlash(filepath.Join("uploads", "receipts", filename))
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{
+		"url": "/" + publicPath,
+	})
+}
+
+// CreateCauseUpdate creates a structured engagement/execution update for a cause.
+func (c *CauseHandler) CreateCauseUpdate(w http.ResponseWriter, r *http.Request) {
+	causeID, err := uuid.Parse(chi.URLParam(r, "ID"))
+	if err != nil {
+		http.Error(w, "Invalid cause ID", http.StatusBadRequest)
+		return
+	}
+
+	var req models.CreateCauseUpdateRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	req.Title = strings.TrimSpace(req.Title)
+	req.Description = strings.TrimSpace(req.Description)
+	if req.Title == "" || req.Description == "" || req.UpdateType == "" {
+		http.Error(w, "title, description and update_type are required", http.StatusBadRequest)
+		return
+	}
+
+	allowedTypes := map[string]bool{
+		"Engagement": true,
+		"Milestone":  true,
+		"Execution":  true,
+		"Completion": true,
+	}
+	if !allowedTypes[req.UpdateType] {
+		http.Error(w, "invalid update_type", http.StatusBadRequest)
+		return
+	}
+
+	userID, ok := middleware.GetUserIDFromContext(r.Context())
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	org, err := c.authService.GetOrganizationByID(r.Context(), userID)
+	if err != nil || org == nil || org.User.Role != string(models.RoleTypeOrganization) {
+		http.Error(w, "Not authorized", http.StatusUnauthorized)
+		return
+	}
+
+	cause, err := c.causeService.GetByID(r.Context(), causeID)
+	if err != nil || cause == nil {
+		http.Error(w, "Cause not found", http.StatusBadRequest)
+		return
+	}
+	if cause.Organization.ID != org.ID {
+		http.Error(w, "Not authorized for this cause", http.StatusForbidden)
+		return
+	}
+
+	update, err := c.causeService.CreateUpdate(r.Context(), causeID, &req)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(update)
 }
 
 // UploadCoverImage handles secure upload of a single campaign cover image.

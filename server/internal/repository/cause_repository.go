@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 
 	"server/internal/models"
 
@@ -27,6 +28,11 @@ type CauseRepository interface {
 	GetUpdatesByCauseID(ctx context.Context, causeID uuid.UUID) ([]*models.CauseUpdate, error)
 
 	CreateProduct(ctx context.Context, product *models.CauseProduct) error
+
+	// Updates & media
+	CreateUpdate(ctx context.Context, update *models.CauseUpdate) error
+	AddUpdateMedia(ctx context.Context, media *models.UpdateMedia) error
+	GetMediaByUpdateIDs(ctx context.Context, updateIDs []uuid.UUID) (map[uuid.UUID][]*models.UpdateMedia, error)
 
 	// Update(ctx context.Context, cause *models.Cause) error
 	Delete(ctx context.Context, id uuid.UUID) error
@@ -350,7 +356,103 @@ func (c *causeRepository) GetUpdatesByCauseID(ctx context.Context, causeID uuid.
 		updates = append(updates, u)
 	}
 
+	// Attach media (receipts/images) in a single query
+	if len(updates) == 0 {
+		return updates, nil
+	}
+	var ids []uuid.UUID
+	for _, u := range updates {
+		ids = append(ids, u.ID)
+	}
+	mediaByUpdate, err := c.GetMediaByUpdateIDs(ctx, ids)
+	if err != nil {
+		return nil, err
+	}
+	for _, u := range updates {
+		if media, ok := mediaByUpdate[u.ID]; ok {
+			u.Media = media
+		}
+	}
+
 	return updates, nil
+}
+
+func (c *causeRepository) CreateUpdate(ctx context.Context, update *models.CauseUpdate) error {
+	query := `
+		INSERT INTO cause_updates (
+			id, cause_id, title, description, update_type, funding_percentage, is_verified, created_at
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+	`
+
+	_, err := c.db.ExecContext(ctx, query,
+		update.ID,
+		update.CauseID,
+		update.Title,
+		update.Description,
+		update.UpdateType,
+		update.FundingPercentage,
+		update.IsVerified,
+		update.CreatedAt,
+	)
+	return err
+}
+
+func (c *causeRepository) AddUpdateMedia(ctx context.Context, media *models.UpdateMedia) error {
+	query := `
+		INSERT INTO update_media (id, update_id, media_type, media_url, created_at)
+		VALUES ($1, $2, $3, $4, $5)
+	`
+
+	_, err := c.db.ExecContext(ctx, query,
+		media.ID,
+		media.UpdateID,
+		media.MediaType,
+		media.MediaURL,
+		media.CreatedAt,
+	)
+	return err
+}
+
+func (c *causeRepository) GetMediaByUpdateIDs(ctx context.Context, updateIDs []uuid.UUID) (map[uuid.UUID][]*models.UpdateMedia, error) {
+	if len(updateIDs) == 0 {
+		return map[uuid.UUID][]*models.UpdateMedia{}, nil
+	}
+
+	// Build a simple IN clause; number of updates per cause is expected to be small.
+	args := make([]interface{}, len(updateIDs))
+	placeholders := make([]string, len(updateIDs))
+	for i, id := range updateIDs {
+		args[i] = id
+		placeholders[i] = fmt.Sprintf("$%d", i+1)
+	}
+
+	query := fmt.Sprintf(`
+		SELECT id, update_id, media_type, media_url, created_at
+		FROM update_media
+		WHERE update_id IN (%s)
+		ORDER BY created_at ASC
+	`, strings.Join(placeholders, ","))
+
+	rows, err := c.db.QueryContext(ctx, query, args...)
+	if err != nil && err != sql.ErrNoRows {
+		return nil, err
+	}
+
+	result := make(map[uuid.UUID][]*models.UpdateMedia)
+	for rows.Next() {
+		m := &models.UpdateMedia{}
+		if err := rows.Scan(
+			&m.ID,
+			&m.UpdateID,
+			&m.MediaType,
+			&m.MediaURL,
+			&m.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		result[m.UpdateID] = append(result[m.UpdateID], m)
+	}
+	return result, nil
 }
 
 func (c *causeRepository) CreateProduct(ctx context.Context, product *models.CauseProduct) error {
