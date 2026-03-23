@@ -42,6 +42,22 @@ export const API_ENDPOINTS = {
   GET_CAUSES_BY_ORGANIZATION: `${API_BASE_URL}/api/causes/organization`,
   ME_ORGANIZATION: `${API_BASE_URL}/api/auth/me/organization`,
 
+  // Cause votes
+  GET_CAUSE_VOTES: (causeId) =>
+    `${API_BASE_URL}/api/causes/${causeId}/votes`,
+  UPVOTE_CAUSE: (causeId) =>
+    `${API_BASE_URL}/api/causes/${causeId}/upvote`,
+  DOWNVOTE_CAUSE: (causeId) =>
+    `${API_BASE_URL}/api/causes/${causeId}/downvote`,
+
+  // Cause reviews
+  GET_CAUSE_REVIEWS: (causeId) =>
+    `${API_BASE_URL}/api/causes/${causeId}/reviews`,
+  GET_CAUSE_REVIEW_COUNT: (causeId) =>
+    `${API_BASE_URL}/api/causes/${causeId}/reviews/count`,
+  CREATE_CAUSE_REVIEW: (causeId) =>
+    `${API_BASE_URL}/api/causes/${causeId}/reviews`,
+
   // Donations (on-chain)
   GET_CAUSE_CHAIN_DONATIONS: (causeId) =>
     `${API_BASE_URL}/api/donations/chain/cause/${causeId}`,

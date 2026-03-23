@@ -20,17 +20,41 @@ require (
 require (
 	github.com/ProjectZKM/Ziren/crates/go-runtime/zkvm_runtime v0.0.0-20251001021608-1fe7b43fc4d6 // indirect
 	github.com/StackExchange/wmi v1.2.1 // indirect
+	github.com/benbjohnson/clock v1.3.0 // indirect
 	github.com/bits-and-blooms/bitset v1.20.0 // indirect
+	github.com/blang/semver/v4 v4.0.0 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/consensys/gnark-crypto v0.18.1 // indirect
+	github.com/crackcomm/go-gitignore v0.0.0-20170627025303-887ab5e44cc3 // indirect
 	github.com/crate-crypto/go-eth-kzg v1.4.0 // indirect
 	github.com/deckarep/golang-set/v2 v2.6.0 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.2.0 // indirect
 	github.com/ethereum/c-kzg-4844/v2 v2.1.6 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/holiman/uint256 v1.3.2 // indirect
+	github.com/ipfs/boxo v0.12.0 // indirect
+	github.com/ipfs/go-cid v0.4.1 // indirect
+	github.com/ipfs/go-ipfs-api v0.7.0 // indirect
+	github.com/klauspost/cpuid/v2 v2.2.3 // indirect
+	github.com/libp2p/go-buffer-pool v0.1.0 // indirect
+	github.com/libp2p/go-flow-metrics v0.1.0 // indirect
+	github.com/libp2p/go-libp2p v0.26.3 // indirect
+	github.com/minio/sha256-simd v1.0.0 // indirect
+	github.com/mitchellh/go-homedir v1.1.0 // indirect
+	github.com/mr-tron/base58 v1.2.0 // indirect
+	github.com/multiformats/go-base32 v0.1.0 // indirect
+	github.com/multiformats/go-base36 v0.2.0 // indirect
+	github.com/multiformats/go-multiaddr v0.8.0 // indirect
+	github.com/multiformats/go-multibase v0.2.0 // indirect
+	github.com/multiformats/go-multicodec v0.9.0 // indirect
+	github.com/multiformats/go-multihash v0.2.3 // indirect
+	github.com/multiformats/go-multistream v0.4.1 // indirect
+	github.com/multiformats/go-varint v0.0.7 // indirect
 	github.com/shirou/gopsutil v3.21.4-0.20210419000835-c7a38de76ee5+incompatible // indirect
+	github.com/spaolacci/murmur3 v1.1.0 // indirect
 	github.com/supranational/blst v0.3.16 // indirect
+	google.golang.org/protobuf v1.36.11 // indirect
+	lukechampine.com/blake3 v1.1.7 // indirect
 )
 
 require (
@@ -57,7 +81,7 @@ require (
 	github.com/go-ole/go-ole v1.3.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/gorilla/context v1.1.1 // indirect
-	github.com/gorilla/mux v1.6.2 // indirect
+	github.com/gorilla/mux v1.8.0 // indirect
 	github.com/gorilla/securecookie v1.1.2 // indirect
 	github.com/gorilla/websocket v1.5.3
 	github.com/jackc/pgpassfile v1.0.0 // indirect

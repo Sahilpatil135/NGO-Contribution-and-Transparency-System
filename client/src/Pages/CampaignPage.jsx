@@ -4,6 +4,7 @@ import { Link, useParams } from "react-router-dom";
 import { apiRequest, API_ENDPOINTS, API_BASE_URL } from "../config/api";
 import { getCauseImage } from "../utils/imageHelper";
 import { LuLink2, LuLock, LuShieldCheck } from "react-icons/lu";
+import { BiUpvote, BiDownvote } from "react-icons/bi";
 import { useAuth } from "../contexts/AuthContext";
 
 const PRODUCT_AID_TYPE_NAMES = [
@@ -24,6 +25,13 @@ const CampaignPage = () => {
   const [donationsLoading, setDonationsLoading] = useState(true);
   const [donationsError, setDonationsError] = useState(null);
   const [selectedImage, setSelectedImage] = useState(null);
+  const [votes, setVotes] = useState({ upvotes: 0, downvotes: 0, my_vote: null });
+  const [votesLoading, setVotesLoading] = useState(false);
+  const [reviews, setReviews] = useState({ count: 0, reviews: [] });
+  const [reviewsLoading, setReviewsLoading] = useState(false);
+  const [reviewsSubmitting, setReviewsSubmitting] = useState(false);
+  const [canReview, setCanReview] = useState(false);
+  const [reviewText, setReviewText] = useState("");
 
   useEffect(() => {
     const fetchData = async () => {
@@ -47,10 +55,69 @@ const CampaignPage = () => {
       }
 
       setDonationsLoading(false);
+
+      // Fetch upvote/downvote counters for this cause.
+      setVotesLoading(true);
+      const votesResult = await apiRequest(
+        API_ENDPOINTS.GET_CAUSE_VOTES(causeID)
+      );
+      if (votesResult.success && votesResult.data) {
+        setVotes(votesResult.data);
+      }
+      setVotesLoading(false);
+
+      // Fetch whether the current user can review (must have donated)
+      // and load existing textual reviews.
+      setReviewsLoading(true);
+      const [myDonationsResult, reviewsResult] = await Promise.all([
+        apiRequest(API_ENDPOINTS.GET_MY_DONATIONS),
+        apiRequest(API_ENDPOINTS.GET_CAUSE_REVIEWS(causeID)),
+      ]);
+
+      if (myDonationsResult.success && Array.isArray(myDonationsResult.data)) {
+        const hasDonated = myDonationsResult.data.some(
+          (d) => String(d.cause_id) === String(causeID)
+        );
+
+        const hasReviewed = reviewsResult.data["reviews"].some(
+          (d) => String(d.user_id) === String(user.id)
+        )
+
+        setCanReview(hasDonated && !hasReviewed);
+      } else {
+        setCanReview(false);
+      }
+
+      if (reviewsResult.success && reviewsResult.data) {
+        setReviews(reviewsResult.data);
+      } else {
+        setReviews({ count: 0, reviews: [] });
+      }
+      setReviewsLoading(false);
     };
 
     fetchData();
   }, [causeID]);
+
+  const handleUpvote = async () => {
+    if (!causeID) return;
+    setVotesLoading(true);
+    const res = await apiRequest(API_ENDPOINTS.UPVOTE_CAUSE(causeID), {
+      method: "POST",
+    });
+    if (res.success && res.data) setVotes(res.data);
+    setVotesLoading(false);
+  };
+
+  const handleDownvote = async () => {
+    if (!causeID) return;
+    setVotesLoading(true);
+    const res = await apiRequest(API_ENDPOINTS.DOWNVOTE_CAUSE(causeID), {
+      method: "POST",
+    });
+    if (res.success && res.data) setVotes(res.data);
+    setVotesLoading(false);
+  };
 
   const getDaysLeft = (targetTimestamp) => {
     if (!targetTimestamp) return 0;
@@ -88,6 +155,7 @@ const CampaignPage = () => {
     ...(showProductsTab ? [{ id: "products", label: "Products" }] : []),
     { id: "project", label: "Project" },
     { id: "updates", label: "Updates" },
+    { id: "reviews", label: "Reviews" },
     { id: "donations", label: "Donations" },
   ];
 
@@ -176,10 +244,53 @@ const CampaignPage = () => {
         </h1>
         <h3 className="text-xl text-gray-500 mt-3">
           Campaign by{" "}
-          <span className="font-semibold text-gray-800">
-            {cause.organization?.name || "NGO"}
-          </span>
+          {cause?.organization?.id ? (
+            <Link
+              to={`/organization/${cause.organization.id}/accounts`}
+              className="font-semibold text-gray-800 hover:text-[#ff6200]"
+            >
+              {cause.organization?.name || "NGO"}
+            </Link>
+          ) : (
+            <span className="font-semibold text-gray-800">
+              {cause.organization?.name || "NGO"}
+            </span>
+          )}
         </h3>
+        <div className="flex items-center gap-4 mt-4">
+          <button
+            type="button"
+            className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-semibold border transition cursor-pointer ${votes.my_vote === "up"
+              ? "bg-green-50 border-green-200 text-green-700"
+              : "bg-white border-gray-200 text-gray-600 hover:border-green-200"
+              }`}
+            disabled={votesLoading}
+            onClick={handleUpvote}
+          >
+            <BiUpvote
+              className={
+                votes.my_vote === "up" ? "text-green-600" : "text-gray-500"
+              }
+            />
+            <span>{votes.upvotes}</span>
+          </button>
+          <button
+            type="button"
+            className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-semibold border transition cursor-pointer ${votes.my_vote === "down"
+              ? "bg-red-50 border-red-200 text-red-700"
+              : "bg-white border-gray-200 text-gray-600 hover:border-red-200"
+              }`}
+            disabled={votesLoading}
+            onClick={handleDownvote}
+          >
+            <BiDownvote
+              className={
+                votes.my_vote === "down" ? "text-red-600" : "text-gray-500"
+              }
+            />
+            <span>{votes.downvotes}</span>
+          </button>
+        </div>
         <div className="flex flex-wrap gap-4 mt-3 text-gray-600 text-sm">
           {cause.execution_location && (
             <span>📍 {cause.execution_location}</span>
@@ -189,6 +300,9 @@ const CampaignPage = () => {
           )}
           {cause.deadline && (
             <span>📅 Deadline: {new Date(cause.deadline).toLocaleDateString()}</span>
+          )}
+          {typeof reviews?.count === "number" && (
+            <span>📝 {reviews.count} Reviews</span>
           )}
         </div>
       </div>
@@ -429,8 +543,18 @@ const CampaignPage = () => {
                                   {u.verification_score}
                                 </span>
                               </div>
+
+                              <div className="text-sm text-gray-600">
+                                {receipts.some((m) =>
+                                  String(m.media_url || "").startsWith("/api/ipfs/")
+                                ) && (
+                                    <p className="text-[11px] text-amber-700 bg-amber-50 border border-amber-100 px-2 py-1 rounded-full inline-block mb-3">
+                                      Stored securely on IPFS
+                                    </p>
+                                  )}
+                              </div>
                             </div>
-                            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-2">
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                               {receipts.map((m) => {
                                 const src = m.media_url.startsWith("http")
                                   ? m.media_url
@@ -461,7 +585,7 @@ const CampaignPage = () => {
                                           src={selectedImage}
                                           alt="Full Receipt"
                                           className="max-h-[90%] max-w-[90%] rounded-lg shadow-lg"
-                                          
+
                                         />
                                         <button
                                           className="absolute top-6 right-10 text-white text-xl cursor-pointer"
@@ -489,6 +613,108 @@ const CampaignPage = () => {
                 <p className="text-gray-600">
                   No updates yet. Be the first to support the campaign!
                 </p>
+              )}
+            </div>
+          )}
+
+          {activeTab === "reviews" && (
+            <div className="mt-6">
+              {reviewsLoading ? (
+                <div className="space-y-4">
+                  <div className="h-16 rounded-xl bg-gray-100 animate-pulse" />
+                  <div className="h-16 rounded-xl bg-gray-100 animate-pulse" />
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+                    <h3 className="text-lg font-semibold text-[#3a0b2e]">
+                      Write a review
+                    </h3>
+                    <p className="text-sm text-gray-600 mt-1">
+                      Review can be left only after you donate.
+                    </p>
+
+                    {canReview ? (
+                      <div className="mt-4 space-y-3">
+                        <textarea
+                          className="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:border-[#ff6200] placeholder-gray-500"
+                          rows={4}
+                          placeholder="Share your experience in a few sentences..."
+                          value={reviewText}
+                          onChange={(e) => setReviewText(e.target.value)}
+                        />
+                        <button
+                          type="button"
+                          className="bg-[#ff6200] hover:bg-[#e45a00] text-white font-semibold px-6 py-2 rounded-lg transition cursor-pointer disabled:opacity-60"
+                          disabled={reviewsSubmitting}
+                          onClick={async () => {
+                            if (!causeID) return;
+                            const text = reviewText.trim();
+                            if (text.length < 5) return;
+                            setReviewsSubmitting(true);
+                            const res = await apiRequest(
+                              API_ENDPOINTS.CREATE_CAUSE_REVIEW(causeID),
+                              {
+                                method: "POST",
+                                body: JSON.stringify({ review_text: text }),
+                              }
+                            );
+                            if (res.success) {
+                              setReviewText("");
+                              const refresh = await apiRequest(
+                                API_ENDPOINTS.GET_CAUSE_REVIEWS(causeID)
+                              );
+                              if (refresh.success && refresh.data) {
+                                setReviews(refresh.data);
+                              }
+                            }
+                            setReviewsSubmitting(false);
+                          }}
+                        >
+                          {reviewsSubmitting ? "Submitting..." : "Submit review"}
+                        </button>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-gray-600 mt-4">
+                        You can only leave one review after donating to this cause.
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <h3 className="text-lg font-semibold text-[#3a0b2e] mb-3">
+                      Reviews
+                    </h3>
+                    {reviews?.reviews && reviews.reviews.length > 0 ? (
+                      <div className="space-y-4">
+                        {reviews.reviews.map((r) => (
+                          <div
+                            key={r.id}
+                            className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm"
+                          >
+                            <div className="flex items-center justify-between gap-3 flex-wrap">
+                              <p className="font-semibold text-[#3a0b2e]">
+                                {r.user_name || "Anonymous"}
+                              </p>
+                              <p className="text-xs text-gray-400">
+                                {r.created_at
+                                  ? new Date(r.created_at).toLocaleDateString()
+                                  : ""}
+                              </p>
+                            </div>
+                            <p className="text-gray-700 mt-3 whitespace-pre-line">
+                              {r.review_text}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-gray-600">
+                        No reviews yet. Be the first to share after donating!
+                      </p>
+                    )}
+                  </div>
+                </div>
               )}
             </div>
           )}

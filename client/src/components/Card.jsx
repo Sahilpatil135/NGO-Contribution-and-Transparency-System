@@ -1,12 +1,14 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import heroimg from "../../public/domains/domain_example.png";
 import { FaRegHeart } from "react-icons/fa";
 import { BiUpvote, BiDownvote, BiGroup } from "react-icons/bi";
 import { IoMdTime } from "react-icons/io";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { apiRequest, API_ENDPOINTS } from "../config/api";
 import { getCauseImage } from "../utils/imageHelper";
 
 const Card = ({ cause }) => {
+  const navigate = useNavigate();
   const raised = parseFloat(cause.collected_amount);
 
   let goal
@@ -20,6 +22,10 @@ const Card = ({ cause }) => {
   const progress = Math.min((raised / goal) * 100, 100);
 
   const [hover, setHover] = useState(false);
+  const [votes, setVotes] = useState({ upvotes: 0, downvotes: 0, my_vote: null });
+  const [votesLoading, setVotesLoading] = useState(false);
+  const [reviewCount, setReviewCount] = useState(0);
+  const [reviewCountLoading, setReviewCountLoading] = useState(false);
 
   const getDaysLeft = (targetTimestamp) => {
     const now = Date.now();
@@ -35,6 +41,73 @@ const Card = ({ cause }) => {
   }
   
   const imageSrc = getCauseImage(cause.cover_image_url, heroimg);
+
+  const handleOrganizationClick = (e) => {
+    // Prevent outer card navigation to `/campaign/:id`
+    e.preventDefault();
+    e.stopPropagation();
+
+    const orgId = cause?.organization?.id;
+    if (!orgId) return;
+
+    navigate(`/organization/${orgId}/accounts`);
+  };
+
+  useEffect(() => {
+    const fetchVotes = async () => {
+      if (!cause?.id) return;
+      setVotesLoading(true);
+      const res = await apiRequest(API_ENDPOINTS.GET_CAUSE_VOTES(cause.id));
+      if (res.success && res.data) {
+        setVotes(res.data);
+      }
+      setVotesLoading(false);
+    };
+
+    fetchVotes();
+  }, [cause?.id]);
+
+  useEffect(() => {
+    const fetchReviewCount = async () => {
+      if (!cause?.id) return;
+      setReviewCountLoading(true);
+      const res = await apiRequest(
+        API_ENDPOINTS.GET_CAUSE_REVIEW_COUNT(cause.id)
+      );
+      if (res.success && typeof res.data?.count === "number") {
+        setReviewCount(res.data.count);
+      }
+      setReviewCountLoading(false);
+    };
+
+    fetchReviewCount();
+  }, [cause?.id]);
+
+  const handleUpvote = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!cause?.id) return;
+
+    const res = await apiRequest(API_ENDPOINTS.UPVOTE_CAUSE(cause.id), {
+      method: "POST",
+    });
+    if (res.success && res.data) setVotes(res.data);
+  };
+
+  const handleDownvote = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!cause?.id) return;
+
+    const res = await apiRequest(API_ENDPOINTS.DOWNVOTE_CAUSE(cause.id), {
+      method: "POST",
+    });
+    if (res.success && res.data) setVotes(res.data);
+  };
+
+  const myVote = votes?.my_vote;
+  const isUpActive = myVote === "up";
+  const isDownActive = myVote === "down";
 
   return (
     <div
@@ -58,11 +131,25 @@ const Card = ({ cause }) => {
 
           {/* Upvote/Downvote */}
           <div className="absolute bottom-3 right-3 flex items-center bg-white/90 px-2 py-1 rounded-full text-gray-700 text-sm shadow">
-            <button className="hover:text-green-600 cursor-pointer">
+            <button
+              type="button"
+              className={isUpActive ? "text-green-600 cursor-pointer" : "hover:text-green-600 cursor-pointer"}
+              onClick={handleUpvote}
+              disabled={votesLoading}
+              aria-label="Upvote cause"
+            >
               <BiUpvote className="text-lg" />
             </button>
-            <span className="mx-1">55 |</span>
-            <button className="hover:text-red-600 cursor-pointer">
+            <span className="mx-1">
+              {votes?.upvotes} | {votes?.downvotes}
+            </span>
+            <button
+              type="button"
+              className={isDownActive ? "text-red-600 cursor-pointer" : "hover:text-red-600 cursor-pointer"}
+              onClick={handleDownvote}
+              disabled={votesLoading}
+              aria-label="Downvote cause"
+            >
               <BiDownvote className="text-lg" />
             </button>
           </div>
@@ -72,12 +159,32 @@ const Card = ({ cause }) => {
         <div className="px-6 py-4 text-left">
           <h1 className="text-xl font-bold text-gray-800">{cause.title}</h1>
           <p className="text-sm text-gray-500 mb-3">{cause.domain.name} | {cause.aid_type.name}</p>
-          <p className="text-md text-gray-500 mb-3">By {cause.organization.name}</p>
+          <p className="text-md text-gray-500 mb-3">
+            By{" "}
+            <span
+              role="link"
+              tabIndex={0}
+              className="font-semibold text-gray-800 hover:text-[#ff6200] underline cursor-pointer"
+              onClick={handleOrganizationClick}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") handleOrganizationClick(e);
+              }}
+            >
+              {cause.organization.name}
+            </span>
+          </p>
           {/*<p className="text-md text-gray-500 mb-3">by Campaign Name</p>*/}
 
           {/* Donations & Time Left */}
           <div className="flex justify-between text-sm text-gray-600 mb-2">
-            <p className="flex"><BiGroup className="h-5 mr-1 text-lg" />1000+ Donations</p>
+            <p className="flex items-center gap-2">
+              <BiGroup className="h-5 text-lg" />
+              1000+ Donations
+              <span className="text-gray-300">•</span>
+              <span>
+                {reviewCountLoading ? "..." : `${reviewCount} Reviews`}
+              </span>
+            </p>
             <p className="flex"><IoMdTime className="h-5 text-lg mr-1" />{getDaysLeft(cause.deadline) + 50} Days Left</p>
           </div>
 

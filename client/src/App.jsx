@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Login from './components/auth/Login';
 import Signup from './components/auth/Signup';
@@ -13,6 +13,7 @@ import CheckoutPage from './Pages/CheckoutPage';
 import DonationTypePage from './Pages/DonationTypePage';
 import DonationSuccess from './Pages/DonationSuccess';
 import ProfilePage from './Pages/ProfilePage';
+import OrganizationAccountsPage from './Pages/Organization/OrganizationAccountsPage';
 import NgoRegistration from './Pages/NgoRegistration';
 import CreateCampaign from './Pages/CreateCampaign';
 import UploadProof from './Pages/Ngo/UploadProof';
@@ -21,6 +22,7 @@ import MobileProofCapture from './Pages/MobileProofCapture';
 
 const AppRoutes = () => {
   const { isAuthenticated, isLoading } = useAuth();
+  const location = useLocation();
 
   if (isLoading) {
     return (
@@ -63,6 +65,14 @@ const AppRoutes = () => {
         <Route path="/checkout" element={isAuthenticated ? <CheckoutPage /> : <Navigate to="/login" replace />} />
         <Route path="/donation/success" element={isAuthenticated ? <DonationSuccess /> : <Navigate to="/login" replace />} />
         <Route path="/profile" element={isAuthenticated ? <ProfilePage /> : <Navigate to="/login" replace />} />
+        <Route
+          path="/organization/accounts"
+          element={isAuthenticated ? <OrganizationAccountsPage /> : <Navigate to="/login" replace />}
+        />
+        <Route
+          path="/organization/:organizationId/accounts"
+          element={<OrganizationAccountsPage />}
+        />
         <Route path="/makeContribution/:category/:slug" element={isAuthenticated ? <DonationTypePage /> : <Navigate to="/login" replace />} />
 
         <Route path="/ngoRegistration" element={<NgoRegistration />} />

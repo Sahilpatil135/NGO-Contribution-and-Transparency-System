@@ -4,7 +4,7 @@ import { NavLink, useNavigate } from "react-router-dom";
 import default_avatar from "/default_user_avatar.jpg";
 
 const Navbar = () => {
-    const { user, logout } = useAuth();
+    const { user, organization, logout } = useAuth();
     const navigate = useNavigate();
 
     const handleLogin = () => navigate("/login");
@@ -12,6 +12,13 @@ const Navbar = () => {
 
     const toTitleCase = (s = "") =>
         s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
+
+    const userLandingPath =
+        user?.role === "organization" && organization?.id
+            ? `/organization/${organization.id}/accounts`
+            : user?.role === "organization"
+              ? "/organization/accounts"
+              : "/profile";
 
     const navLinks = [
         { name: "Home", path: "/" },
@@ -57,7 +64,7 @@ const Navbar = () => {
                     {user ? (
                         <div className="flex items-center gap-5">
                             <NavLink
-                                to="/profile"
+                                to={userLandingPath}
                                 className="flex items-center gap-3 text-right leading-tight hidden sm:block hover:opacity-80 transition"
                             >
                                 <div>
@@ -69,7 +76,7 @@ const Navbar = () => {
                                     </p>
                                 </div>
                             </NavLink>
-                            <NavLink to="/profile" className="hover:opacity-90 transition">
+                            <NavLink to={userLandingPath} className="hover:opacity-90 transition">
                                 <img
                                     src={user.avatar_url || default_avatar}
                                     className="w-10 h-10 rounded-full border border-gray-300 object-cover"

@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -22,16 +23,29 @@ import (
 )
 
 type CauseHandler struct {
-	causeService services.CauseService
-	authService  services.AuthService
-	jwtService   services.JWTService
+	causeService       services.CauseService
+	authService        services.AuthService
+	jwtService         services.JWTService
+	causeVoteService   services.CauseVoteService
+	causeReviewService services.CauseReviewService
+	ipfsService        services.IPFSService
 }
 
-func NewCauseHandler(causeService services.CauseService, authService services.AuthService, jwtService services.JWTService) *CauseHandler {
+func NewCauseHandler(
+	causeService services.CauseService,
+	authService services.AuthService,
+	jwtService services.JWTService,
+	causeVoteService services.CauseVoteService,
+	causeReviewService services.CauseReviewService,
+	ipfsService services.IPFSService,
+) *CauseHandler {
 	return &CauseHandler{
-		causeService: causeService,
-		authService:  authService,
-		jwtService:   jwtService,
+		causeService:       causeService,
+		authService:        authService,
+		jwtService:         jwtService,
+		causeVoteService:   causeVoteService,
+		causeReviewService: causeReviewService,
+		ipfsService:        ipfsService,
 	}
 }
 
@@ -48,12 +62,18 @@ func (c *CauseHandler) RegisterRoutes(r chi.Router) {
 			protected.Get("/updates/receipt-status/{id}", c.GetReceiptStatus)
 			// }
 			protected.Post("/{ID}/updates", c.CreateCauseUpdate)
+			protected.Post("/{ID}/upvote", c.UpvoteCause)
+			protected.Post("/{ID}/downvote", c.DownvoteCause)
+			protected.Get("/{ID}/votes", c.GetCauseVotes)
+			protected.Post("/{ID}/reviews", c.CreateCauseReview)
 			protected.Delete("/{ID}", c.DeleteCause)
 		})
 
 		r.Get("/", c.GetAllCauses)
 		r.Get("/{ID}", c.GetCauseByID)
 		r.Get("/organization/{ID}", c.GetCauseByOrganizationID)
+		r.Get("/{ID}/reviews", c.GetCauseReviews)
+		r.Get("/{ID}/reviews/count", c.GetCauseReviewCount)
 
 		r.Get("/domain/{ID}", c.GetCauseByDomainID)
 		r.Get("/aid/{ID}", c.GetCauseByAidTypeID)
@@ -66,6 +86,10 @@ func (c *CauseHandler) RegisterRoutes(r chi.Router) {
 	r.Get("/api/aids", c.GetAidTypes)
 	r.Get("/api/domains/{ID}", c.GetDomainByID)
 	r.Get("/api/aids/{ID}", c.GetAidTypeByID)
+
+	// Serves raw files stored on IPFS for UI consumption.
+	// The frontend uses this endpoint when rendering update receipts.
+	r.Get("/api/ipfs/{CID}", c.GetIPFSContent)
 }
 func (c *CauseHandler) CreateCause(w http.ResponseWriter, r *http.Request) {
 	var req models.CreateCauseRequest
@@ -152,6 +176,191 @@ func (c *CauseHandler) GetCauseByOrganizationID(w http.ResponseWriter, r *http.R
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(causesResult)
+}
+
+func (c *CauseHandler) CreateCauseReview(w http.ResponseWriter, r *http.Request) {
+	causeID, err := uuid.Parse(chi.URLParam(r, "ID"))
+	if err != nil {
+		http.Error(w, "Invalid cause ID", http.StatusBadRequest)
+		return
+	}
+
+	userID, ok := middleware.GetUserIDFromContext(r.Context())
+	if !ok {
+		http.Error(w, "User not found", http.StatusUnauthorized)
+		return
+	}
+
+	var req models.CreateCauseReviewRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	reviewText := strings.TrimSpace(req.ReviewText)
+	if reviewText == "" || len(reviewText) < 5 {
+		http.Error(w, "review_text is required (min 5 chars)", http.StatusBadRequest)
+		return
+	}
+
+	canReview, err := c.causeReviewService.UserCanReviewCause(r.Context(), causeID, userID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	if !canReview {
+		http.Error(w, "Only users who donated to this cause can leave a review", http.StatusForbidden)
+		return
+	}
+
+	review, err := c.causeReviewService.CreateReview(r.Context(), causeID, userID, reviewText)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(review)
+}
+
+func (c *CauseHandler) GetCauseReviews(w http.ResponseWriter, r *http.Request) {
+	ID, err := uuid.Parse(chi.URLParam(r, "ID"))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	reviews, err := c.causeReviewService.GetReviewsByCauseID(r.Context(), ID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(reviews)
+}
+
+func (c *CauseHandler) GetCauseReviewCount(w http.ResponseWriter, r *http.Request) {
+	ID, err := uuid.Parse(chi.URLParam(r, "ID"))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	count, err := c.causeReviewService.GetReviewCountByCauseID(r.Context(), ID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]int{"count": count})
+}
+
+// GetIPFSContent streams raw bytes from IPFS to the caller.
+// The UI uses this endpoint to display uploaded update receipts.
+func (c *CauseHandler) GetIPFSContent(w http.ResponseWriter, r *http.Request) {
+	cid := chi.URLParam(r, "CID")
+	if cid == "" {
+		http.Error(w, "CID is required", http.StatusBadRequest)
+		return
+	}
+
+	rc, err := c.ipfsService.Cat(r.Context(), cid)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	defer rc.Close()
+
+	// Read a small prefix to detect content-type.
+	// Then re-stream prefix + remainder to the client.
+	prefix := make([]byte, 512)
+	n, readErr := rc.Read(prefix)
+	if readErr != nil && readErr != io.EOF {
+		http.Error(w, readErr.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if n > 0 {
+		w.Header().Set("Content-Type", http.DetectContentType(prefix[:n]))
+	}
+	w.Header().Set("X-Content-Source", "ipfs")
+
+	if n > 0 {
+		_, _ = io.Copy(w, io.MultiReader(bytes.NewReader(prefix[:n]), rc))
+	} else {
+		_, _ = io.Copy(w, rc)
+	}
+}
+
+func (c *CauseHandler) UpvoteCause(w http.ResponseWriter, r *http.Request) {
+	ID, err := uuid.Parse(chi.URLParam(r, "ID"))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	userID, ok := middleware.GetUserIDFromContext(r.Context())
+	if !ok {
+		http.Error(w, "User not found", http.StatusUnauthorized)
+		return
+	}
+
+	votes, err := c.causeVoteService.ToggleVote(r.Context(), ID, userID, 1)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(votes)
+}
+
+func (c *CauseHandler) DownvoteCause(w http.ResponseWriter, r *http.Request) {
+	ID, err := uuid.Parse(chi.URLParam(r, "ID"))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	userID, ok := middleware.GetUserIDFromContext(r.Context())
+	if !ok {
+		http.Error(w, "User not found", http.StatusUnauthorized)
+		return
+	}
+
+	votes, err := c.causeVoteService.ToggleVote(r.Context(), ID, userID, -1)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(votes)
+}
+
+func (c *CauseHandler) GetCauseVotes(w http.ResponseWriter, r *http.Request) {
+	ID, err := uuid.Parse(chi.URLParam(r, "ID"))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	userID, ok := middleware.GetUserIDFromContext(r.Context())
+	if !ok {
+		http.Error(w, "User not found", http.StatusUnauthorized)
+		return
+	}
+
+	votes, err := c.causeVoteService.GetVotes(r.Context(), ID, userID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(votes)
 }
 
 func (c *CauseHandler) GetCauseByDomainID(w http.ResponseWriter, r *http.Request) {
@@ -367,7 +576,7 @@ func (c *CauseHandler) UploadUpdateReceipt(w http.ResponseWriter, r *http.Reques
 		return
 	}
 	// }
-	file, header, err := r.FormFile("file")
+	file, _, err := r.FormFile("file")
 	if err != nil {
 		http.Error(w, "Receipt image required", http.StatusBadRequest)
 		return
@@ -391,58 +600,40 @@ func (c *CauseHandler) UploadUpdateReceipt(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	imageBytes, err := io.ReadAll(io.MultiReader(strings.NewReader(string(sniff[:n])), file))
+	imageBytes, err := io.ReadAll(io.MultiReader(bytes.NewReader(sniff[:n]), file))
 	if err != nil {
 		http.Error(w, "Failed to read full image", http.StatusBadRequest)
 		return
 	}
 
-	exts, _ := mime.ExtensionsByType(contentType)
-	ext := ""
-	if len(exts) > 0 {
-		ext = exts[0]
-	}
-	if ext == "" {
-		ext = filepath.Ext(header.Filename)
-	}
-	if ext == "" {
-		ext = ".img"
-	}
-
-	dir := "uploads/receipts"
-	_ = os.MkdirAll(dir, 0755)
-
-	filename := uuid.New().String() + ext
-	path := filepath.Join(dir, filename)
-
-	if err := os.WriteFile(path, imageBytes, 0644); err != nil {
-		http.Error(w, "Failed to save file", http.StatusInternalServerError)
+	// Store the receipt securely on IPFS and return an API URL that streams it back.
+	cid, err := c.ipfsService.AddFile(r.Context(), bytes.NewReader(imageBytes))
+	if err != nil {
+		http.Error(w, "Failed to store on IPFS: "+err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	publicPath := filepath.ToSlash(filepath.Join("uploads", "receipts", filename))
+	publicPath := "/api/ipfs/" + cid
 
 	// new {
 	// Persist a DB-backed receipt verification job and trigger AI analysis async.
-	
-	receiptJobID, err := c.causeService.StartReceiptVerificationJob(r.Context(), org.ID, path, claimedAmount)
+
+	receiptJobID, err := c.causeService.StartReceiptVerificationJob(r.Context(), org.ID, publicPath, claimedAmount)
 	if err != nil {
 		http.Error(w, "Failed to create receipt verification job", http.StatusInternalServerError)
 		return
 	}
-// }
+
 	w.Header().Set("Content-Type", "application/json")
-	// json.NewEncoder(w).Encode(map[string]string{
-	// 	"url": "/" + publicPath,
-	// new {
+
 	json.NewEncoder(w).Encode(map[string]any{
-		"url":         "/" + publicPath,
-		"receipt_id":  receiptJobID.String(),
-		"status":       "pending",
+		"url":           "/" + publicPath,
+		"receipt_id":    receiptJobID.String(),
+		"status":        "pending",
 		"receipt_score": nil,
-	// }
 	})
 }
+
 // new {
 func (c *CauseHandler) GetReceiptStatus(w http.ResponseWriter, r *http.Request) {
 	receiptJobID, err := uuid.Parse(chi.URLParam(r, "id"))
@@ -472,6 +663,7 @@ func (c *CauseHandler) GetReceiptStatus(w http.ResponseWriter, r *http.Request) 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(status)
 }
+
 // }
 // CreateCauseUpdate creates a structured engagement/execution update for a cause.
 func (c *CauseHandler) CreateCauseUpdate(w http.ResponseWriter, r *http.Request) {
@@ -536,7 +728,7 @@ func (c *CauseHandler) CreateCauseUpdate(w http.ResponseWriter, r *http.Request)
 	}
 
 	// update, err := c.causeService.CreateUpdate(r.Context(), causeID, &req)
-// new {
+	// new {
 	ctx := context.WithValue(r.Context(), "organizationID", org.ID)
 	update, err := c.causeService.CreateUpdate(ctx, causeID, &req)
 	// }

@@ -4,7 +4,7 @@ ADD COLUMN execution_lng DOUBLE PRECISION,
 ADD COLUMN execution_radius_meters INT DEFAULT 200,
 ADD COLUMN execution_start_time TIMESTAMP,
 ADD COLUMN execution_end_time TIMESTAMP,
-ADD COLUMN funding_status VARCHAR(20) DEFAULT 'PENDING',
+ADD COLUMN funding_status VARCHAR(20) DEFAULT 'Pending',
 ADD COLUMN beneficiaries_count INTEGER NOT NULL DEFAULT 0,
 ADD COLUMN execution_location TEXT,
 ADD COLUMN impact_goal TEXT,
@@ -73,7 +73,7 @@ ALTER COLUMN funding_status DROP DEFAULT;
 
 UPDATE causes
 SET funding_status = 'Not Started'
-WHERE funding_status = 'PENDING';
+WHERE funding_status = 'Pending';
 
 ALTER TABLE causes
 ALTER COLUMN funding_status TYPE funding_status_enum

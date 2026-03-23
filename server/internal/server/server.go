@@ -45,6 +45,8 @@ func NewServer() *http.Server {
 	userRepo := repository.NewUserRepository(sqlDB)
 	organizationRepo := repository.NewOrganizationRepository(sqlDB)
 	causeRepo := repository.NewCauseRepository(sqlDB)
+	causeVoteRepo := repository.NewCauseVoteRepository(sqlDB)
+	causeReviewRepo := repository.NewCauseReviewRepository(sqlDB)
 	donationRepo := repository.NewDonationRepository(sqlDB)
 	proofSessionRepo := repository.NewProofSessionRepository(sqlDB)
 	proofImageRepo := repository.NewProofImageRepository(sqlDB)
@@ -53,6 +55,8 @@ func NewServer() *http.Server {
 	jwtService := services.NewJWTService()
 	authService := services.NewAuthService(userRepo, organizationRepo, jwtService)
 	causeService := services.NewCauseService(causeRepo)
+	causeVoteService := services.NewCauseVoteService(causeVoteRepo)
+	causeReviewService := services.NewCauseReviewService(causeReviewRepo)
 	proofService := services.NewProofService(proofSessionRepo, proofImageRepo, causeRepo)
 	chainService, err := blockchain.NewDonationChainService(
 		blockchainClient,
@@ -65,7 +69,8 @@ func NewServer() *http.Server {
 
 	// Initialize handlers
 	authHandler := handlers.NewAuthHandler(authService, jwtService)
-	causeHandler := handlers.NewCauseHandler(causeService, authService, jwtService)
+	ipfsService := services.NewIPFSService()
+	causeHandler := handlers.NewCauseHandler(causeService, authService, jwtService, causeVoteService, causeReviewService, ipfsService)
 	donationHandler := handlers.NewDonationHandler(donationService, authService, jwtService)
 	proofHandler := handlers.NewProofHandler(jwtService, proofService, organizationRepo, causeRepo)
 
