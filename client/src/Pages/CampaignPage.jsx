@@ -23,6 +23,7 @@ const CampaignPage = () => {
   const [donations, setDonations] = useState([]);
   const [donationsLoading, setDonationsLoading] = useState(true);
   const [donationsError, setDonationsError] = useState(null);
+  const [selectedImage, setSelectedImage] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -437,7 +438,8 @@ const CampaignPage = () => {
                                 return (
                                   <div
                                     key={m.id}
-                                    className="relative group border rounded-lg overflow-hidden"
+                                    onClick={() => setSelectedImage(src)}
+                                    className="relative group border rounded-lg overflow-hidden cursor-pointer"
                                   >
                                     <img
                                       src={src}
@@ -449,6 +451,30 @@ const CampaignPage = () => {
                                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition">
                                       <span className="text-white text-xs">View</span>
                                     </div>
+
+                                    {selectedImage && (
+                                      <div
+                                        className="fixed inset-0 bg-black/80 flex items-center justify-center z-50"
+                                        onClick={() => setSelectedImage(null)}
+                                      >
+                                        <img
+                                          src={selectedImage}
+                                          alt="Full Receipt"
+                                          className="max-h-[90%] max-w-[90%] rounded-lg shadow-lg"
+                                          
+                                        />
+                                        <button
+                                          className="absolute top-6 right-10 text-white text-xl cursor-pointer"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setSelectedImage(null);
+                                          }}
+                                        >
+                                          ✕
+                                        </button>
+                                      </div>
+                                    )}
+
                                   </div>
                                 );
                               })}
