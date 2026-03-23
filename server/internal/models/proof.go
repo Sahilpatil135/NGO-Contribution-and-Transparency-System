@@ -40,6 +40,8 @@ type ProofImage struct {
 	Longitude     *float64   `json:"longitude" db:"longitude"`
 	Timestamp     *time.Time `json:"timestamp" db:"timestamp"`
 	MetadataScore int        `json:"metadata_score" db:"metadata_score"`
+	FinalScore    *float64   `json:"final_score,omitempty" db:"final_score"`
+	VerificationStatus *string `json:"verification_status,omitempty" db:"verification_status"`
 	CreatedAt     time.Time  `json:"created_at" db:"created_at"`
 }
 

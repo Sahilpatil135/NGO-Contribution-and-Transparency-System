@@ -17,6 +17,8 @@ type ProofSessionRepository interface {
 type ProofImageRepository interface {
 	Create(ctx context.Context, img *models.ProofImage) error
 	ExistsBySessionIDAndHash(ctx context.Context, sessionID uuid.UUID, imageHash string) (bool, error)
+	GetBySessionID(ctx context.Context, sessionID uuid.UUID) ([]*models.ProofImage, error)
+	UpdateAIResultsAndMedia(ctx context.Context, imageID uuid.UUID, mediaPath string, finalScore *float64, validationStatus *string) error
 }
 
 type proofSessionRepository struct {
@@ -103,4 +105,63 @@ func (r *proofImageRepository) ExistsBySessionIDAndHash(ctx context.Context, ses
 		return false, err
 	}
 	return true, nil
+}
+
+func (r *proofImageRepository) GetBySessionID(ctx context.Context, sessionID uuid.UUID) ([]*models.ProofImage, error) {
+	query := `
+		SELECT
+			id, session_id, image_hash, ipfs_cid, latitude, longitude, timestamp,
+			metadata_score, final_score, verification_status, created_at
+		FROM proof_images
+		WHERE session_id = $1
+		ORDER BY created_at ASC
+	`
+
+	rows, err := r.db.QueryContext(ctx, query, sessionID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var results []*models.ProofImage
+	for rows.Next() {
+		img := &models.ProofImage{}
+		if err := rows.Scan(
+			&img.ID,
+			&img.SessionID,
+			&img.ImageHash,
+			&img.IPFSCID,
+			&img.Latitude,
+			&img.Longitude,
+			&img.Timestamp,
+			&img.MetadataScore,
+			&img.FinalScore,
+			&img.VerificationStatus,
+			&img.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		results = append(results, img)
+	}
+	return results, nil
+}
+
+func (r *proofImageRepository) UpdateAIResultsAndMedia(
+	ctx context.Context,
+	imageID uuid.UUID,
+	mediaPath string,
+	finalScore *float64,
+	validationStatus *string,
+) error {
+	query := `
+		UPDATE proof_images
+		SET
+			ipfs_cid = $2,
+			final_score = $3,
+			verification_status = $4
+		WHERE id = $1
+	`
+
+	_, err := r.db.ExecContext(ctx, query, imageID, mediaPath, finalScore, validationStatus)
+	return err
 }

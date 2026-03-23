@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useNavigate, useParams, Link } from "react-router-dom";
+import { useNavigate, useParams, Link, useLocation } from "react-router-dom";
 import { apiRequest, API_ENDPOINTS, API_BASE_URL } from "@/config/api";
 
 const UPDATE_TYPES = [
@@ -10,6 +10,7 @@ const UPDATE_TYPES = [
 export default function UploadUpdate() {
   const { causeID } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const [cause, setCause] = useState(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -22,6 +23,13 @@ export default function UploadUpdate() {
     funding_percentage: "",
     claimed_amount: "",
   });
+
+  const proofSessionIdFromQuery = new URLSearchParams(location.search).get(
+    "proofSessionId"
+  );
+  const [proofs, setProofs] = useState([]);
+  const [proofsLoading, setProofsLoading] = useState(false);
+  const [proofsError, setProofsError] = useState("");
 
   const [receiptUploadLoading, setReceiptUploadLoading] = useState(false);
   // new {
@@ -151,6 +159,47 @@ export default function UploadUpdate() {
       pollingIntervalsRef.current = {};
     };
   }, []);
+
+  // Backend-first: fetch proof images using the proof session id returned
+  // from UploadProof back to this page.
+  useEffect(() => {
+    const sessionId = proofSessionIdFromQuery;
+    if (!sessionId) {
+      setProofs([]);
+      return;
+    }
+
+    const fetchProofImages = async () => {
+      setProofsLoading(true);
+      setProofsError("");
+      try {
+        const res = await apiRequest(
+          API_ENDPOINTS.GET_PROOF_IMAGES_BY_SESSION(sessionId)
+        );
+        if (res.success) {
+          setProofs(Array.isArray(res.data) ? res.data : []);
+        } else {
+          setProofsError(res.error || "Failed to load proofs");
+          setProofs([]);
+        }
+      } catch (e) {
+        setProofsError(e?.message || "Failed to load proofs");
+        setProofs([]);
+      } finally {
+        setProofsLoading(false);
+      }
+    };
+
+    fetchProofImages();
+  }, [proofSessionIdFromQuery]);
+
+  const getProofStatusStyle = (status) => {
+    const s = String(status ?? "").toLowerCase();
+    if (s === "verified") return "bg-green-100 text-green-700";
+    if (s === "review") return "bg-amber-100 text-amber-700";
+    if (s === "rejected") return "bg-red-100 text-red-700";
+    return "bg-gray-100 text-gray-700";
+  };
 
   const startPollingReceipt = (receiptJobId) => {
     if (!receiptJobId) return;
@@ -401,6 +450,10 @@ export default function UploadUpdate() {
       payload.receipt_urls = receipts.map((r) => r.url);
       payload.receipt_job_ids = receipts.map((r) => r.receiptJobId);
       // }
+    }
+
+    if (form.update_type === "Execution" && proofSessionIdFromQuery) {
+      payload.proof_session_id = proofSessionIdFromQuery;
     }
 
     setSubmitting(true);
@@ -696,6 +749,55 @@ export default function UploadUpdate() {
                 Open Proof Capture
               </button>
             </Link>
+
+            {proofsLoading && (
+              <p className="text-xs text-gray-500 mt-3">Loading proofs...</p>
+            )}
+
+            {proofsError && (
+              <p className="text-xs text-red-500 mt-3">{proofsError}</p>
+            )}
+
+            {Array.isArray(proofs) && proofs.length > 0 && (
+              <div className="mt-4 grid grid-cols-2 md:grid-cols-3 gap-3">
+                {proofs.map((p, idx) => {
+                  const src = p.image?.startsWith("http")
+                    ? p.image
+                    : p.image
+                      ? `${API_BASE_URL}/uploads/${p.image}`
+                      : null;
+                  return (
+                    <div
+                      key={p.image ? p.image : idx}
+                      className="border rounded-lg p-2 bg-white"
+                    >
+                      {src ? (
+                        <img
+                          src={src}
+                          alt={`Proof ${idx + 1}`}
+                          className="w-full h-24 object-cover rounded border"
+                        />
+                      ) : (
+                        <div className="w-full h-24 bg-gray-100 flex items-center justify-center text-xs text-gray-400 rounded border">
+                          Image not found
+                        </div>
+                      )}
+
+                      <div className="mt-2 text-xs">
+                        <p className="font-medium text-gray-800">AI Status</p>
+                        <span
+                          className={`inline-block mt-1 px-2 py-0.5 rounded font-semibold ${getProofStatusStyle(
+                            p.aiStatus
+                          )}`}
+                        >
+                          {p.aiStatus || "unknown"}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         )}
 

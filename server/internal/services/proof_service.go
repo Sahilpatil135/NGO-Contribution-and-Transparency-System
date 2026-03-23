@@ -24,6 +24,8 @@ type ProofService interface {
 	CreateSession(ctx context.Context, causeID, organizationID uuid.UUID) (*models.ProofSession, error)
 	ProcessUpload(ctx context.Context, sessionID uuid.UUID, lat, lng float64, timestamp time.Time, imageBytes []byte) (*models.ProofImage, int, bool, bool, error)
 	GetSession(ctx context.Context, id uuid.UUID) (*models.ProofSession, error)
+	GetProofImagesBySessionID(ctx context.Context, sessionID uuid.UUID) ([]*models.ProofImage, error)
+	UpdateProofAIResultsAndMedia(ctx context.Context, imageID uuid.UUID, mediaPath string, finalScore *float64, validationStatus *string) error
 }
 
 type proofService struct {
@@ -142,6 +144,20 @@ func (s *proofService) ProcessUpload(ctx context.Context, sessionID uuid.UUID, l
 
 func (s *proofService) GetSession(ctx context.Context, id uuid.UUID) (*models.ProofSession, error) {
 	return s.sessionRepo.GetByID(ctx, id)
+}
+
+func (s *proofService) GetProofImagesBySessionID(ctx context.Context, sessionID uuid.UUID) ([]*models.ProofImage, error) {
+	return s.imageRepo.GetBySessionID(ctx, sessionID)
+}
+
+func (s *proofService) UpdateProofAIResultsAndMedia(
+	ctx context.Context,
+	imageID uuid.UUID,
+	mediaPath string,
+	finalScore *float64,
+	validationStatus *string,
+) error {
+	return s.imageRepo.UpdateAIResultsAndMedia(ctx, imageID, mediaPath, finalScore, validationStatus)
 }
 
 func hashImage(data []byte) string {

@@ -328,6 +328,7 @@ func (c *causeService) CreateUpdate(ctx context.Context, causeID uuid.UUID, req 
 		FundingPercentage:  req.FundingPercentage,
 		ClaimedAmount:      req.ClaimedAmount,
 		VerificationStatus: "pending",
+		ProofSessionID:     req.ProofSessionID,
 		CreatedAt:          now,
 	}
 

@@ -221,7 +221,13 @@ export default function UploadProof() {
       <div className="mt-8 flex justify-end">
         <button
           type="button"
-          onClick={() => navigate(`/campaign/${causeID}/update`)}
+          onClick={() =>
+            navigate(
+              `/campaign/${causeID}/update?proofSessionId=${encodeURIComponent(
+                session
+              )}`
+            )
+          }
           className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 text-sm cursor-pointer bg-white hover:bg-gray-50"
         >
           Back to Post Update
