@@ -96,6 +96,14 @@ const CampaignPage = () => {
     cause?.organization?.id &&
     String(organization.id) === String(cause.organization.id);
 
+  const getScoreStyle = (score) => {
+    if (score >= 70)
+      return "bg-blue-100 text-blue-700";
+    if (score >= 40)
+      return "bg-amber-100 text-amber-700";
+    return "bg-red-100 text-red-700";
+  };
+
   const canDonate = fundingStatus !== "Fully Funded" && fundingStatus !== "Closed";
 
   // Set default active tab when products tab is not available
@@ -366,12 +374,14 @@ const CampaignPage = () => {
           {activeTab === "updates" && (
             <div className="mt-6">
               {cause.updates && cause.updates.length > 0 ? (
-                <div className="space-y-4">                  
+                <div className="space-y-4">
                   {cause.updates.map((u) => {
                     const receipts =
                       Array.isArray(u.media) && u.media.length > 0
                         ? u.media.filter((m) => m.media_type === "receipt")
                         : [];
+                    console.log(receipts);
+                    console.log(u);
                     return (
                       <div
                         key={u.id}
@@ -398,21 +408,48 @@ const CampaignPage = () => {
                         </p>
                         {u.update_type === "Execution" && receipts.length > 0 && (
                           <div className="mt-2">
-                            <p className="text-xs font-semibold text-gray-700 mb-1">
+                            <p className="text-sm font-semibold text-gray-800 mb-2">
                               Receipts
                             </p>
-                            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                            <div className="flex flex-wrap gap-3 mb-2">
+                              <div className="text-sm text-gray-600">
+                                <span className="font-medium text-gray-800"> Claimed Amount:</span>{" "}
+                                ₹{u.claimed_amount}
+                              </div>
+
+                              <div className="text-sm text-gray-600">
+                                <span className="font-medium text-gray-800"> Verification Score:</span>{" "}
+                                {/* <span className="px-2 py-0.5 rounded bg-blue-100 text-blue-700 font-semibold"> */}
+                                <span
+                                  className={`px-2 py-0.5 rounded font-semibold ${getScoreStyle(
+                                    u.verification_score
+                                  )}`}
+                                >
+                                  {u.verification_score}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-2">
                               {receipts.map((m) => {
                                 const src = m.media_url.startsWith("http")
                                   ? m.media_url
                                   : `${API_BASE_URL}${m.media_url}`;
                                 return (
-                                  <img
+                                  <div
                                     key={m.id}
-                                    src={src}
-                                    alt="Receipt"
-                                    className="w-full h-24 object-cover rounded border"
-                                  />
+                                    className="relative group border rounded-lg overflow-hidden"
+                                  >
+                                    <img
+                                      src={src}
+                                      alt="Receipt"
+                                      className="w-full h-28 object-cover transition-transform duration-200 group-hover:scale-105"
+                                    />
+
+                                    {/* Hover overlay */}
+                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition">
+                                      <span className="text-white text-xs">View</span>
+                                    </div>
+                                  </div>
                                 );
                               })}
                             </div>
@@ -678,7 +715,7 @@ const CampaignPage = () => {
               <button className="w-full bg-[#3a0b2e] hover:bg-[#6d1f57] text-white font-semibold py-3 rounded-lg transition cursor-pointer">
                 Post Update
               </button>
-            </Link> 
+            </Link>
           ) : (
             canDonate && (
               <Link to="/checkout" state={{ causeID: cause.id }} onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>

@@ -123,3 +123,48 @@ func CallAIService(imagePath string, causeText string) (map[string]interface{}, 
 
 	return result, nil
 }
+
+func CallAIReceiptService(receiptPath string, claimedAmount float64) (map[string]interface{}, error) {
+	// Ensure we always send an absolute path so the Python service
+	// can reliably find the receipt regardless of its working directory.
+	if abs, err := filepath.Abs(receiptPath); err == nil {
+		receiptPath = abs
+	}
+	log.Println("Calling AI receipt service with receipt:", receiptPath, "claimedAmount:", claimedAmount)
+
+	if !isAIServiceRunning() {
+		log.Println("AI service not running, starting...")
+		err := startAIService()
+		if err != nil {
+			log.Println("Failed to start AI service:", err)
+			return nil, err
+		}
+		log.Println("AI service started successfully")
+	}
+
+	payload := map[string]interface{}{
+		"receipt_path":   receiptPath,
+		"claimed_amount": claimedAmount,
+	}
+
+	jsonData, _ := json.Marshal(payload)
+	log.Println("AI receipt request payload:", string(jsonData))
+
+	resp, err := http.Post(
+		aiURL+"/analyze-receipt",
+		"application/json",
+		bytes.NewBuffer(jsonData),
+	)
+	if err != nil {
+		log.Println("Error calling AI /analyze-receipt:", err)
+		return nil, err
+	}
+	defer resp.Body.Close()
+	log.Println("AI /analyze-receipt status code:", resp.StatusCode)
+
+	var result map[string]interface{}
+	json.NewDecoder(resp.Body).Decode(&result)
+	log.Println("AI receipt response body:", result)
+
+	return result, nil
+}

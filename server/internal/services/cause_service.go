@@ -2,6 +2,11 @@ package services
 
 import (
 	"context"
+	// new {
+	"fmt"
+	// }
+	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -25,7 +30,11 @@ type CauseService interface {
 
 	// Structured updates
 	CreateUpdate(ctx context.Context, causeID uuid.UUID, req *models.CreateCauseUpdateRequest) (*models.CauseUpdate, error)
-
+	// new {
+	// Receipt verification jobs (async)
+	StartReceiptVerificationJob(ctx context.Context, organizationID uuid.UUID, receiptPath string, claimedAmount float64) (uuid.UUID, error)
+	GetReceiptVerificationStatus(ctx context.Context, organizationID uuid.UUID, receiptJobID uuid.UUID) (*models.ReceiptStatusResponse, error)
+	// }
 	GetDomains(ctx context.Context) ([]*models.CauseCategory, error)
 	GetAidTypes(ctx context.Context) ([]*models.CauseCategory, error)
 	GetDomainByID(ctx context.Context, id uuid.UUID) (*models.CauseCategory, error)
@@ -42,6 +51,82 @@ func NewCauseService(causeRepo repository.CauseRepository) *causeService {
 	}
 }
 
+// new {
+func (c *causeService) StartReceiptVerificationJob(
+	ctx context.Context,
+	organizationID uuid.UUID,
+	receiptPath string,
+	claimedAmount float64,
+) (uuid.UUID, error) {
+	jobID := uuid.New()
+
+	job := &models.ReceiptVerificationJob{
+		ID:             jobID,
+		OrganizationID: organizationID,
+		ReceiptPath:    receiptPath,
+		ClaimedAmount:  claimedAmount,
+		Status:         "pending",
+	}
+
+	if err := c.causeRepo.CreateReceiptVerificationJob(ctx, job); err != nil {
+		return uuid.Nil, err
+	}
+
+	// Run AI verification asynchronously. We use a background context so the
+	// goroutine is not cancelled when the HTTP request completes.
+	go func() {
+		aiCtx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+		defer cancel()
+
+		ai, err := CallAIReceiptService(receiptPath, claimedAmount)
+		if err != nil {
+			errMsg := err.Error()
+			_ = c.causeRepo.UpdateReceiptVerificationJobResult(aiCtx, organizationID, jobID, "error", nil, &errMsg)
+			return
+		}
+
+		var (
+			status string
+			score  *float64
+		)
+
+		if s, ok := ai["status"].(string); ok && strings.TrimSpace(s) != "" {
+			status = s
+		}
+		if rs, ok := ai["receipt_score"].(float64); ok {
+			score = &rs
+		}
+
+		if strings.TrimSpace(status) == "" {
+			status = "review"
+		}
+
+		_ = c.causeRepo.UpdateReceiptVerificationJobResult(aiCtx, organizationID, jobID, status, score, nil)
+	}()
+
+	return jobID, nil
+}
+
+func (c *causeService) GetReceiptVerificationStatus(
+	ctx context.Context,
+	organizationID uuid.UUID,
+	receiptJobID uuid.UUID,
+) (*models.ReceiptStatusResponse, error) {
+	job, err := c.causeRepo.GetReceiptVerificationJob(ctx, organizationID, receiptJobID)
+	if err != nil || job == nil {
+		return nil, err
+	}
+
+	return &models.ReceiptStatusResponse{
+		ReceiptJobID:  job.ID,
+		Status:        job.Status,
+		ReceiptScore:  job.ReceiptScore,
+		ErrorMessage:  job.ErrorMessage,
+		ClaimedAmount: job.ClaimedAmount,
+	}, nil
+}
+
+// }
 func (c *causeService) Create(ctx context.Context, req *models.CreateCauseRequest) (*models.Cause, error) {
 	domain, err := c.GetDomainByID(ctx, req.DomainID)
 
@@ -235,15 +320,112 @@ func (c *causeService) CreateUpdate(ctx context.Context, causeID uuid.UUID, req 
 	now := time.Now()
 
 	update := &models.CauseUpdate{
-		ID:                uuid.New(),
-		CauseID:           causeID,
-		Title:             strings.TrimSpace(req.Title),
-		Description:       strings.TrimSpace(req.Description),
-		UpdateType:        req.UpdateType,
-		FundingPercentage: req.FundingPercentage,
-		IsVerified:        false,
-		CreatedAt:         now,
+		ID:                 uuid.New(),
+		CauseID:            causeID,
+		Title:              strings.TrimSpace(req.Title),
+		Description:        strings.TrimSpace(req.Description),
+		UpdateType:         req.UpdateType,
+		FundingPercentage:  req.FundingPercentage,
+		ClaimedAmount:      req.ClaimedAmount,
+		VerificationStatus: "pending",
+		CreatedAt:          now,
 	}
+
+	// new {
+	// If this is an Execution update and we have receipt_job_ids, use their
+	// async AI results (recommended flow).
+	if strings.EqualFold(req.UpdateType, "Execution") && len(req.ReceiptJobIDs) > 0 {
+		orgIDAny := ctx.Value("organizationID")
+		orgID, ok := orgIDAny.(uuid.UUID)
+		if !ok || orgID == uuid.Nil {
+			return nil, fmt.Errorf("organizationID missing from context")
+		}
+
+		receiptJobUUIDs := make([]uuid.UUID, 0, len(req.ReceiptJobIDs))
+		for _, idStr := range req.ReceiptJobIDs {
+			idStr = strings.TrimSpace(idStr)
+			if idStr == "" {
+				continue
+			}
+			id, err := uuid.Parse(idStr)
+			if err != nil {
+				return nil, fmt.Errorf("invalid receipt_job_id: %w", err)
+			}
+			receiptJobUUIDs = append(receiptJobUUIDs, id)
+		}
+
+		jobs, err := c.causeRepo.GetReceiptVerificationJobsByIDs(ctx, orgID, receiptJobUUIDs)
+		if err != nil {
+			return nil, err
+		}
+		if len(jobs) != len(receiptJobUUIDs) {
+			return nil, fmt.Errorf("one or more receipt verification jobs not found")
+		}
+
+		// Guard: don't allow update creation while receipts are still processing.
+		for _, j := range jobs {
+			switch strings.TrimSpace(strings.ToLower(j.Status)) {
+			case "pending", "processing":
+				return nil, fmt.Errorf("receipt verification is still in progress")
+			case "error":
+				return nil, fmt.Errorf("receipt verification failed")
+			}
+		}
+
+		// Worst-case status aggregation.
+		verificationStatus := "verified"
+		for _, j := range jobs {
+			switch strings.TrimSpace(strings.ToLower(j.Status)) {
+			case "rejected":
+				verificationStatus = "rejected"
+			case "review":
+				if verificationStatus != "rejected" {
+					verificationStatus = "review"
+				}
+			}
+		}
+
+		update.VerificationStatus = verificationStatus
+
+		// Score aggregation: average of available receipt scores.
+		var (
+			sum   float64
+			count int
+		)
+		for _, j := range jobs {
+			if j.ReceiptScore != nil {
+				sum += *j.ReceiptScore
+				count++
+			}
+		}
+		if count > 0 {
+			avg := sum / float64(count)
+			update.VerificationScore = &avg
+		}
+	} else if strings.EqualFold(req.UpdateType, "Execution") && req.ClaimedAmount != nil && len(req.ReceiptURLs) > 0 {
+		// Backward-compatible fallback: older clients may only send receipt URLs.
+		// In this mode, we synchronously call the Python AI service.
+	// }
+		first := strings.TrimSpace(req.ReceiptURLs[0])
+		if first != "" {
+			// The upload endpoint returns a public URL like "/uploads/receipts/<file>".
+			// Convert it back to a local filesystem path for the AI service.
+			// We run the Go API from the "server" directory, so "uploads/..." is relative.
+			localRel := strings.TrimPrefix(first, "/")
+			localPath := filepath.FromSlash(localRel)
+			if _, err := os.Stat(localPath); err == nil {
+				if ai, err := CallAIReceiptService(localPath, *req.ClaimedAmount); err == nil && ai != nil {
+					if score, ok := ai["receipt_score"].(float64); ok {
+						update.VerificationScore = &score
+					}
+					if status, ok := ai["status"].(string); ok && strings.TrimSpace(status) != "" {
+						update.VerificationStatus = status
+					}
+				}
+			}
+		}
+	}
+	update.DeriveVerificationFields()
 
 	if err := c.causeRepo.CreateUpdate(ctx, update); err != nil {
 		return nil, err
@@ -286,4 +468,3 @@ func valueOrDefaultString(v *string, def string) string {
 	}
 	return *v
 }
-

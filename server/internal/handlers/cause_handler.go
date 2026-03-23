@@ -44,6 +44,9 @@ func (c *CauseHandler) RegisterRoutes(r chi.Router) {
 			protected.Post("/cover/upload", c.UploadCoverImage)
 			protected.Post("/products/upload", c.UploadProductImage)
 			protected.Post("/updates/upload/receipt", c.UploadUpdateReceipt)
+			// new {
+			protected.Get("/updates/receipt-status/{id}", c.GetReceiptStatus)
+			// }
 			protected.Post("/{ID}/updates", c.CreateCauseUpdate)
 			protected.Delete("/{ID}", c.DeleteCause)
 		})
@@ -352,6 +355,18 @@ func (c *CauseHandler) UploadUpdateReceipt(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
+	// new {
+	claimedAmountStr := strings.TrimSpace(r.FormValue("claimed_amount"))
+	if claimedAmountStr == "" {
+		http.Error(w, "claimed_amount is required", http.StatusBadRequest)
+		return
+	}
+	claimedAmount, err := strconv.ParseFloat(claimedAmountStr, 64)
+	if err != nil || claimedAmount <= 0 {
+		http.Error(w, "claimed_amount must be a positive number", http.StatusBadRequest)
+		return
+	}
+	// }
 	file, header, err := r.FormFile("file")
 	if err != nil {
 		http.Error(w, "Receipt image required", http.StatusBadRequest)
@@ -407,12 +422,57 @@ func (c *CauseHandler) UploadUpdateReceipt(w http.ResponseWriter, r *http.Reques
 
 	publicPath := filepath.ToSlash(filepath.Join("uploads", "receipts", filename))
 
+	// new {
+	// Persist a DB-backed receipt verification job and trigger AI analysis async.
+	
+	receiptJobID, err := c.causeService.StartReceiptVerificationJob(r.Context(), org.ID, path, claimedAmount)
+	if err != nil {
+		http.Error(w, "Failed to create receipt verification job", http.StatusInternalServerError)
+		return
+	}
+// }
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{
-		"url": "/" + publicPath,
+	// json.NewEncoder(w).Encode(map[string]string{
+	// 	"url": "/" + publicPath,
+	// new {
+	json.NewEncoder(w).Encode(map[string]any{
+		"url":         "/" + publicPath,
+		"receipt_id":  receiptJobID.String(),
+		"status":       "pending",
+		"receipt_score": nil,
+	// }
 	})
 }
+// new {
+func (c *CauseHandler) GetReceiptStatus(w http.ResponseWriter, r *http.Request) {
+	receiptJobID, err := uuid.Parse(chi.URLParam(r, "id"))
+	if err != nil {
+		http.Error(w, "Invalid receipt id", http.StatusBadRequest)
+		return
+	}
 
+	userID, ok := middleware.GetUserIDFromContext(r.Context())
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	org, err := c.authService.GetOrganizationByID(r.Context(), userID)
+	if err != nil || org == nil || org.User.Role != string(models.RoleTypeOrganization) {
+		http.Error(w, "Not authorized", http.StatusUnauthorized)
+		return
+	}
+
+	status, err := c.causeService.GetReceiptVerificationStatus(r.Context(), org.ID, receiptJobID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(status)
+}
+// }
 // CreateCauseUpdate creates a structured engagement/execution update for a cause.
 func (c *CauseHandler) CreateCauseUpdate(w http.ResponseWriter, r *http.Request) {
 	causeID, err := uuid.Parse(chi.URLParam(r, "ID"))
@@ -445,6 +505,14 @@ func (c *CauseHandler) CreateCauseUpdate(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	// Execution updates require a claimed amount (used for receipt verification)
+	if strings.EqualFold(req.UpdateType, "Execution") {
+		if req.ClaimedAmount == nil || *req.ClaimedAmount <= 0 {
+			http.Error(w, "claimed_amount is required for Execution updates", http.StatusBadRequest)
+			return
+		}
+	}
+
 	userID, ok := middleware.GetUserIDFromContext(r.Context())
 	if !ok {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
@@ -467,7 +535,11 @@ func (c *CauseHandler) CreateCauseUpdate(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	update, err := c.causeService.CreateUpdate(r.Context(), causeID, &req)
+	// update, err := c.causeService.CreateUpdate(r.Context(), causeID, &req)
+// new {
+	ctx := context.WithValue(r.Context(), "organizationID", org.ID)
+	update, err := c.causeService.CreateUpdate(ctx, causeID, &req)
+	// }
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return

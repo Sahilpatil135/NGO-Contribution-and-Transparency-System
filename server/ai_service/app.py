@@ -97,13 +97,27 @@ def validate_gst(gst):
 # ─────────────────────────────────────────────
 #  Helper functions for /analyze-receipt
 # ─────────────────────────────────────────────
+def ensure_jpg(path):
+    ext = path.split(".")[-1].lower()
+
+    if ext in ["jfif", "jpeg", "png"]:
+        try:
+            img = Image.open(path).convert("RGB")
+            new_path = path.rsplit(".", 1)[0] + ".jpg"
+            img.save(new_path, "JPEG", quality=90)
+            return new_path
+        except Exception as e:
+            print(f"Conversion error: {e}")
+            return path
+
+    return path
 
 def validate_file(path):
 
     if not os.path.exists(path):
         return False, "file_not_found"
 
-    allowed = ["jpg", "jpeg", "png", "pdf"]
+    allowed = ["jpg", "jpeg", "png", "pdf", "jfif"]
 
     ext = path.split(".")[-1].lower()
     if ext not in allowed:
@@ -618,6 +632,9 @@ def analyze_receipt(data: ReceiptRequest):
 
     # convert pdf if needed
     path = convert_pdf(data.receipt_path)
+
+    # Ensure jpg format 
+    path = ensure_jpg(path)
 
     # preprocessing
     processed = preprocess_receipt(path)

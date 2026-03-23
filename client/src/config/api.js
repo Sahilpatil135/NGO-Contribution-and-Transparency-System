@@ -51,6 +51,11 @@ export const API_ENDPOINTS = {
   CREATE_CAUSE_PROOF_SESSION: `${API_BASE_URL}/api/proof/session/cause`,
   UPLOAD_PROOF_IMAGE: (sessionId) =>
     `${API_BASE_URL}/api/proof/upload/${sessionId}`,
+  // new {
+  // Receipt verification polling (Execution updates)
+  GET_RECEIPT_STATUS: (receiptJobId) =>
+    `${API_BASE_URL}/api/causes/updates/receipt-status/${receiptJobId}`,
+  // }
 };
 
 // API utility functions

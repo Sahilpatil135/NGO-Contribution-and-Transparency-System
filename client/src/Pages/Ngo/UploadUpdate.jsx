@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import { apiRequest, API_ENDPOINTS, API_BASE_URL } from "@/config/api";
 
@@ -20,10 +20,45 @@ export default function UploadUpdate() {
     description: "",
     update_type: "Engagement",
     funding_percentage: "",
+    claimed_amount: "",
   });
 
   const [receiptUploadLoading, setReceiptUploadLoading] = useState(false);
+  // new {
+  // Each receipt has its own verification job started on upload.
+  // { url, receiptJobId, status, receiptScore, errorMessage }
+  // }
   const [receipts, setReceipts] = useState([]);
+  // new {
+  const pollingIntervalsRef = useRef({});
+  const draftKey = `uploadUpdateDraft:${causeID}`;
+  const [draftRestored, setDraftRestored] = useState(false);
+  const saveDraft = (nextForm, nextReceipts) => {
+    try {
+      localStorage.setItem(
+        draftKey,
+        JSON.stringify({
+          form: nextForm,
+          receipts: nextReceipts,
+        })
+      );
+    } catch {
+      // Ignore localStorage write errors (e.g. privacy mode).
+    }
+  };
+
+  const claimedAmountNumber = Number(String(form.claimed_amount ?? "").trim());
+  const claimedAmountValid =
+    Number.isFinite(claimedAmountNumber) && claimedAmountNumber > 0;
+
+  const isReceiptVerificationInProgress =
+    form.update_type === "Execution" &&
+    receipts.length > 0 &&
+    receipts.some((r) => {
+      const s = String(r.status ?? "").toLowerCase();
+      return s === "" || s === "pending" || s === "processing" || s === "error";
+    });
+  // }
 
   useEffect(() => {
     const fetchCause = async () => {
@@ -36,10 +71,166 @@ export default function UploadUpdate() {
     fetchCause();
   }, [causeID]);
 
+  // new {
+  // Restore any saved draft if the user navigated away to proof capture.
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(draftKey);
+      if (!raw) return;
+      const parsed = JSON.parse(raw);
+      if (parsed?.form) {
+        setForm((prev) => ({ ...prev, ...parsed.form }));
+      }
+      if (Array.isArray(parsed?.receipts)) {
+        const normalized = parsed.receipts.map((r) => {
+          if (typeof r === "string") {
+            return {
+              url: r,
+              receiptJobId: null,
+              status: "pending",
+              receiptScore: null,
+              errorMessage: null,
+            };
+          }
+          return r;
+        });
+        setReceipts(normalized);
+      }
+    } catch (err) {
+      // Ignore draft restore errors.
+    }
+    setDraftRestored(true);
+  }, [draftKey]);
+// }
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
+    setForm((prev) => {
+      const next = { ...prev, [name]: value };
+      let nextReceipts = receipts;
+      // Reset execution-only fields when switching away from Execution
+      if (name === "update_type" && value !== "Execution") {
+        next.claimed_amount = "";
+        // new {
+        for (const intervalId of Object.values(pollingIntervalsRef.current)) {
+          clearInterval(intervalId);
+        }
+        pollingIntervalsRef.current = {};
+        // }
+        setReceipts([]);
+        nextReceipts = [];
+      }
+      // Save immediately so draft exists even if we navigate away quickly.
+      saveDraft(next, nextReceipts);
+      return next;
+    });
   };
+
+  // new {
+  // Persist draft so we can return from proof capture without losing input.
+  useEffect(() => {
+    if (!draftRestored) return;
+    try {
+      localStorage.setItem(
+        draftKey,
+        JSON.stringify({
+          form,
+          receipts,
+        })
+      );
+    } catch {
+      // Ignore localStorage write errors (e.g. privacy mode).
+    }
+  }, [draftKey, form, receipts, draftRestored]);
+
+  useEffect(() => {
+    // Cleanup polling intervals when leaving this page.
+    return () => {
+      for (const intervalId of Object.values(pollingIntervalsRef.current)) {
+        clearInterval(intervalId);
+      }
+      pollingIntervalsRef.current = {};
+    };
+  }, []);
+
+  const startPollingReceipt = (receiptJobId) => {
+    if (!receiptJobId) return;
+    if (pollingIntervalsRef.current[receiptJobId]) return;
+
+    let attempts = 0;
+    const maxAttempts = 60; // ~2-3 min hard cap
+
+    pollingIntervalsRef.current[receiptJobId] = setInterval(async () => {
+      attempts += 1;
+
+      try {
+        const res = await apiRequest(
+          API_ENDPOINTS.GET_RECEIPT_STATUS(receiptJobId)
+        );
+        if (!res.success || !res.data) {
+          throw new Error(res.error || "Failed to fetch receipt status");
+        }
+
+        const {
+          status: nextStatus,
+          receipt_score: nextReceiptScore,
+          error_message: nextErrorMessage,
+        } = res.data;
+
+        setReceipts((prev) =>
+          prev.map((r) => {
+            if (r.receiptJobId !== receiptJobId) return r;
+            return {
+              ...r,
+              status: nextStatus,
+              receiptScore: nextReceiptScore ?? null,
+              errorMessage: nextErrorMessage ?? null,
+            };
+          })
+        );
+
+        const s = String(nextStatus ?? "").toLowerCase();
+        if (
+          s === "verified" ||
+          s === "review" ||
+          s === "rejected" ||
+          s === "error"
+        ) {
+          clearInterval(pollingIntervalsRef.current[receiptJobId]);
+          delete pollingIntervalsRef.current[receiptJobId];
+        }
+      } catch (err) {
+        if (attempts >= maxAttempts) {
+          setReceipts((prev) =>
+            prev.map((r) => {
+              if (r.receiptJobId !== receiptJobId) return r;
+              return {
+                ...r,
+                status: "error",
+                errorMessage: err.message || "Receipt verification failed",
+              };
+            })
+          );
+          clearInterval(pollingIntervalsRef.current[receiptJobId]);
+          delete pollingIntervalsRef.current[receiptJobId];
+        }
+      }
+    }, 2500);
+  };
+
+  // Resume polling for any pending receipts (e.g. after returning from UploadProof).
+  useEffect(() => {
+    if (form.update_type !== "Execution") return;
+    receipts.forEach((r) => {
+      const s = String(r.status ?? "").toLowerCase();
+      if (
+        r.receiptJobId &&
+        (s === "" || s === "pending" || s === "processing")
+      ) {
+        startPollingReceipt(r.receiptJobId);
+      }
+    });
+  }, [receipts, form.update_type]);
+// }
 
   const handleReceiptChange = async (e) => {
     const file = e.target.files?.[0];
@@ -66,10 +257,17 @@ export default function UploadUpdate() {
       setError("You must be logged in as an NGO to upload receipts.");
       return;
     }
-
+    // new {
+    if (!claimedAmountValid) {
+      setError("Enter a valid claimed amount before uploading receipts.");
+      return;
+    }
+    // }
     const formData = new FormData();
     formData.append("file", file);
-
+    // new {
+    formData.append("claimed_amount", String(claimedAmountNumber));
+    // }
     setReceiptUploadLoading(true);
     try {
       const response = await fetch(API_ENDPOINTS.UPLOAD_UPDATE_RECEIPT, {
@@ -86,11 +284,29 @@ export default function UploadUpdate() {
       }
 
       const data = await response.json();
-      if (!data.url) {
+      // if (!data.url) {
+      // new {
+      if (!data.url || !data.receipt_id) {  //}
         throw new Error("Upload did not return receipt URL");
       }
 
-      setReceipts((prev) => [...prev, data.url]);
+      // setReceipts((prev) => [...prev, data.url]);
+      // new {
+      const receiptJobId = data.receipt_id;
+      const newReceipt = {
+        url: data.url,
+        receiptJobId,
+        status: data.status || "pending",
+        receiptScore: data.receipt_score ?? null,
+        errorMessage: data.error_message ?? null,
+      };
+      setReceipts((prev) => {
+        const nextReceipts = [...prev, newReceipt];
+        saveDraft(form, nextReceipts);
+        return nextReceipts;
+      });
+      startPollingReceipt(receiptJobId);
+      // }
     } catch (err) {
       console.error(err);
       setError(err.message || "Failed to upload receipt");
@@ -101,7 +317,19 @@ export default function UploadUpdate() {
   };
 
   const handleRemoveReceipt = (indexToRemove) => {
-    setReceipts((prev) => prev.filter((_, i) => i !== indexToRemove));
+    // setReceipts((prev) => prev.filter((_, i) => i !== indexToRemove));
+    // new {
+    setReceipts((prev) => {
+      const removed = prev[indexToRemove];
+      if (removed?.receiptJobId && pollingIntervalsRef.current[removed.receiptJobId]) {
+        clearInterval(pollingIntervalsRef.current[removed.receiptJobId]);
+        delete pollingIntervalsRef.current[removed.receiptJobId];
+      }
+      const nextReceipts = prev.filter((_, i) => i !== indexToRemove);
+      saveDraft(form, nextReceipts);
+      return nextReceipts;
+    });
+    // }
   };
 
   const handleSubmit = async (e) => {
@@ -128,8 +356,51 @@ export default function UploadUpdate() {
       }
     }
 
+    if (form.update_type === "Execution") {
+      const raw = String(form.claimed_amount ?? "").trim();
+      if (!raw) {
+        setError("Claimed amount is required for Execution updates.");
+        return;
+      }
+      const amount = Number(raw);
+      if (!Number.isFinite(amount) || amount <= 0) {
+        setError("Claimed amount must be a positive number.");
+        return;
+      }
+      payload.claimed_amount = amount;
+    }
+
     if (form.update_type === "Execution" && receipts.length > 0) {
-      payload.receipt_urls = receipts;
+      // payload.receipt_urls = receipts;
+      // new {
+      const missingJobId = receipts.some((r) => !r.receiptJobId);
+      if (missingJobId) {
+        setError(
+          "Receipt verification is required. Please remove and re-upload receipts."
+        );
+        return;
+      }
+
+      const pending = receipts.filter((r) => {
+        const s = String(r.status ?? "").toLowerCase();
+        return s === "" || s === "pending" || s === "processing";
+      });
+      if (pending.length > 0) {
+        setError("Please wait until all receipts are verified before posting.");
+        return;
+      }
+
+      const errored = receipts.filter((r) =>
+        String(r.status ?? "").toLowerCase() === "error"
+      );
+      if (errored.length > 0) {
+        setError("Receipt verification failed. Please remove and re-upload receipts.");
+        return;
+      }
+
+      payload.receipt_urls = receipts.map((r) => r.url);
+      payload.receipt_job_ids = receipts.map((r) => r.receiptJobId);
+      // }
     }
 
     setSubmitting(true);
@@ -144,6 +415,13 @@ export default function UploadUpdate() {
       return;
     }
 
+    // new {
+    try {
+      localStorage.removeItem(draftKey);
+    } catch {
+      // ignore
+    }
+    // }
     navigate(`/campaign/${causeID}`);
   };
 
@@ -252,6 +530,29 @@ export default function UploadUpdate() {
         {form.update_type === "Execution" && (
           <div>
             <label className="block text-sm font-medium mb-1">
+              Claimed Amount (Execution updates only){" "}
+              <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="number"
+              name="claimed_amount"
+              value={form.claimed_amount}
+              onChange={handleChange}
+              onWheel={(e) => e.target.blur()}
+              min="0"
+              step="0.01"
+              className="w-full border rounded-md p-2 focus:outline-none focus:border-[#ff6200] placeholder-gray-500"
+              placeholder="e.g. 2500.00"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              This will be used to verify receipts against the claimed spend.
+            </p>
+          </div>
+        )}
+
+        {form.update_type === "Execution" && (
+          <div>
+            <label className="block text-sm font-medium mb-1">
               Receipts (Execution updates only)
             </label>
             {/* <p className="text-xs text-gray-500 mb-2">
@@ -279,9 +580,19 @@ export default function UploadUpdate() {
               type="file"
               accept="image/*"
               onChange={handleReceiptChange}
-              disabled={form.update_type !== "Execution"}
+              // disabled={form.update_type !== "Execution"}
+              // new {
+              disabled={form.update_type !== "Execution" || !claimedAmountValid}
+              // }
               className="w-full border rounded-md p-2 focus:outline-none focus:border-[#ff6200] cursor-pointer"
             />
+            {/* new  */}
+            {form.update_type === "Execution" && !claimedAmountValid && (
+              <p className="text-xs text-red-500 mt-1">
+                Enter a valid claimed amount to upload receipts.
+              </p>
+            )}
+            {/* } */}
             {receiptUploadLoading && (
               <p className="text-xs text-gray-500 mt-1">
                 Uploading receipt...
@@ -289,18 +600,66 @@ export default function UploadUpdate() {
             )}
             {receipts.length > 0 && (
               <div className="mt-3 grid grid-cols-2 md:grid-cols-3 gap-3">
-                {receipts.map((url, idx) => {
+                {/* {receipts.map((url, idx) => {
                   const src = url.startsWith("http")
                     ? url
-                    : `${API_BASE_URL}${url}`;
+                    : `${API_BASE_URL}${url}`; */}
+                {/* new { */}
+                {receipts.map((r, idx) => {
+                  const src = r.url.startsWith("http")
+                    ? r.url
+                    : `${API_BASE_URL}${r.url}`;
+                  const s = String(r.status ?? "").toLowerCase();
+                  // }
                   return (
                     <div key={idx} className="relative group">
                       <img
-                        // key={idx}
                         src={src}
                         alt={`Receipt ${idx + 1}`}
                         className="w-full h-24 object-cover rounded border"
                       />
+                      {/* new { */}
+                      <div className="mt-2 text-xs">
+                        <p className="font-medium text-gray-800">Verification:</p>
+                        {s === "verified" && (
+                          <span className="text-green-700 font-semibold">
+                            Verified
+                          </span>
+                        )}
+                        {s === "review" && (
+                          <span className="text-yellow-700 font-semibold">
+                            Needs Review
+                          </span>
+                        )}
+                        {s === "rejected" && (
+                          <span className="text-red-700 font-semibold">
+                            Rejected
+                          </span>
+                        )}
+                        {(s === "" || s === "pending" || s === "processing") && (
+                          <span className="text-gray-600 font-semibold">
+                            Pending...
+                          </span>
+                        )}
+                        {s === "error" && (
+                          <span className="text-red-700 font-semibold">
+                            Error
+                          </span>
+                        )}
+
+                        {r.receiptScore != null && (
+                          <p className="text-gray-600 mt-1">
+                            Score:{" "}
+                            {Number(r.receiptScore).toFixed(2)}
+                          </p>
+                        )}
+                        {r.errorMessage && (
+                          <p className="text-red-600 mt-1">
+                            {r.errorMessage}
+                          </p>
+                        )}
+                      </div>
+                      {/* } */}
                       {/* <span className="absolute bottom-1 left-1 bg-white text-[10px] px-1 rounded">
                         IMG
                       </span>
@@ -350,10 +709,20 @@ export default function UploadUpdate() {
           </button>
           <button
             type="submit"
-            disabled={submitting}
+            // disabled={submitting}
+            // new {
+            disabled={submitting || isReceiptVerificationInProgress}
+            // }
             className="px-6 py-2 rounded-lg bg-[#ff6200] hover:bg-[#e45a00] text-white text-sm font-semibold disabled:opacity-60 cursor-pointer"
           >
-            {submitting ? "Posting..." : "Post Update"}
+            {/* {submitting ? "Posting..." : "Post Update"} */}
+            {/* new { */}
+            {submitting
+              ? "Posting..."
+              : isReceiptVerificationInProgress
+                ? "Verifying receipts..."
+                : "Post Update"}
+            {/* } */}
           </button>
         </div>
       </form>

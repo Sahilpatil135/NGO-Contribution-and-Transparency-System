@@ -116,3 +116,44 @@ ALTER TABLE proof_sessions
 ADD COLUMN total_images INTEGER DEFAULT 0,
 ADD COLUMN verified_images INTEGER DEFAULT 0,
 ADD COLUMN session_score NUMERIC(5,2);
+
+-- Added on 18/3/2026
+CREATE TABLE disbursements (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    cause_id UUID REFERENCES causes(id) ON DELETE CASCADE,
+
+    amount NUMERIC(12,2) NOT NULL,
+    milestone_percentage INTEGER, -- e.g. 20, 40, etc.
+
+    tx_hash TEXT, -- blockchain transaction reference
+
+    released_at TIMESTAMP DEFAULT NOW()
+);
+
+ALTER TABLE cause_updates DROP COLUMN is_verified;
+
+ALTER TABLE cause_updates
+ADD COLUMN claimed_amount NUMERIC(12,2),
+ADD COLUMN verification_score NUMERIC(5,2),
+ADD COLUMN verification_status TEXT DEFAULT 'pending';
+
+ALTER TABLE proof_images
+RENAME COLUMN verification_score TO verification_status;
+
+-- new 
+-- Added on 20/3/2026
+-- Async receipt verification jobs for Execution updates.
+CREATE TABLE receipt_verification_jobs (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+    receipt_path TEXT NOT NULL,
+    claimed_amount NUMERIC(12,2) NOT NULL,
+    status TEXT NOT NULL DEFAULT 'pending', -- pending | verified | review | rejected | error
+    receipt_score NUMERIC(5,2),
+    error_message TEXT,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX receipt_verification_jobs_org_status_idx
+ON receipt_verification_jobs (organization_id, status);

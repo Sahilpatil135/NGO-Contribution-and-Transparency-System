@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import QRCode from "react-qr-code";
 
 import { apiRequest, API_ENDPOINTS, WS_BASE_URL } from '@/config/api';
@@ -7,6 +7,9 @@ import { ENV } from '@/config/environment';
 
 export default function UploadProof() {
   const { causeID } = useParams();
+  // new {
+  const navigate = useNavigate();
+  // }
   const [cause, setCause] = useState({});
   const [session, setSession] = useState(null);
   const [captures, setCaptures] = useState([]);
@@ -214,6 +217,17 @@ export default function UploadProof() {
           </div>
         )}
       </div>
+       {/* new */}
+      <div className="mt-8 flex justify-end">
+        <button
+          type="button"
+          onClick={() => navigate(`/campaign/${causeID}/update`)}
+          className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 text-sm cursor-pointer bg-white hover:bg-gray-50"
+        >
+          Back to Post Update
+        </button>
+      </div>
+      {/* } */}
     </div>
   );
 }

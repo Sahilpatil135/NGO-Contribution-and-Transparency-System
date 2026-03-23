@@ -34,6 +34,14 @@ type CauseRepository interface {
 	AddUpdateMedia(ctx context.Context, media *models.UpdateMedia) error
 	GetMediaByUpdateIDs(ctx context.Context, updateIDs []uuid.UUID) (map[uuid.UUID][]*models.UpdateMedia, error)
 
+	// new {
+	// Receipt verification jobs (async AI processing)
+	CreateReceiptVerificationJob(ctx context.Context, job *models.ReceiptVerificationJob) error
+	GetReceiptVerificationJob(ctx context.Context, organizationID uuid.UUID, receiptJobID uuid.UUID) (*models.ReceiptVerificationJob, error)
+	UpdateReceiptVerificationJobResult(ctx context.Context, organizationID uuid.UUID, receiptJobID uuid.UUID, status string, receiptScore *float64, errorMessage *string) error
+	GetReceiptVerificationJobsByIDs(ctx context.Context, organizationID uuid.UUID, receiptJobIDs []uuid.UUID) ([]*models.ReceiptVerificationJob, error)
+	// }
+
 	// Update(ctx context.Context, cause *models.Cause) error
 	Delete(ctx context.Context, id uuid.UUID) error
 
@@ -327,7 +335,7 @@ func (c *causeRepository) GetProductsByCauseID(ctx context.Context, causeID uuid
 
 func (c *causeRepository) GetUpdatesByCauseID(ctx context.Context, causeID uuid.UUID) ([]*models.CauseUpdate, error) {
 	query := `
-		SELECT id, cause_id, title, description, update_type, funding_percentage, is_verified, created_at
+		SELECT id, cause_id, title, description, update_type, funding_percentage, claimed_amount, verification_score, verification_status, created_at
 		FROM cause_updates
 		WHERE cause_id = $1
 		ORDER BY created_at DESC
@@ -341,6 +349,9 @@ func (c *causeRepository) GetUpdatesByCauseID(ctx context.Context, causeID uuid.
 	var updates []*models.CauseUpdate
 	for rows.Next() {
 		u := &models.CauseUpdate{}
+		var claimed sql.NullFloat64
+		var vScore sql.NullFloat64
+		var vStatus sql.NullString
 		if err := rows.Scan(
 			&u.ID,
 			&u.CauseID,
@@ -348,11 +359,25 @@ func (c *causeRepository) GetUpdatesByCauseID(ctx context.Context, causeID uuid.
 			&u.Description,
 			&u.UpdateType,
 			&u.FundingPercentage,
-			&u.IsVerified,
+			&claimed,
+			&vScore,
+			&vStatus,
 			&u.CreatedAt,
 		); err != nil {
 			return nil, err
 		}
+		if claimed.Valid {
+			v := claimed.Float64
+			u.ClaimedAmount = &v
+		}
+		if vScore.Valid {
+			v := vScore.Float64
+			u.VerificationScore = &v
+		}
+		if vStatus.Valid {
+			u.VerificationStatus = vStatus.String
+		}
+		u.DeriveVerificationFields()
 		updates = append(updates, u)
 	}
 
@@ -380,8 +405,9 @@ func (c *causeRepository) GetUpdatesByCauseID(ctx context.Context, causeID uuid.
 func (c *causeRepository) CreateUpdate(ctx context.Context, update *models.CauseUpdate) error {
 	query := `
 		INSERT INTO cause_updates (
-			id, cause_id, title, description, update_type, funding_percentage, is_verified, created_at
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+			id, cause_id, title, description, update_type, funding_percentage,
+			claimed_amount, verification_score, verification_status, created_at
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 	`
 
 	_, err := c.db.ExecContext(ctx, query,
@@ -391,7 +417,9 @@ func (c *causeRepository) CreateUpdate(ctx context.Context, update *models.Cause
 		update.Description,
 		update.UpdateType,
 		update.FundingPercentage,
-		update.IsVerified,
+		update.ClaimedAmount,
+		update.VerificationScore,
+		update.VerificationStatus,
 		update.CreatedAt,
 	)
 	return err
@@ -455,6 +483,169 @@ func (c *causeRepository) GetMediaByUpdateIDs(ctx context.Context, updateIDs []u
 	return result, nil
 }
 
+// new {
+func (c *causeRepository) CreateReceiptVerificationJob(ctx context.Context, job *models.ReceiptVerificationJob) error {
+	query := `
+		INSERT INTO receipt_verification_jobs (
+			id, organization_id, receipt_path, claimed_amount, status
+		) VALUES ($1, $2, $3, $4, $5)
+	`
+
+	_, err := c.db.ExecContext(ctx, query,
+		job.ID,
+		job.OrganizationID,
+		job.ReceiptPath,
+		job.ClaimedAmount,
+		job.Status,
+	)
+
+	return err
+}
+
+func (c *causeRepository) GetReceiptVerificationJob(ctx context.Context, organizationID uuid.UUID, receiptJobID uuid.UUID) (*models.ReceiptVerificationJob, error) {
+	query := `
+		SELECT
+			id, organization_id, receipt_path, claimed_amount,
+			status, receipt_score, error_message, created_at, updated_at
+		FROM receipt_verification_jobs
+		WHERE id = $1 AND organization_id = $2
+	`
+
+	row := c.db.QueryRowContext(ctx, query, receiptJobID, organizationID)
+
+	job := &models.ReceiptVerificationJob{}
+	var receiptScore sql.NullFloat64
+	var errMsg sql.NullString
+	var claimedAmount float64
+
+	if err := row.Scan(
+		&job.ID,
+		&job.OrganizationID,
+		&job.ReceiptPath,
+		&claimedAmount,
+		&job.Status,
+		&receiptScore,
+		&errMsg,
+		&job.CreatedAt,
+		&job.UpdatedAt,
+	); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, fmt.Errorf("receipt verification job not found")
+		}
+		return nil, err
+	}
+
+	job.ClaimedAmount = claimedAmount
+	if receiptScore.Valid {
+		v := receiptScore.Float64
+		job.ReceiptScore = &v
+	}
+	if errMsg.Valid {
+		v := errMsg.String
+		job.ErrorMessage = &v
+	}
+
+	return job, nil
+}
+
+func (c *causeRepository) UpdateReceiptVerificationJobResult(
+	ctx context.Context,
+	organizationID uuid.UUID,
+	receiptJobID uuid.UUID,
+	status string,
+	receiptScore *float64,
+	errorMessage *string,
+) error {
+	query := `
+		UPDATE receipt_verification_jobs
+		SET
+			status = $1,
+			receipt_score = $2,
+			error_message = $3,
+			updated_at = NOW()
+		WHERE id = $4 AND organization_id = $5
+	`
+
+	_, err := c.db.ExecContext(ctx, query,
+		status,
+		receiptScore,
+		errorMessage,
+		receiptJobID,
+		organizationID,
+	)
+
+	return err
+}
+
+func (c *causeRepository) GetReceiptVerificationJobsByIDs(
+	ctx context.Context,
+	organizationID uuid.UUID,
+	receiptJobIDs []uuid.UUID,
+) ([]*models.ReceiptVerificationJob, error) {
+	if len(receiptJobIDs) == 0 {
+		return []*models.ReceiptVerificationJob{}, nil
+	}
+
+	args := make([]interface{}, len(receiptJobIDs))
+	placeholders := make([]string, len(receiptJobIDs))
+	for i, id := range receiptJobIDs {
+		args[i] = id
+		placeholders[i] = fmt.Sprintf("$%d", i+1)
+	}
+
+	query := fmt.Sprintf(`
+		SELECT
+			id, organization_id, receipt_path, claimed_amount,
+			status, receipt_score, error_message, created_at, updated_at
+		FROM receipt_verification_jobs
+		WHERE organization_id = $%d AND id IN (%s)
+	`, len(receiptJobIDs)+1, strings.Join(placeholders, ","))
+
+	args = append(args, organizationID)
+
+	rows, err := c.db.QueryContext(ctx, query, args...)
+	if err != nil && err != sql.ErrNoRows {
+		return nil, err
+	}
+	defer rows.Close()
+
+	jobs := make([]*models.ReceiptVerificationJob, 0, len(receiptJobIDs))
+	for rows.Next() {
+		job := &models.ReceiptVerificationJob{}
+		var receiptScore sql.NullFloat64
+		var errMsg sql.NullString
+		var claimedAmount float64
+
+		if err := rows.Scan(
+			&job.ID,
+			&job.OrganizationID,
+			&job.ReceiptPath,
+			&claimedAmount,
+			&job.Status,
+			&receiptScore,
+			&errMsg,
+			&job.CreatedAt,
+			&job.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+
+		job.ClaimedAmount = claimedAmount
+		if receiptScore.Valid {
+			v := receiptScore.Float64
+			job.ReceiptScore = &v
+		}
+		if errMsg.Valid {
+			v := errMsg.String
+			job.ErrorMessage = &v
+		}
+
+		jobs = append(jobs, job)
+	}
+
+	return jobs, nil
+}
+// }
 func (c *causeRepository) CreateProduct(ctx context.Context, product *models.CauseProduct) error {
 	query := `
 		INSERT INTO cause_products (
