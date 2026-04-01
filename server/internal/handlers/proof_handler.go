@@ -60,6 +60,7 @@ func (h *ProofHandler) RegisterRoutes(r chi.Router) {
 		})
 
 		r.Post("/upload/{sessionID}", h.UploadProofImage)
+		r.Get("/sessions/{sessionID}/images", h.GetProofImagesBySession)
 	})
 
 	r.Get("/ws/proof/{sessionID}", h.ProofWebSocket)
@@ -239,10 +240,15 @@ func (h *ProofHandler) UploadProofImage(w http.ResponseWriter, r *http.Request) 
 			aiResult, _ := services.CallAIService(path, cause.Title)
 			aiStatus := "unknown"
 			flags := []string{}
+			var finalScore *float64
 
 			if aiResult != nil {
 				if status, ok := aiResult["validation_status"].(string); ok {
 					aiStatus = status
+				}
+
+				if fs, ok := aiResult["final_score"].(float64); ok {
+					finalScore = &fs
 				}
 
 				if flagsInterface, ok := aiResult["flags"].([]interface{}); ok {
@@ -275,6 +281,15 @@ func (h *ProofHandler) UploadProofImage(w http.ResponseWriter, r *http.Request) 
 			}
 			if img != nil {
 				resp.Score = img.MetadataScore
+				// Persist AI verification + media path so the NGO can fetch them later.
+				validationStatus := aiStatus
+				_ = h.proofService.UpdateProofAIResultsAndMedia(
+					r.Context(),
+					img.ID,
+					relativePath,
+					finalScore,
+					&validationStatus,
+				)
 			}
 			if isDup {
 				resp.Score = 0
@@ -309,4 +324,61 @@ func (h *ProofHandler) emitToSession(sessionID string, payload interface{}) {
 	for _, conn := range wsClients[sessionID] {
 		_ = conn.WriteJSON(payload)
 	}
+}
+
+// GetProofImagesBySession returns all proof images stored for a given DB-backed proof session.
+// This is used to show proof-of-work results on the UploadUpdate page (and later in campaign updates).
+func (h *ProofHandler) GetProofImagesBySession(w http.ResponseWriter, r *http.Request) {
+	sessionIDStr := chi.URLParam(r, "sessionID")
+	sessionIDParsed, err := uuid.Parse(sessionIDStr)
+	if err != nil {
+		http.Error(w, "Invalid session id", http.StatusBadRequest)
+		return
+	}
+
+	imgs, err := h.proofService.GetProofImagesBySessionID(r.Context(), sessionIDParsed)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	type ProofImageItem struct {
+		Image     string    `json:"image"`
+		Lat       *float64  `json:"lat"`
+		Lng       *float64  `json:"lng"`
+		Timestamp *time.Time `json:"timestamp"`
+		AIStatus  string    `json:"aiStatus"`
+		Flags     []string  `json:"flags,omitempty"`
+		Score     *int      `json:"score,omitempty"`
+	}
+
+	out := make([]ProofImageItem, 0, len(imgs))
+	for _, img := range imgs {
+		if img == nil {
+			continue
+		}
+		// We store the relative file path in ipfs_cid for now (used as "media path" in UI).
+		mediaPath := ""
+		if img.IPFSCID != nil {
+			mediaPath = *img.IPFSCID
+		}
+
+		aiStatus := "unknown"
+		if img.VerificationStatus != nil && strings.TrimSpace(*img.VerificationStatus) != "" {
+			aiStatus = *img.VerificationStatus
+		}
+
+		out = append(out, ProofImageItem{
+			Image:     mediaPath,
+			Lat:       img.Latitude,
+			Lng:       img.Longitude,
+			Timestamp: img.Timestamp,
+			AIStatus:  aiStatus,
+			Flags:     []string{},
+			Score:     &img.MetadataScore,
+		})
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(out)
 }

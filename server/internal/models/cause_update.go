@@ -18,6 +18,7 @@ type CauseUpdate struct {
 	ClaimedAmount      *float64       `json:"claimed_amount,omitempty" db:"claimed_amount"`
 	VerificationScore  *float64       `json:"verification_score,omitempty" db:"verification_score"`
 	VerificationStatus string         `json:"verification_status,omitempty" db:"verification_status"`
+	ProofSessionID     *uuid.UUID    `json:"proof_session_id,omitempty" db:"proof_session_id"`
 	// Backward-compat for existing frontend (CampaignPage.jsx) expecting is_verified.
 	// This is derived from VerificationStatus and is not stored in DB.
 	IsVerified bool `json:"is_verified"`
@@ -36,6 +37,7 @@ type CreateCauseUpdateRequest struct {
 	ReceiptJobIDs    []string `json:"receipt_job_ids,omitempty"`
 	// }
 	ClaimedAmount     *float64 `json:"claimed_amount,omitempty"`
+	ProofSessionID   *uuid.UUID `json:"proof_session_id,omitempty"`
 }
 
 func (u *CauseUpdate) DeriveVerificationFields() {

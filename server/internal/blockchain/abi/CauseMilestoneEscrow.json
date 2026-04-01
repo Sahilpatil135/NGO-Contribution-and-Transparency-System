@@ -1,0 +1,61 @@
+[
+  {
+    "inputs": [],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "inputs": [
+      {"internalType": "bytes16", "name": "causeId", "type": "bytes16"}
+    ],
+    "name": "donate",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {"internalType": "bytes16", "name": "causeId", "type": "bytes16"}
+    ],
+    "name": "getCause",
+    "outputs": [
+      {"internalType": "uint256", "name": "goal", "type": "uint256"},
+      {"internalType": "uint256", "name": "collected", "type": "uint256"},
+      {"internalType": "uint256", "name": "released", "type": "uint256"},
+      {"internalType": "uint256", "name": "milestonesPaid", "type": "uint256"},
+      {"internalType": "address", "name": "beneficiary", "type": "address"},
+      {"internalType": "bool", "name": "exists", "type": "bool"}
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {"internalType": "bytes16", "name": "causeId", "type": "bytes16"},
+      {"internalType": "uint256", "name": "goal", "type": "uint256"},
+      {"internalType": "address", "name": "beneficiary", "type": "address"}
+    ],
+    "name": "registerCause",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {"internalType": "address", "name": "newOwner", "type": "address"}
+    ],
+    "name": "transferOwnership",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "owner",
+    "outputs": [
+      {"internalType": "address", "name": "", "type": "address"}
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  }
+]

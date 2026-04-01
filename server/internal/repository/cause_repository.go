@@ -335,7 +335,7 @@ func (c *causeRepository) GetProductsByCauseID(ctx context.Context, causeID uuid
 
 func (c *causeRepository) GetUpdatesByCauseID(ctx context.Context, causeID uuid.UUID) ([]*models.CauseUpdate, error) {
 	query := `
-		SELECT id, cause_id, title, description, update_type, funding_percentage, claimed_amount, verification_score, verification_status, created_at
+		SELECT id, cause_id, title, description, update_type, funding_percentage, claimed_amount, verification_score, verification_status, proof_session_id, created_at
 		FROM cause_updates
 		WHERE cause_id = $1
 		ORDER BY created_at DESC
@@ -352,6 +352,7 @@ func (c *causeRepository) GetUpdatesByCauseID(ctx context.Context, causeID uuid.
 		var claimed sql.NullFloat64
 		var vScore sql.NullFloat64
 		var vStatus sql.NullString
+		var proofSessionID sql.NullString
 		if err := rows.Scan(
 			&u.ID,
 			&u.CauseID,
@@ -362,6 +363,7 @@ func (c *causeRepository) GetUpdatesByCauseID(ctx context.Context, causeID uuid.
 			&claimed,
 			&vScore,
 			&vStatus,
+			&proofSessionID,
 			&u.CreatedAt,
 		); err != nil {
 			return nil, err
@@ -376,6 +378,11 @@ func (c *causeRepository) GetUpdatesByCauseID(ctx context.Context, causeID uuid.
 		}
 		if vStatus.Valid {
 			u.VerificationStatus = vStatus.String
+		}
+		if proofSessionID.Valid && strings.TrimSpace(proofSessionID.String) != "" {
+			if id, err := uuid.Parse(proofSessionID.String); err == nil {
+				u.ProofSessionID = &id
+			}
 		}
 		u.DeriveVerificationFields()
 		updates = append(updates, u)
@@ -403,11 +410,16 @@ func (c *causeRepository) GetUpdatesByCauseID(ctx context.Context, causeID uuid.
 }
 
 func (c *causeRepository) CreateUpdate(ctx context.Context, update *models.CauseUpdate) error {
+	var proofSessionArg any = nil
+	if update.ProofSessionID != nil {
+		proofSessionArg = *update.ProofSessionID
+	}
+
 	query := `
 		INSERT INTO cause_updates (
 			id, cause_id, title, description, update_type, funding_percentage,
-			claimed_amount, verification_score, verification_status, created_at
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+			claimed_amount, verification_score, verification_status, proof_session_id, created_at
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
 	`
 
 	_, err := c.db.ExecContext(ctx, query,
@@ -420,6 +432,7 @@ func (c *causeRepository) CreateUpdate(ctx context.Context, update *models.Cause
 		update.ClaimedAmount,
 		update.VerificationScore,
 		update.VerificationStatus,
+		proofSessionArg,
 		update.CreatedAt,
 	)
 	return err

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import img1 from "../../public/domains/domain_example.png";
 import { Link, useParams } from "react-router-dom";
 import { apiRequest, API_ENDPOINTS, API_BASE_URL } from "../config/api";
@@ -32,6 +32,9 @@ const CampaignPage = () => {
   const [reviewsSubmitting, setReviewsSubmitting] = useState(false);
   const [canReview, setCanReview] = useState(false);
   const [reviewText, setReviewText] = useState("");
+  const [proofsBySession, setProofsBySession] = useState({});
+  const [proofsLoadingBySession, setProofsLoadingBySession] = useState({});
+  const proofsFetchedRef = useRef(new Set());
 
   useEffect(() => {
     const fetchData = async () => {
@@ -172,6 +175,63 @@ const CampaignPage = () => {
       return "bg-amber-100 text-amber-700";
     return "bg-red-100 text-red-700";
   };
+
+  const getProofStatusStyle = (status) => {
+    const s = String(status ?? "").toLowerCase();
+    if (s === "verified") return "bg-green-100 text-green-700";
+    if (s === "review") return "bg-amber-100 text-amber-700";
+    if (s === "rejected") return "bg-red-100 text-red-700";
+    return "bg-gray-100 text-gray-700";
+  };
+
+  // Fetch proof-of-work images for execution updates (using stored proof_session_id).
+  useEffect(() => {
+    const updates = Array.isArray(cause?.updates) ? cause.updates : [];
+    const sessionIds = Array.from(
+      new Set(
+        updates
+          .map((u) => u?.proof_session_id)
+          .filter((id) => id)
+          .map((id) => String(id))
+      )
+    );
+
+    const toFetch = sessionIds.filter(
+      (id) => !proofsFetchedRef.current.has(id)
+    );
+    if (toFetch.length === 0) return;
+
+    toFetch.forEach((id) => proofsFetchedRef.current.add(id));
+
+    const fetchProofs = async () => {
+      // Mark loading up-front so the UI can show placeholders.
+      setProofsLoadingBySession((prev) => {
+        const next = { ...prev };
+        toFetch.forEach((id) => (next[id] = true));
+        return next;
+      });
+
+      await Promise.all(
+        toFetch.map(async (sessionId) => {
+          const res = await apiRequest(
+            API_ENDPOINTS.GET_PROOF_IMAGES_BY_SESSION(sessionId)
+          );
+          if (res.success) {
+            setProofsBySession((prev) => ({
+              ...prev,
+              [sessionId]: Array.isArray(res.data) ? res.data : [],
+            }));
+          }
+          setProofsLoadingBySession((prev) => ({
+            ...prev,
+            [sessionId]: false,
+          }));
+        })
+      );
+    };
+
+    fetchProofs();
+  }, [cause?.updates]);
 
   const canDonate = fundingStatus !== "Fully Funded" && fundingStatus !== "Closed";
 
@@ -495,6 +555,13 @@ const CampaignPage = () => {
                       Array.isArray(u.media) && u.media.length > 0
                         ? u.media.filter((m) => m.media_type === "receipt")
                         : [];
+                    const proofSessionId = u?.proof_session_id
+                      ? String(u.proof_session_id)
+                      : null;
+                    const proofs =
+                      proofSessionId && proofsBySession[proofSessionId]
+                        ? proofsBySession[proofSessionId]
+                        : [];
                     console.log(receipts);
                     console.log(u);
                     return (
@@ -603,6 +670,82 @@ const CampaignPage = () => {
                                 );
                               })}
                             </div>
+                          </div>
+                        )}
+
+                        {u.update_type === "Execution" && proofSessionId && (
+                          <div className="mt-3">
+                            <p className="text-sm font-semibold text-gray-800 mb-2">
+                              Proof of Work
+                            </p>
+
+                            {proofsLoadingBySession[proofSessionId] ? (
+                              <p className="text-xs text-gray-500">
+                                Loading proofs...
+                              </p>
+                            ) : proofs.length > 0 ? (
+                              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                                {proofs.map((p, idx) => {
+                                  const src = p?.image?.startsWith("http")
+                                    ? p.image
+                                    : p?.image
+                                      ? `${API_BASE_URL}/uploads/${p.image}`
+                                      : null;
+                                  console.log("proofs data", p);
+                                  return (
+                                    <div
+                                      key={p?.image ? p.image : idx}
+                                      onClick={() => src && setSelectedImage(src)}
+                                      className="relative group border rounded-lg overflow-hidden cursor-pointer bg-white"
+                                    >
+                                      {src ? (
+                                        <img
+                                          src={src}
+                                          alt="Proof"
+                                          className="w-full h-28 object-cover transition-transform duration-200 group-hover:scale-105"
+                                        />
+                                      ) : (
+                                        <div className="w-full h-28 bg-gray-100 flex items-center justify-center text-xs text-gray-400">
+                                          Image not found
+                                        </div>
+                                      )}
+
+
+                                      <div className="flex mb-1">
+                                        <div className="p-2">
+                                          <p className="text-sm text-gray-500">
+                                            AI Status
+                                          </p>
+                                          <span
+                                            className={`inline-block mt-1 px-2 py-0.5 rounded text-sm font-semibold ${getProofStatusStyle(
+                                              p.aiStatus
+                                            )}`}
+                                          >
+                                            {p.aiStatus || "unknown"}
+                                          </span>
+                                        </div>
+                                        <div className="p-2">
+                                          <p className="text-sm text-gray-500">
+                                            Score
+                                          </p>
+                                          <span
+                                            className={`inline-block mt-1 px-2 py-0.5 rounded text-sm font-semibold ${getScoreStyle(
+                                              p.score
+                                            )}`}
+                                          >
+                                            {p.score || "unknown"}
+                                          </span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            ) : (
+                              <p className="text-xs text-gray-500">
+                                Proofs not found for this session.
+                              </p>
+                            )}
                           </div>
                         )}
                       </div>
