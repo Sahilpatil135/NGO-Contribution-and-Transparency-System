@@ -18,6 +18,8 @@ import (
 
 type CauseService interface {
 	Create(ctx context.Context, req *models.CreateCauseRequest) (*models.Cause, error)
+	CreateCauseBlood(ctx context.Context, userID uuid.UUID, req *models.CreateCauseBloodRequest) (*models.CauseBlood, error)
+	CheckBloodDonationEligibility(ctx context.Context, userID uuid.UUID) (*models.BloodDonationEligibilityResponse, error)
 
 	GetByID(ctx context.Context, id uuid.UUID) (*models.Cause, error)
 	GetByOrganizationID(ctx context.Context, id uuid.UUID) ([]*models.Cause, error)
@@ -206,6 +208,159 @@ func (c *causeService) Create(ctx context.Context, req *models.CreateCauseReques
 	}
 
 	return cause, nil
+}
+
+func (c *causeService) CreateCauseBlood(ctx context.Context, userID uuid.UUID, req *models.CreateCauseBloodRequest) (*models.CauseBlood, error) {
+	if userID == uuid.Nil {
+		return nil, fmt.Errorf("user_id is required")
+	}
+
+	fullName := strings.TrimSpace(req.FullName)
+	phone := strings.TrimSpace(req.Phone)
+	bloodGroup := models.NormalizeBloodGroup(req.BloodGroup)
+
+	if fullName == "" || phone == "" || bloodGroup == "" {
+		return nil, fmt.Errorf("full_name, phone and blood_group are required")
+	}
+
+	eligibility, err := c.CheckBloodDonationEligibility(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	if !eligibility.Eligible {
+		return nil, fmt.Errorf(eligibility.EligibilityMessage)
+	}
+	if req.Age <= 0 {
+		return nil, fmt.Errorf("age must be greater than zero")
+	}
+	if !req.Consent {
+		return nil, fmt.Errorf("consent must be accepted")
+	}
+
+	var causeID *uuid.UUID
+	if req.CauseID != nil {
+		s := strings.TrimSpace(*req.CauseID)
+		if s != "" {
+			id, err := uuid.Parse(s)
+			if err != nil {
+				return nil, fmt.Errorf("invalid cause_id")
+			}
+			causeID = &id
+		}
+	}
+
+	var lastDonation *time.Time
+	if req.LastDonationDate != nil {
+		s := strings.TrimSpace(*req.LastDonationDate)
+		if s != "" {
+			t, err := time.Parse(time.RFC3339, s)
+			if err != nil {
+				t, err = time.ParseInLocation("2006-01-02", s, time.UTC)
+			}
+			if err != nil {
+				return nil, fmt.Errorf("invalid last_donation_date")
+			}
+			lastDonation = &t
+		}
+	}
+
+	now := time.Now()
+	availability := true
+	if req.Availability != nil {
+		availability = *req.Availability
+	}
+
+	uid := userID
+	blood := &models.CauseBlood{
+		ID:                uuid.New(),
+		UserID:            &uid,
+		CauseID:           causeID,
+		FullName:          fullName,
+		Age:               req.Age,
+		BloodGroup:        bloodGroup,
+		Phone:             phone,
+		Email:             req.Email,
+		Village:           req.Village,
+		City:              req.City,
+		District:          req.District,
+		State:             req.State,
+		LastDonationDate:  lastDonation,
+		Availability:      availability,
+		MedicalConditions: req.MedicalConditions,
+		Consent:           req.Consent,
+		Status:            "pending",
+		CreatedAt:         now,
+		UpdatedAt:         now,
+	}
+
+	if err := c.causeRepo.CreateCauseBlood(ctx, blood); err != nil {
+		return nil, err
+	}
+
+	return blood, nil
+}
+
+func (c *causeService) CheckBloodDonationEligibility(ctx context.Context, userID uuid.UUID) (*models.BloodDonationEligibilityResponse, error) {
+	if userID == uuid.Nil {
+		return nil, fmt.Errorf("user_id is required")
+	}
+
+	const requiredGapDays = 90
+
+	incomplete, err := c.causeRepo.UserHasIncompleteBloodDonationSubmission(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	if incomplete {
+		return &models.BloodDonationEligibilityResponse{
+			HasIncompleteSubmission: true,
+			Eligible:                false,
+			RequiredGapDays:           requiredGapDays,
+			EligibilityMessage:        "You already have a blood donation submission in progress. Please wait until it is completed before submitting again.",
+		}, nil
+	}
+
+	latestVerifiedDate, err := c.causeRepo.GetLatestVerifiedBloodDonationDateByUserID(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	if latestVerifiedDate == nil {
+		return &models.BloodDonationEligibilityResponse{
+			HasVerifiedRecord:  false,
+			Eligible:           true,
+			RequiredGapDays:    requiredGapDays,
+			EligibilityMessage: "No verified donation record found. You can submit your donation details.",
+		}, nil
+	}
+
+	lastDateUTC := latestVerifiedDate.UTC()
+	nextEligibleDate := lastDateUTC.AddDate(0, 0, requiredGapDays)
+	nowUTC := time.Now().UTC()
+
+	if nowUTC.Before(nextEligibleDate) {
+		daysRemaining := int(nextEligibleDate.Sub(nowUTC).Hours() / 24)
+		if nextEligibleDate.Sub(nowUTC).Hours() > float64(daysRemaining*24) {
+			daysRemaining++
+		}
+
+		return &models.BloodDonationEligibilityResponse{
+			HasVerifiedRecord:  true,
+			LatestVerifiedDate: lastDateUTC.Format("2006-01-02"),
+			Eligible:           false,
+			DaysUntilEligible:  daysRemaining,
+			RequiredGapDays:    requiredGapDays,
+			EligibilityMessage: fmt.Sprintf("You are not eligible yet. Please wait %d more day(s) before donating again.", daysRemaining),
+		}, nil
+	}
+
+	return &models.BloodDonationEligibilityResponse{
+		HasVerifiedRecord:  true,
+		LatestVerifiedDate: lastDateUTC.Format("2006-01-02"),
+		Eligible:           true,
+		RequiredGapDays:    requiredGapDays,
+		EligibilityMessage: "You are eligible to donate.",
+	}, nil
 }
 
 func (c *causeService) GetByID(ctx context.Context, id uuid.UUID) (*models.Cause, error) {

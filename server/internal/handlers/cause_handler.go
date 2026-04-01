@@ -37,6 +37,11 @@ func NewCauseHandler(causeService services.CauseService, authService services.Au
 
 func (c *CauseHandler) RegisterRoutes(r chi.Router) {
 	r.Route("/api/causes", func(r chi.Router) {
+		r.Group(func(blood chi.Router) {
+			blood.Use(middleware.AuthMiddleware(c.jwtService))
+			blood.Post("/blood", c.CreateCauseBlood)
+			blood.Get("/blood/eligibility", c.CheckBloodDonationEligibility)
+		})
 
 		r.Group(func(protected chi.Router) {
 			protected.Use(middleware.AuthMiddleware(c.jwtService))
@@ -67,6 +72,47 @@ func (c *CauseHandler) RegisterRoutes(r chi.Router) {
 	r.Get("/api/domains/{ID}", c.GetDomainByID)
 	r.Get("/api/aids/{ID}", c.GetAidTypeByID)
 }
+
+func (c *CauseHandler) CreateCauseBlood(w http.ResponseWriter, r *http.Request) {
+	userID, ok := middleware.GetUserIDFromContext(r.Context())
+	if !ok || userID == uuid.Nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	var req models.CreateCauseBloodRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	blood, err := c.causeService.CreateCauseBlood(r.Context(), userID, &req)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(blood)
+}
+
+func (c *CauseHandler) CheckBloodDonationEligibility(w http.ResponseWriter, r *http.Request) {
+	userID, ok := middleware.GetUserIDFromContext(r.Context())
+	if !ok || userID == uuid.Nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	result, err := c.causeService.CheckBloodDonationEligibility(r.Context(), userID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(result)
+}
+
 func (c *CauseHandler) CreateCause(w http.ResponseWriter, r *http.Request) {
 	var req models.CreateCauseRequest
 
