@@ -15,6 +15,7 @@ import (
 type CauseRepository interface {
 	Create(ctx context.Context, cause *models.Cause) error
 	CreateCauseBlood(ctx context.Context, blood *models.CauseBlood) error
+	CreateCauseVolunteer(ctx context.Context, v *models.CauseVolunteer) error
 	GetLatestVerifiedBloodDonationDateByUserID(ctx context.Context, userID uuid.UUID) (*time.Time, error)
 	// UserHasIncompleteBloodDonationSubmission is true when a row exists that is not yet completed or rejected.
 	UserHasIncompleteBloodDonationSubmission(ctx context.Context, userID uuid.UUID) (bool, error)
@@ -143,6 +144,46 @@ func (c *causeRepository) CreateCauseBlood(ctx context.Context, blood *models.Ca
 		blood.Status,
 		blood.CreatedAt,
 		blood.UpdatedAt,
+	)
+
+	return err
+}
+
+func (c *causeRepository) CreateCauseVolunteer(ctx context.Context, v *models.CauseVolunteer) error {
+	query := `
+		INSERT INTO cause_volunteer (
+			id, user_id, cause_id, full_name, phone, email,
+			village, city, district, state,
+			skills, interests, availability_type, available_hours, experience,
+			consent, status, created_at, updated_at
+		) VALUES (
+			$1, $2, $3, $4, $5, $6,
+			$7, $8, $9, $10,
+			$11, $12, $13, $14, $15,
+			$16, $17, $18, $19
+		)
+	`
+
+	_, err := c.db.ExecContext(ctx, query,
+		v.ID,
+		v.UserID,
+		v.CauseID,
+		v.FullName,
+		v.Phone,
+		v.Email,
+		v.Village,
+		v.City,
+		v.District,
+		v.State,
+		v.Skills,
+		v.Interests,
+		v.AvailabilityType,
+		v.AvailableHours,
+		v.Experience,
+		v.Consent,
+		v.Status,
+		v.CreatedAt,
+		v.UpdatedAt,
 	)
 
 	return err

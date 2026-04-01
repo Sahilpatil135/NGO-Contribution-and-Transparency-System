@@ -34,6 +34,7 @@ export const API_ENDPOINTS = {
   CREATE_CAUSE: `${API_BASE_URL}/api/causes`,
   CREATE_BLOOD_DONOR: `${API_BASE_URL}/api/causes/blood`,
   CHECK_BLOOD_DONATION_ELIGIBILITY: `${API_BASE_URL}/api/causes/blood/eligibility`,
+  CREATE_VOLUNTEER: `${API_BASE_URL}/api/causes/volunteer`,
   UPLOAD_CAUSE_COVER: `${API_BASE_URL}/api/causes/cover/upload`,
   UPLOAD_PRODUCT_IMAGE: `${API_BASE_URL}/api/causes/products/upload`,
   UPLOAD_UPDATE_RECEIPT: `${API_BASE_URL}/api/causes/updates/upload/receipt`,

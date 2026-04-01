@@ -197,3 +197,44 @@ CHECK (status IN ('pending', 'approved', 'rejected', 'completed'));
 
 ALTER TABLE cause_blood
 ADD CONSTRAINT check_consent_true CHECK (consent = true);
+
+-- new
+-- Added on 2/4/2026
+CREATE TABLE cause_volunteer (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    cause_id UUID REFERENCES causes(id) ON DELETE CASCADE,
+
+    full_name VARCHAR(255) NOT NULL,
+    phone VARCHAR(15) NOT NULL,
+    email VARCHAR(255),
+
+    village VARCHAR(100),
+    city VARCHAR(100),
+    district VARCHAR(100),
+    state VARCHAR(100),
+
+    skills TEXT NOT NULL,
+    interests TEXT,
+
+    availability_type VARCHAR(50),  -- full-time / part-time / weekends
+    available_hours INT,
+
+    experience TEXT,
+
+    consent BOOLEAN NOT NULL,
+
+    status VARCHAR(50) DEFAULT 'pending',
+
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
+);
+
+ALTER TABLE cause_volunteer
+ADD CONSTRAINT check_volunteer_status
+CHECK (status IN ('pending', 'approved', 'assigned', 'completed', 'rejected'));
+
+ALTER TABLE cause_volunteer
+ADD CONSTRAINT check_volunteer_consent
+CHECK (consent = true);

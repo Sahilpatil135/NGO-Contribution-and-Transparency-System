@@ -19,6 +19,7 @@ import (
 type CauseService interface {
 	Create(ctx context.Context, req *models.CreateCauseRequest) (*models.Cause, error)
 	CreateCauseBlood(ctx context.Context, userID uuid.UUID, req *models.CreateCauseBloodRequest) (*models.CauseBlood, error)
+	CreateCauseVolunteer(ctx context.Context, userID uuid.UUID, req *models.CreateCauseVolunteerRequest) (*models.CauseVolunteer, error)
 	CheckBloodDonationEligibility(ctx context.Context, userID uuid.UUID) (*models.BloodDonationEligibilityResponse, error)
 
 	GetByID(ctx context.Context, id uuid.UUID) (*models.Cause, error)
@@ -298,6 +299,76 @@ func (c *causeService) CreateCauseBlood(ctx context.Context, userID uuid.UUID, r
 	}
 
 	return blood, nil
+}
+
+func (c *causeService) CreateCauseVolunteer(ctx context.Context, userID uuid.UUID, req *models.CreateCauseVolunteerRequest) (*models.CauseVolunteer, error) {
+	if userID == uuid.Nil {
+		return nil, fmt.Errorf("user_id is required")
+	}
+
+	fullName := strings.TrimSpace(req.FullName)
+	phone := strings.TrimSpace(req.Phone)
+	skills := strings.TrimSpace(req.Skills)
+
+	if fullName == "" || phone == "" || skills == "" {
+		return nil, fmt.Errorf("full_name, phone and skills are required")
+	}
+	if !req.Consent {
+		return nil, fmt.Errorf("consent must be accepted")
+	}
+
+	var causeID *uuid.UUID
+	if req.CauseID != nil {
+		s := strings.TrimSpace(*req.CauseID)
+		if s != "" {
+			id, err := uuid.Parse(s)
+			if err != nil {
+				return nil, fmt.Errorf("invalid cause_id")
+			}
+			causeID = &id
+		}
+	}
+
+	var hours *int
+	if req.AvailableHours != nil {
+		if *req.AvailableHours < 0 {
+			return nil, fmt.Errorf("available_hours cannot be negative")
+		}
+		if *req.AvailableHours > 0 {
+			h := *req.AvailableHours
+			hours = &h
+		}
+	}
+
+	now := time.Now()
+	uid := userID
+	v := &models.CauseVolunteer{
+		ID:               uuid.New(),
+		UserID:           &uid,
+		CauseID:          causeID,
+		FullName:         fullName,
+		Phone:            phone,
+		Email:            req.Email,
+		Village:          req.Village,
+		City:             req.City,
+		District:         req.District,
+		State:            req.State,
+		Skills:           skills,
+		Interests:        req.Interests,
+		AvailabilityType: req.AvailabilityType,
+		AvailableHours:   hours,
+		Experience:       req.Experience,
+		Consent:          req.Consent,
+		Status:           "pending",
+		CreatedAt:        now,
+		UpdatedAt:        now,
+	}
+
+	if err := c.causeRepo.CreateCauseVolunteer(ctx, v); err != nil {
+		return nil, err
+	}
+
+	return v, nil
 }
 
 func (c *causeService) CheckBloodDonationEligibility(ctx context.Context, userID uuid.UUID) (*models.BloodDonationEligibilityResponse, error) {

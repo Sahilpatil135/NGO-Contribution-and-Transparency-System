@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { apiRequest, API_ENDPOINTS } from "../config/api";
 
@@ -8,28 +8,26 @@ const UUID_RE =
 const initialForm = {
   cause_id: "",
   full_name: "",
-  age: "",
-  blood_group: "",
   phone: "",
   email: "",
   village: "",
   city: "",
   district: "",
   state: "",
-  last_donation_date: "",
-  availability: true,
-  medical_conditions: "",
+  skills: "",
+  interests: "",
+  availability_type: "",
+  available_hours: "",
+  experience: "",
   consent: false,
 };
 
-export default function BloodDonationPage() {
+export default function VolunteerPage() {
   const location = useLocation();
   const [form, setForm] = useState(initialForm);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [eligibility, setEligibility] = useState(null);
-  const [eligibilityLoading, setEligibilityLoading] = useState(false);
 
   useEffect(() => {
     const id = location.state?.causeID;
@@ -46,50 +44,18 @@ export default function BloodDonationPage() {
     }));
   };
 
-  const loadEligibility = useCallback(async () => {
-    setEligibilityLoading(true);
-    const result = await apiRequest(API_ENDPOINTS.CHECK_BLOOD_DONATION_ELIGIBILITY);
-    setEligibilityLoading(false);
-
-    if (!result.success) {
-      setEligibility(null);
-      setError(result.error || "Unable to verify blood donation eligibility.");
-      return null;
-    }
-
-    setError("");
-    setEligibility(result.data);
-    return result.data;
-  }, []);
-
-  useEffect(() => {
-    loadEligibility();
-  }, [loadEligibility]);
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setSuccess("");
 
-    if (!form.full_name.trim() || !form.phone.trim() || !form.blood_group.trim()) {
-      setError("Full name, phone and blood group are required.");
+    if (!form.full_name.trim() || !form.phone.trim() || !form.skills.trim()) {
+      setError("Full name, phone and skills are required.");
       return;
     }
 
     if (!form.consent) {
       setError("Please provide consent before submitting.");
-      return;
-    }
-
-    const latestEligibility = await loadEligibility();
-    if (!latestEligibility) {
-      return;
-    }
-    if (!latestEligibility.eligible) {
-      setError(
-        latestEligibility.eligibility_message ||
-          "You are not eligible to donate right now."
-      );
       return;
     }
 
@@ -99,19 +65,21 @@ export default function BloodDonationPage() {
       return;
     }
 
-    const ageNumber = Number(form.age);
-    if (!Number.isFinite(ageNumber) || ageNumber <= 0) {
-      setError("Age must be a valid number greater than zero.");
-      return;
+    let availableHoursNum = null;
+    if (String(form.available_hours).trim() !== "") {
+      const n = Number(form.available_hours);
+      if (!Number.isFinite(n) || n < 0) {
+        setError("Available hours must be a valid non-negative number.");
+        return;
+      }
+      availableHoursNum = n > 0 ? Math.floor(n) : null;
     }
 
     const payload = {
       full_name: form.full_name.trim(),
-      age: ageNumber,
-      blood_group: form.blood_group.trim().toUpperCase(),
       phone: form.phone.trim(),
+      skills: form.skills.trim(),
       consent: form.consent,
-      availability: form.availability,
     };
 
     if (causeIdTrimmed) payload.cause_id = causeIdTrimmed;
@@ -120,36 +88,35 @@ export default function BloodDonationPage() {
     if (form.city.trim()) payload.city = form.city.trim();
     if (form.district.trim()) payload.district = form.district.trim();
     if (form.state.trim()) payload.state = form.state.trim();
-    if (form.medical_conditions.trim()) {
-      payload.medical_conditions = form.medical_conditions.trim();
+    if (form.interests.trim()) payload.interests = form.interests.trim();
+    if (form.availability_type.trim()) {
+      payload.availability_type = form.availability_type.trim();
     }
-    if (!latestEligibility.has_verified_record && form.last_donation_date) {
-      payload.last_donation_date = form.last_donation_date;
-    }
+    if (availableHoursNum != null) payload.available_hours = availableHoursNum;
+    if (form.experience.trim()) payload.experience = form.experience.trim();
 
     setSubmitting(true);
-    const result = await apiRequest(API_ENDPOINTS.CREATE_BLOOD_DONOR, {
+    const result = await apiRequest(API_ENDPOINTS.CREATE_VOLUNTEER, {
       method: "POST",
       body: JSON.stringify(payload),
     });
     setSubmitting(false);
 
     if (!result.success) {
-      setError(result.error || "Failed to submit blood donor information.");
+      setError(result.error || "Failed to submit volunteer information.");
       return;
     }
 
-    setSuccess("Your donor details have been submitted successfully.");
+    setSuccess("Your volunteer details have been submitted successfully.");
     setForm(initialForm);
-    loadEligibility();
   };
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
       <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
-        <h1 className="text-2xl font-bold text-[#3a0b2e] mb-2">Blood Donor Form</h1>
+        <h1 className="text-2xl font-bold text-[#3a0b2e] mb-2">Volunteer Form</h1>
         <p className="text-gray-600 mb-6">
-          Enter your details to register as a blood donor.
+          Share your skills and availability to support this campaign.
         </p>
 
         {error && <p className="mb-4 text-sm text-red-600">{error}</p>}
@@ -167,6 +134,7 @@ export default function BloodDonationPage() {
             className="w-full border border-gray-300 rounded-lg py-2 px-3 focus:outline-none focus:border-[#ff6200] placeholder-gray-500"
             required
           />
+
           <label className="block text-sm font-medium mb-2">
             Full Name <span className="text-red-500">*</span>
           </label>
@@ -182,36 +150,6 @@ export default function BloodDonationPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="flex flex-col">
               <label className="block text-sm font-medium mb-2">
-                Age <span className="text-red-500">*</span>
-              </label>
-              <input
-                name="age"
-                value={form.age}
-                onChange={handleChange}
-                placeholder="Age"
-                type="number"
-                min="1"
-                className="w-full border border-gray-300 rounded-lg py-2 px-3 focus:outline-none focus:border-[#ff6200] placeholder-gray-500"
-                required
-              />
-            </div>
-            <div className="flex flex-col">
-              <label className="block text-sm font-medium mb-2">
-                Blood Group <span className="text-red-500">*</span>
-              </label>
-              <input
-                name="blood_group"
-                value={form.blood_group}
-                onChange={handleChange}
-                placeholder="Blood Group (e.g. O+, AB-)"
-                className="w-full border border-gray-300 rounded-lg py-2 px-3 focus:outline-none focus:border-[#ff6200] placeholder-gray-500"
-                required
-              />
-            </div>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="flex flex-col">
-              <label className="block text-sm font-medium mb-2">
                 Phone <span className="text-red-500">*</span>
               </label>
               <input
@@ -224,9 +162,7 @@ export default function BloodDonationPage() {
               />
             </div>
             <div className="flex flex-col">
-              <label className="block text-sm font-medium mb-2">
-                Email <span className="text-red-500">*</span>
-              </label>
+              <label className="block text-sm font-medium mb-2">Email <span className="text-red-500">*</span></label>
               <input
                 name="email"
                 value={form.email}
@@ -234,14 +170,14 @@ export default function BloodDonationPage() {
                 placeholder="Email"
                 type="email"
                 className="w-full border border-gray-300 rounded-lg py-2 px-3 focus:outline-none focus:border-[#ff6200] placeholder-gray-500"
+                required
               />
             </div>
           </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="flex flex-col">
-              <label className="block text-sm font-medium mb-2">
-                Village <span className="text-red-500">*</span>
-              </label>
+              <label className="block text-sm font-medium mb-2">Village <span className="text-red-500">*</span></label>
               <input
                 name="village"
                 value={form.village}
@@ -252,9 +188,7 @@ export default function BloodDonationPage() {
               />
             </div>
             <div className="flex flex-col">
-              <label className="block text-sm font-medium mb-2">
-                City <span className="text-red-500">*</span>
-              </label>
+              <label className="block text-sm font-medium mb-2">City <span className="text-red-500">*</span></label>
               <input
                 name="city"
                 value={form.city}
@@ -265,11 +199,10 @@ export default function BloodDonationPage() {
               />
             </div>
           </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="flex flex-col">
-              <label className="block text-sm font-medium mb-2">
-                District <span className="text-red-500">*</span>
-              </label>
+              <label className="block text-sm font-medium mb-2">District <span className="text-red-500">*</span></label>
               <input
                 name="district"
                 value={form.district}
@@ -280,9 +213,7 @@ export default function BloodDonationPage() {
               />
             </div>
             <div className="flex flex-col">
-              <label className="block text-sm font-medium mb-2">
-                State <span className="text-red-500">*</span>
-              </label>
+              <label className="block text-sm font-medium mb-2">State <span className="text-red-500">*</span></label>
               <input
                 name="state"
                 value={form.state}
@@ -293,63 +224,74 @@ export default function BloodDonationPage() {
               />
             </div>
           </div>
-          {eligibilityLoading && (
-            <p className="text-sm text-gray-600">
-              Checking donation eligibility...
-            </p>
-          )}
 
-          {eligibility?.has_verified_record ? (
-            <div className="rounded-lg border border-gray-200 bg-gray-50 p-3 text-sm">
-              <p className="text-gray-700">
-                Latest verified donation date:{" "}
-                <span className="font-semibold">
-                  {eligibility.latest_verified_date}
-                </span>
-              </p>
-              <p
-                className={`mt-1 ${
-                  eligibility.eligible ? "text-green-700" : "text-red-600"
-                }`}
-              >
-                {eligibility.eligibility_message}
-              </p>
-            </div>
-          ) : (
-            <>
-              <label className="block text-sm font-medium mb-2">
-                Last Donation Date (optional)
-              </label>
-              <input
-                name="last_donation_date"
-                value={form.last_donation_date}
-                onChange={handleChange}
-                type="date"
-                className="w-full border border-gray-300 rounded-lg py-2 px-3 focus:outline-none focus:border-[#ff6200] placeholder-gray-500"
-              />
-            </>
-          )}
           <label className="block text-sm font-medium mb-2">
-            Medical Conditions (optional)
+            Skills <span className="text-red-500">*</span>
           </label>
           <textarea
-            name="medical_conditions"
-            value={form.medical_conditions}
+            name="skills"
+            value={form.skills}
             onChange={handleChange}
-            placeholder="Mention any known conditions (e.g., diabetes, BP, recent illness)"
+            placeholder="Describe relevant skills (e.g. teaching, logistics, first aid)"
             rows="3"
+            className="w-full border border-gray-300 rounded-lg py-2 px-3 focus:outline-none focus:border-[#ff6200] placeholder-gray-500"
+            required
+          />
+
+          <label className="block text-sm font-medium mb-2">Interests (optional)</label>
+          <textarea
+            name="interests"
+            value={form.interests}
+            onChange={handleChange}
+            placeholder="Areas you are most interested in"
+            rows="2"
             className="w-full border border-gray-300 rounded-lg py-2 px-3 focus:outline-none focus:border-[#ff6200] placeholder-gray-500"
           />
 
-          <label className="flex items-center gap-2 text-sm text-gray-700">
-            <input
-              name="availability"
-              checked={form.availability}
-              onChange={handleChange}
-              type="checkbox"
-            />
-            I am currently available for blood donation
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="flex flex-col">
+              <label className="block text-sm font-medium mb-2">
+                Availability type
+              </label>
+              <select
+                name="availability_type"
+                value={form.availability_type}
+                onChange={handleChange}
+                className="w-full border border-gray-300 rounded-lg py-2 px-3 focus:outline-none focus:border-[#ff6200] bg-white"
+              >
+                <option value="">Select (optional)</option>
+                <option value="full-time">Full-time</option>
+                <option value="part-time">Part-time</option>
+                <option value="weekends">Weekends</option>
+              </select>
+            </div>
+            <div className="flex flex-col">
+              <label className="block text-sm font-medium mb-2">
+                Available hours per week (optional)
+              </label>
+              <input
+                name="available_hours"
+                value={form.available_hours}
+                onChange={handleChange}
+                placeholder="e.g. 10"
+                type="number"
+                min="0"
+                className="w-full border border-gray-300 rounded-lg py-2 px-3 focus:outline-none focus:border-[#ff6200] placeholder-gray-500"
+              />
+            </div>
+          </div>
+
+          <label className="block text-sm font-medium mb-2">
+            Prior experience (optional)
           </label>
+          <textarea
+            name="experience"
+            value={form.experience}
+            onChange={handleChange}
+            placeholder="Relevant volunteering or work experience"
+            rows="3"
+            className="w-full border border-gray-300 rounded-lg py-2 px-3 focus:outline-none focus:border-[#ff6200] placeholder-gray-500"
+          />
 
           <label className="flex items-center gap-2 text-sm text-gray-700">
             <input
@@ -359,12 +301,12 @@ export default function BloodDonationPage() {
               type="checkbox"
               required
             />
-            I consent to share these details for blood donation requests *
+            I consent to share these details for volunteer coordination *
           </label>
 
           <button
             type="submit"
-            disabled={submitting || (eligibility?.has_verified_record && !eligibility?.eligible)}
+            disabled={submitting}
             className="bg-[#ff6200] hover:bg-[#e45a00] text-white font-semibold px-5 py-2 rounded-lg transition cursor-pointer disabled:opacity-60"
           >
             {submitting ? "Submitting..." : "Submit"}

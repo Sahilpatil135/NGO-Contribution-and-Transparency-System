@@ -15,6 +15,7 @@ const PRODUCT_AID_TYPE_NAMES = [
 ];
 
 const BLOOD_DONATION_AID_TYPE_NAME = "Blood Donations";
+const VOLUNTEERING_AID_TYPE_NAME = "Volunteering";
 
 const CampaignPage = () => {
   const { user, organization } = useAuth();
@@ -170,6 +171,8 @@ const CampaignPage = () => {
   const canDonate = fundingStatus !== "Fully Funded" && fundingStatus !== "Closed";
   const isBloodDonationAid =
     cause.aid_type?.name === BLOOD_DONATION_AID_TYPE_NAME;
+  const isVolunteeringAid =
+    cause.aid_type?.name === VOLUNTEERING_AID_TYPE_NAME;
 
   // Set default active tab when products tab is not available
   useEffect(() => {
@@ -892,12 +895,22 @@ const CampaignPage = () => {
           ) : (
             canDonate && (
               <Link
-                to={isBloodDonationAid ? "/bloodDonation" : "/checkout"}
+                to={
+                  isBloodDonationAid
+                    ? "/bloodDonation"
+                    : isVolunteeringAid
+                      ? "/volunteer"
+                      : "/checkout"
+                }
                 state={{ causeID: cause.id }}
                 onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
               >
                 <button className="w-full bg-[#ff6200] hover:bg-[#e45a00] text-white font-semibold py-3 rounded-lg transition cursor-pointer">
-                  {isBloodDonationAid ? "Provide details" : "Donate Now"}
+                  {isBloodDonationAid
+                    ? "Provide details"
+                    : isVolunteeringAid
+                      ? "Apply Now"
+                      : "Donate Now"}
                 </button>
               </Link>
             )
