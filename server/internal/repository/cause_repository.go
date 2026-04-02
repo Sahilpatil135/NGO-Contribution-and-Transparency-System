@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"strings"
+	"time"
 
 	"server/internal/models"
 
@@ -13,6 +14,11 @@ import (
 
 type CauseRepository interface {
 	Create(ctx context.Context, cause *models.Cause) error
+	CreateCauseBlood(ctx context.Context, blood *models.CauseBlood) error
+	CreateCauseVolunteer(ctx context.Context, v *models.CauseVolunteer) error
+	GetLatestVerifiedBloodDonationDateByUserID(ctx context.Context, userID uuid.UUID) (*time.Time, error)
+	// UserHasIncompleteBloodDonationSubmission is true when a row exists that is not yet completed or rejected.
+	UserHasIncompleteBloodDonationSubmission(ctx context.Context, userID uuid.UUID) (bool, error)
 
 	GetByID(ctx context.Context, id uuid.UUID) (*models.Cause, error)
 	GetByOrganizationID(ctx context.Context, id uuid.UUID) ([]*models.Cause, error)
@@ -103,6 +109,120 @@ func (c *causeRepository) Create(ctx context.Context, cause *models.Cause) error
 	)
 
 	return err
+}
+
+func (c *causeRepository) CreateCauseBlood(ctx context.Context, blood *models.CauseBlood) error {
+	query := `
+		INSERT INTO cause_blood (
+			id, user_id, cause_id, full_name, age, blood_group, phone, email,
+			village, city, district, state, last_donation_date, availability,
+			medical_conditions, consent, status, created_at, updated_at
+		) VALUES (
+			$1, $2, $3, $4, $5, $6, $7, $8,
+			$9, $10, $11, $12, $13, $14,
+			$15, $16, $17, $18, $19
+		)
+	`
+
+	_, err := c.db.ExecContext(ctx, query,
+		blood.ID,
+		blood.UserID,
+		blood.CauseID,
+		blood.FullName,
+		blood.Age,
+		blood.BloodGroup,
+		blood.Phone,
+		blood.Email,
+		blood.Village,
+		blood.City,
+		blood.District,
+		blood.State,
+		blood.LastDonationDate,
+		blood.Availability,
+		blood.MedicalConditions,
+		blood.Consent,
+		blood.Status,
+		blood.CreatedAt,
+		blood.UpdatedAt,
+	)
+
+	return err
+}
+
+func (c *causeRepository) CreateCauseVolunteer(ctx context.Context, v *models.CauseVolunteer) error {
+	query := `
+		INSERT INTO cause_volunteer (
+			id, user_id, cause_id, full_name, phone, email,
+			village, city, district, state,
+			skills, interests, availability_type, available_hours, experience,
+			consent, status, created_at, updated_at
+		) VALUES (
+			$1, $2, $3, $4, $5, $6,
+			$7, $8, $9, $10,
+			$11, $12, $13, $14, $15,
+			$16, $17, $18, $19
+		)
+	`
+
+	_, err := c.db.ExecContext(ctx, query,
+		v.ID,
+		v.UserID,
+		v.CauseID,
+		v.FullName,
+		v.Phone,
+		v.Email,
+		v.Village,
+		v.City,
+		v.District,
+		v.State,
+		v.Skills,
+		v.Interests,
+		v.AvailabilityType,
+		v.AvailableHours,
+		v.Experience,
+		v.Consent,
+		v.Status,
+		v.CreatedAt,
+		v.UpdatedAt,
+	)
+
+	return err
+}
+
+func (c *causeRepository) GetLatestVerifiedBloodDonationDateByUserID(ctx context.Context, userID uuid.UUID) (*time.Time, error) {
+	query := `
+		SELECT MAX(verified_donation_date)
+		FROM cause_blood
+		WHERE user_id = $1
+		  AND status = 'completed'
+		  AND verified_donation_date IS NOT NULL
+	`
+
+	var latest sql.NullTime
+	if err := c.db.QueryRowContext(ctx, query, userID).Scan(&latest); err != nil {
+		return nil, err
+	}
+	if !latest.Valid {
+		return nil, nil
+	}
+
+	t := latest.Time
+	return &t, nil
+}
+
+func (c *causeRepository) UserHasIncompleteBloodDonationSubmission(ctx context.Context, userID uuid.UUID) (bool, error) {
+	query := `
+		SELECT EXISTS(
+			SELECT 1 FROM cause_blood
+			WHERE user_id = $1
+			  AND status IN ('pending', 'approved')
+		)
+	`
+	var exists bool
+	if err := c.db.QueryRowContext(ctx, query, userID).Scan(&exists); err != nil {
+		return false, err
+	}
+	return exists, nil
 }
 
 func GetCauseByColumnID(c *causeRepository, ctx context.Context, id uuid.UUID, column string) (*models.Cause, error) {
