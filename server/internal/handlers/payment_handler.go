@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"net/http/httputil"
 	"server/internal/services"
 )
 
@@ -23,19 +22,13 @@ func (h *PaymentHandler) CreateOrder(w http.ResponseWriter, r *http.Request) {
 		Receipt string `json:"receipt"`
 	}
 
-	dump, err := httputil.DumpRequest(r, true)
-
-	fmt.Printf("%+v\n", string(dump))
-
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		fmt.Println(err)
 		http.Error(w, "Invalid request", http.StatusBadRequest)
 		return
 	}
-	fmt.Printf("INVALID NO")
 
 	order, err := h.paymentService.CreateOrder(req.Amount, req.Receipt)
-	fmt.Printf("PAYMENT1: %+v\n", order)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

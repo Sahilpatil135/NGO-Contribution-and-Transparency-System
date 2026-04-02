@@ -50,6 +50,7 @@ func NewServer() *http.Server {
 	donationRepo := repository.NewDonationRepository(sqlDB)
 	proofSessionRepo := repository.NewProofSessionRepository(sqlDB)
 	proofImageRepo := repository.NewProofImageRepository(sqlDB)
+	disbursementRepo := repository.NewDisbursementRepository(sqlDB)
 
 	// Initialize services
 	jwtService := services.NewJWTService()
@@ -73,6 +74,7 @@ func NewServer() *http.Server {
 	causeHandler := handlers.NewCauseHandler(causeService, authService, jwtService, causeVoteService, causeReviewService, ipfsService)
 	donationHandler := handlers.NewDonationHandler(donationService, authService, jwtService)
 	proofHandler := handlers.NewProofHandler(jwtService, proofService, organizationRepo, causeRepo)
+	disbursementHandler := handlers.NewDisbursementHandler(disbursementRepo, organizationRepo, jwtService)
 
 	// Configure OAuth
 	config.ConfigureOAuth()
@@ -87,7 +89,7 @@ func NewServer() *http.Server {
 	// Declare Server config
 	httpServer := &http.Server{
 		Addr:         fmt.Sprintf(":%d", port),
-		Handler:      server.RegisterRoutes(authHandler, causeHandler, donationHandler, proofHandler),
+		Handler:      server.RegisterRoutes(authHandler, causeHandler, donationHandler, proofHandler, disbursementHandler),
 		IdleTimeout:  time.Minute,
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 30 * time.Second,

@@ -12,6 +12,8 @@ const OrganizationAccountsPage = () => {
   const [causes, setCauses] = useState([]);
   const [loadingCauses, setLoadingCauses] = useState(true);
   const [error, setError] = useState(null);
+  const [disbursements, setDisbursements] = useState([]);
+  const [loadingDisbursements, setLoadingDisbursements] = useState(true);
 
   useEffect(() => {
     // If we're on the "my organization" route, ensure we have org details.
@@ -84,6 +86,37 @@ const OrganizationAccountsPage = () => {
 
     fetchCauses();
   }, [organizationIdToFetch]);
+
+  // Fetch disbursements for the organization
+  useEffect(() => {
+    const fetchDisbursements = async () => {
+      if (!user || user?.role !== "organization") return;
+
+      setLoadingDisbursements(true);
+
+      try {
+        const res = await apiRequest(API_ENDPOINTS.GET_MY_ORGANIZATION_DISBURSEMENTS);
+        console.log(res.data.disbursements)
+        console.log(organizationId, user?.role === "organization")
+
+        if (res.data?.disbursements && Array.isArray(res.data.disbursements)) {
+          console.log(res.data.disbursements)
+          setDisbursements(res.data.disbursements);
+          setLoadingDisbursements(true);
+        } else {
+          console.log("EMPTY")
+          setDisbursements([]);
+        }
+      } catch (e) {
+        console.error("Failed to load disbursements:", e);
+        setDisbursements([]);
+      } finally {
+        setLoadingDisbursements(false);
+      }
+    };
+
+    fetchDisbursements();
+  }, [user]);
 
   const sortedCauses = useMemo(() => {
     return [...causes].sort((a, b) => {
@@ -218,6 +251,78 @@ const OrganizationAccountsPage = () => {
           </div>
         )}
       </div>
+
+      {/* Disbursement History Section */}
+      {!!organizationId && user?.role === "organization" ? (
+        <div className="mb-6 rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+          <h3 className="text-lg font-semibold text-[#3a0b2e] mb-4">
+            Disbursement History
+          </h3>
+
+          {loadingDisbursements ? (
+            <div className="space-y-3">
+              <div className="animate-pulse h-20 bg-gray-100 rounded-lg" />
+              <div className="animate-pulse h-20 bg-gray-100 rounded-lg" />
+            </div>
+          ) : disbursements.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              <p>No disbursements yet</p>
+              <p className="text-sm mt-1">Milestone payments will appear here once escrow releases funds</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {disbursements.map((disbursement) => (
+                <div
+                  key={disbursement.id}
+                  className="border border-gray-200 rounded-lg p-4 hover:border-[#ff6200] transition-colors"
+                >
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="inline-block px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                          {disbursement.milestone_label}
+                        </span>
+                        {disbursement.milestone_number === 4 && (
+                          <span className="inline-block px-2 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-800">
+                            ✓ Completed
+                          </span>
+                        )}
+                      </div>
+                      <p className="font-semibold text-gray-800">
+                        {disbursement.cause_name}
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        {new Date(disbursement.disbursed_at).toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-2xl font-bold text-green-700">
+                        ${Number(disbursement.amount).toLocaleString('en-US', {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2
+                        })}
+                      </p>
+                      {disbursement.transaction_hash && (
+                        <p className="text-xs text-gray-500 mt-1">
+                          TX: {disbursement.transaction_hash.substring(0, 10)}...
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      ) : (
+        <h1>HELLO</h1>
+      )}
 
       {loadingCauses ? (
         <div className="space-y-4">

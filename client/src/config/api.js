@@ -42,6 +42,9 @@ export const API_ENDPOINTS = {
   GET_CAUSES_BY_ORGANIZATION: `${API_BASE_URL}/api/causes/organization`,
   ME_ORGANIZATION: `${API_BASE_URL}/api/auth/me/organization`,
 
+  // Disbursements
+  GET_MY_ORGANIZATION_DISBURSEMENTS: `${API_BASE_URL}/api/disbursements/my-organization`,
+
   // Cause votes
   GET_CAUSE_VOTES: (causeId) =>
     `${API_BASE_URL}/api/causes/${causeId}/votes`,
