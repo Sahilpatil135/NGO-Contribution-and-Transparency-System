@@ -19,6 +19,8 @@ import CreateCampaign from './Pages/CreateCampaign';
 import UploadProof from './Pages/Ngo/UploadProof';
 import UploadUpdate from './Pages/Ngo/UploadUpdate';
 import MobileProofCapture from './Pages/MobileProofCapture';
+import BloodDonationPage from './Pages/BloodDonationPage';
+import VolunteerPage from './Pages/VolunteerPage';
 
 const AppRoutes = () => {
   const { isAuthenticated, isLoading } = useAuth();
@@ -63,6 +65,8 @@ const AppRoutes = () => {
         <Route path="/makeContribution" element={isAuthenticated ? <ContributionsPage /> : <Navigate to="/login" replace />} />
         <Route path="/campaign/:causeID" element={isAuthenticated ? <CampaignPage key={location.pathname} /> : <Navigate to="/login" replace />} />
         <Route path="/checkout" element={isAuthenticated ? <CheckoutPage /> : <Navigate to="/login" replace />} />
+        <Route path="/bloodDonation" element={isAuthenticated ? <BloodDonationPage /> : <Navigate to="/login" replace />} />
+        <Route path="/volunteer" element={isAuthenticated ? <VolunteerPage /> : <Navigate to="/login" replace />} />
         <Route path="/donation/success" element={isAuthenticated ? <DonationSuccess /> : <Navigate to="/login" replace />} />
         <Route path="/profile" element={isAuthenticated ? <ProfilePage /> : <Navigate to="/login" replace />} />
         <Route
