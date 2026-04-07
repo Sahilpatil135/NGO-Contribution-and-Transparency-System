@@ -1,18 +1,20 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import img1 from "../../public/domains/domain_example.png";
 import { LuLock } from "react-icons/lu";
 import { useLocation } from "react-router-dom";
 import DonateButton from "../components/DonateButton";
+import { apiRequest, API_ENDPOINTS } from "../config/api";
+import { getCauseImage } from "../utils/imageHelper";
 
 const CheckoutPage = () => {
   const location = useLocation();
   const causeId = location.state?.causeID;
 
-  console.log(causeId)
-
   const [amount, setAmount] = useState(500);
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [isIndianCitizen, setIsIndianCitizen] = useState(false);
+  const [cause, setCause] = useState(null);
+  const [loadingCause, setLoadingCause] = useState(true);
   const [form, setForm] = useState({
     name: "",
     mobile: "",
@@ -23,6 +25,34 @@ const CheckoutPage = () => {
   });
 
   const suggestedAmounts = [100, 500, 1000, 2500, 5000];
+
+  // Fetch cause details
+  useEffect(() => {
+    const fetchCause = async () => {
+      if (!causeId) {
+        setLoadingCause(false);
+        return;
+      }
+
+      try {
+        const res = await apiRequest(`${API_ENDPOINTS.GET_CAUSES}/${causeId}`);
+        if (res.success && res.data) {
+          setCause(res.data);
+        }
+      } catch (error) {
+        console.error("Failed to load cause:", error);
+      } finally {
+        setLoadingCause(false);
+      }
+    };
+
+    fetchCause();
+  }, [causeId]);
+
+  // Calculate progress
+  const collected = Number(cause?.collected_amount) || 0;
+  const goal = Number(cause?.goal_amount) || 0;
+  const progressPercent = goal > 0 ? Math.min((collected / goal) * 100, 100) : 0;
 
   // Prevent scroll-based value change
   const disableScroll = (e) => e.target.blur();
@@ -288,40 +318,60 @@ const CheckoutPage = () => {
 
         {/* RIGHT SIDE */}
         <div className="bg-white p-6 rounded-xl shadow-md h-fit sticky top-24">
-          <img
-            src={img1}
-            alt="Campaign"
-            className="w-full h-48 object-cover rounded-lg mb-4"
-          />
-          <h3 className="text-lg font-bold text-[#3a0b2e] mb-1">
-            Help Dr Amruta Provide Life-Saving Cancer Treatment
-          </h3>
-          <p className="text-gray-600 text-sm mb-4">Campaign by Dr. Amruta Tripathi</p>
+          {loadingCause ? (
+            <div className="text-center py-8">
+              <p className="text-gray-600">Loading cause details...</p>
+            </div>
+          ) : cause ? (
+            <>
+              <img
+                src={getCauseImage(cause.id)}
+                alt={cause.title}
+                className="w-full h-48 object-cover rounded-lg mb-4"
+                onError={(e) => {
+                  e.target.src = img1;
+                }}
+              />
+              <h3 className="text-lg font-bold text-[#3a0b2e] mb-1">
+                {cause.title}
+              </h3>
+              <p className="text-gray-600 text-sm mb-4">
+                Campaign by {cause.organization?.name || "Organization"}
+              </p>
 
-          <div className="w-full bg-gray-300 rounded-full h-3 mb-4">
-            <div
-              className="h-full bg-[#ff6200] rounded-full"
-              style={{ width: "80%" }}
-            ></div>
-          </div>
+              {goal > 0 && (
+                <>
+                  <div className="w-full bg-gray-300 rounded-full h-3 mb-4">
+                    <div
+                      className="h-full bg-[#ff6200] rounded-full transition-all"
+                      style={{ width: `${progressPercent}%` }}
+                    ></div>
+                  </div>
 
-          <div className="flex justify-between text-sm mb-6">
-            <p className="text-[#3a0b2e] font-semibold">₹4,00,000 raised</p>
-            <p className="text-gray-600">of ₹5,00,000 goal</p>
-          </div>
+                  <div className="flex justify-between text-sm mb-6">
+                    <p className="text-[#3a0b2e] font-semibold">
+                      ₹{collected.toLocaleString('en-IN')} raised
+                    </p>
+                    <p className="text-gray-600">
+                      of ₹{goal.toLocaleString('en-IN')} goal
+                    </p>
+                  </div>
+                </>
+              )}
 
-          {/* <button className="w-full bg-[#ff6200] hover:bg-[#e45a00] text-white font-semibold py-3 rounded-lg transition cursor-pointer">
-            Proceed to Pay ₹{amount}
-          </button> */}
-
-          {/* Mirror button for right side */}
-          <button
-            onClick={handleProceedToPay}
-            className="w-full bg-[#ff6200] hover:bg-[#e45a00] text-white font-semibold py-3 rounded-lg transition cursor-pointer"
-          >
-            Proceed to Pay ₹{amount}
-          </button>
-
+              {/* Mirror button for right side */}
+              <button
+                onClick={handleProceedToPay}
+                className="w-full bg-[#ff6200] hover:bg-[#e45a00] text-white font-semibold py-3 rounded-lg transition cursor-pointer"
+              >
+                Proceed to Pay ₹{amount}
+              </button>
+            </>
+          ) : (
+            <div className="text-center py-8">
+              <p className="text-gray-600">Cause not found</p>
+            </div>
+          )}
         </div>
       </div>
     </div>

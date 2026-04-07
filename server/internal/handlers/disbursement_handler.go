@@ -10,6 +10,7 @@ import (
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
 )
 
 type DisbursementHandler struct {
@@ -34,6 +35,7 @@ func (h *DisbursementHandler) RegisterRoutes(r chi.Router) {
 	r.Route("/api/disbursements", func(r chi.Router) {
 		r.Use(middleware.AuthMiddleware(h.jwtService))
 		r.Get("/my-organization", h.GetMyOrganizationDisbursements)
+		r.Get("/cause/{causeID}", h.GetCauseDisbursements)
 	})
 }
 
@@ -97,6 +99,46 @@ func (h *DisbursementHandler) GetMyOrganizationDisbursements(w http.ResponseWrit
 		"total":         total,
 		"limit":         limit,
 		"offset":        offset,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+}
+
+// GetCauseDisbursements returns disbursements for a specific cause (public endpoint)
+func (h *DisbursementHandler) GetCauseDisbursements(w http.ResponseWriter, r *http.Request) {
+	causeIDStr := chi.URLParam(r, "causeID")
+	if causeIDStr == "" {
+		http.Error(w, "Cause ID is required", http.StatusBadRequest)
+		return
+	}
+
+	causeID, err := uuid.Parse(causeIDStr)
+	if err != nil {
+		http.Error(w, "Invalid cause ID", http.StatusBadRequest)
+		return
+	}
+
+	// Get disbursements for this cause
+	disbursements, err := h.disbursementRepo.GetByCauseID(r.Context(), causeID)
+	if err != nil {
+		http.Error(w, "Failed to fetch disbursements", http.StatusInternalServerError)
+		return
+	}
+
+	// Convert to response format
+	var responses []models.DisbursementResponse
+	totalDisbursed := 0.0
+	for _, d := range disbursements {
+		responses = append(responses, d.ToResponse())
+		totalDisbursed += d.Amount
+	}
+
+	// Return response
+	response := map[string]interface{}{
+		"disbursements":   responses,
+		"total_disbursed": totalDisbursed,
+		"count":           len(disbursements),
 	}
 
 	w.Header().Set("Content-Type", "application/json")

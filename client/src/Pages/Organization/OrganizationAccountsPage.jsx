@@ -188,6 +188,17 @@ const OrganizationAccountsPage = () => {
                 </span>
               </p>
             )}
+            {organization?.amount != null && (
+              <p className="text-sm text-gray-500 mt-1">
+                Total Disbursements:{" "}
+                <span className="font-semibold text-green-700">
+                  ₹{Number(organization.amount).toLocaleString('en-IN', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                  })}
+                </span>
+              </p>
+            )}
           </div>
 
           <div className="text-sm text-gray-600">

@@ -38,6 +38,8 @@ const CampaignPage = () => {
   const [proofsBySession, setProofsBySession] = useState({});
   const [proofsLoadingBySession, setProofsLoadingBySession] = useState({});
   const proofsFetchedRef = useRef(new Set());
+  const [totalDisbursed, setTotalDisbursed] = useState(0);
+  const [disbursementsLoading, setDisbursementsLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -100,6 +102,16 @@ const CampaignPage = () => {
         setReviews({ count: 0, reviews: [] });
       }
       setReviewsLoading(false);
+
+      // Fetch disbursements for this cause
+      setDisbursementsLoading(true);
+      const disbursementsResult = await apiRequest(
+        API_ENDPOINTS.GET_CAUSE_DISBURSEMENTS(causeID)
+      );
+      if (disbursementsResult.success && disbursementsResult.data) {
+        setTotalDisbursed(disbursementsResult.data.total_disbursed || 0);
+      }
+      setDisbursementsLoading(false);
     };
 
     fetchData();
@@ -154,7 +166,9 @@ const CampaignPage = () => {
   const fundingStatus = cause.funding_status || "Not Started";
   const goal = parseFloat(cause.goal_amount) || 0;
   const collected = parseFloat(cause.collected_amount) || 0;
+  const disbursed = parseFloat(totalDisbursed) || 0;
   const percentage = goal > 0 ? Math.min((collected / goal) * 100, 100) : 0;
+  const disbursedPercentage = goal > 0 ? Math.min((disbursed / goal) * 100, 100) : 0;
   const daysLeft = getDaysLeft(cause.deadline);
 
   const tabs = [
@@ -1088,11 +1102,28 @@ const CampaignPage = () => {
             </div>
           </div>
 
-          <div className="w-full bg-gray-200 rounded-full h-3 mb-4 overflow-hidden">
+          <div className="w-full bg-gray-200 rounded-full h-3 mb-2 overflow-hidden relative">
+            {/* Collected amount bar (orange, back layer) */}
             <div
-              className="h-full bg-[#ff6200] transition-all duration-500"
+              className="h-full bg-[#ff6200] transition-all duration-500 absolute top-0 left-0"
               style={{ width: `${percentage}%` }}
             />
+            {/* Disbursed amount bar (green, front layer - on top) */}
+            <div
+              className="h-full bg-green-500 transition-all duration-500 absolute top-0 left-0"
+              style={{ width: `${disbursedPercentage}%` }}
+            />
+          </div>
+
+          <div className="flex justify-between text-xs text-gray-600 mb-4">
+            <div className="flex items-center gap-2">
+              <span className="inline-block w-3 h-3 bg-green-500 rounded"></span>
+              <span>₹{disbursed.toLocaleString()} disbursed</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="inline-block w-3 h-3 bg-[#ff6200] rounded"></span>
+              <span>₹{collected.toLocaleString()} collected</span>
+            </div>
           </div>
 
           <p className="text-gray-600 mb-6 text-sm text-center">

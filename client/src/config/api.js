@@ -47,6 +47,8 @@ export const API_ENDPOINTS = {
 
   // Disbursements
   GET_MY_ORGANIZATION_DISBURSEMENTS: `${API_BASE_URL}/api/disbursements/my-organization`,
+  GET_CAUSE_DISBURSEMENTS: (causeId) =>
+    `${API_BASE_URL}/api/disbursements/cause/${causeId}`,
 
   // Cause votes
   GET_CAUSE_VOTES: (causeId) =>
