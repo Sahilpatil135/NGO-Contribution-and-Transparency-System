@@ -110,6 +110,7 @@ func GetDonationsByColumnID(d *donationRepository, ctx context.Context, ID uuid.
 			c.payment_id, c.tx_hash, c.created_at
 		FROM donations c
 		WHERE c.%s = $1
+		ORDER BY created_at DESC
 		`, column)
 
 	result, err := d.db.QueryContext(ctx, query, ID)

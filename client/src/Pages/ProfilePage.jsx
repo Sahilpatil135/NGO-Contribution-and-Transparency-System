@@ -178,12 +178,12 @@ const ProfilePage = () => {
         ) : (
           <>
             <p className="text-sm text-gray-600 mb-4">
-              You've donated to {donations.length} {donations.length === 1 ? "cause" : "causes"}. Total of 
+              You've donated to {donations.length} {donations.length === 1 ? "cause" : "causes"}. Total of
               <span className="text-[#ff6200]"> ₹
-              {donations
-                .reduce((sum, d) => sum + parseFloat(d.amount || 0), 0)
-                .toLocaleString()}
-                </span>.
+                {donations
+                  .reduce((sum, d) => sum + parseFloat(d.amount || 0), 0)
+                  .toLocaleString()}
+              </span>.
               Thank You for Your Contributions!
             </p>
             <div className="space-y-3">
