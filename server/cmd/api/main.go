@@ -53,7 +53,7 @@ func main() {
 	if port == 0 {
 		port = 8080
 	}
-	fmt.Printf("Starting Server on Port %v\n", port)
+	log.Printf("Starting Server on Port %v\n", port)
 
 	err := server.ListenAndServe()
 	if err != nil && err != http.ErrServerClosed {

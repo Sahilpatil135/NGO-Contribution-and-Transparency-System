@@ -3,7 +3,6 @@ package repository
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"server/internal/models"
 
 	"github.com/google/uuid"
@@ -113,8 +112,6 @@ func (r *disbursementRepository) GetByOrganizationID(ctx context.Context, organi
 
 		disbursements = append(disbursements, d)
 	}
-
-	fmt.Printf("%+v\n", disbursements[0])
 
 	return disbursements, rows.Err()
 }

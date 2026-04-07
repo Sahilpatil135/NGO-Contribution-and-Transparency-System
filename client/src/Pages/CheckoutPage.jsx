@@ -105,6 +105,7 @@ const CheckoutPage = () => {
                 Enter custom amount (₹)
               </label>
               <input
+                autoComplete="transaction-amount"
                 type="number"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
@@ -128,6 +129,7 @@ const CheckoutPage = () => {
                   Full Name
                 </label>
                 <input
+                  autoComplete="name"
                   type="text"
                   name="name"
                   value={form.name}
@@ -155,6 +157,7 @@ const CheckoutPage = () => {
                   Mobile Number
                 </label>
                 <input
+                  autoComplete="mobile tel"
                   type="tel"
                   name="mobile"
                   value={form.mobile}
@@ -171,6 +174,7 @@ const CheckoutPage = () => {
                   Email Address
                 </label>
                 <input
+                  autoComplete="email"
                   type="email"
                   name="email"
                   value={form.email}
@@ -201,6 +205,7 @@ const CheckoutPage = () => {
                   Pincode
                 </label>
                 <input
+                  autoComplete="postal-code"
                   type="text"
                   name="pincode"
                   value={form.pincode}
@@ -217,6 +222,7 @@ const CheckoutPage = () => {
                   PAN Number
                 </label>
                 <input
+                  autoComplete="pan-number"
                   type="text"
                   name="pan"
                   value={form.pan}

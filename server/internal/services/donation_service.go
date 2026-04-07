@@ -2,6 +2,8 @@ package services
 
 import (
 	"context"
+	"fmt"
+	"log"
 	"math/big"
 	"server/internal/blockchain"
 	"server/internal/blockchain/contracts"
@@ -28,17 +30,23 @@ type DonationService interface {
 }
 
 type donationService struct {
-	donationRepo repository.DonationRepository
-	chainService blockchain.DonationChainService
+	donationRepo   repository.DonationRepository
+	chainService   blockchain.DonationChainService
+	trackerService *blockchain.MilestoneTrackerService
+	causeRepo      repository.CauseRepository
 }
 
 func NewDonationService(
 	donationRepo repository.DonationRepository,
 	chainService blockchain.DonationChainService,
+	trackerService *blockchain.MilestoneTrackerService,
+	causeRepo repository.CauseRepository,
 ) *donationService {
 	return &donationService{
-		donationRepo: donationRepo,
-		chainService: chainService,
+		donationRepo:   donationRepo,
+		chainService:   chainService,
+		trackerService: trackerService,
+		causeRepo:      causeRepo,
 	}
 }
 
@@ -58,6 +66,7 @@ func (c *donationService) Create(ctx context.Context, req *models.CreateDonation
 		CreatedAt:      time.Now(),
 	}
 
+	// Record in DonationLedger (for record-keeping)
 	txHash, err := c.chainService.RecordDonation(
 		ctx,
 		donation.ID,
@@ -71,6 +80,45 @@ func (c *donationService) Create(ctx context.Context, req *models.CreateDonation
 	}
 
 	donation.TxHash = &txHash
+
+	// Get cause for milestone tracking
+	cause, err := c.causeRepo.GetByID(ctx, donation.CauseID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get cause: %w", err)
+	}
+
+	// If tracker service is available, record donation for milestone tracking
+	if c.trackerService != nil && cause != nil && cause.GoalAmount != nil {
+		// Calculate total collected amount for this cause from database
+		// This ensures the contract starts with the correct baseline when registering
+		collectedInDB := float32(cause.CollectedAmount) // Already includes all donations
+		
+		// Convert rupees to integers for contract (database stores with 2 decimals)
+		goalAmount := big.NewInt(int64(*cause.GoalAmount))
+		collectedAmount := big.NewInt(int64(collectedInDB))
+
+		err := c.trackerService.EnsureCauseRegistered(
+			ctx,
+			donation.CauseID,
+			goalAmount,
+			collectedAmount,
+		)
+		if err != nil {
+			log.Printf("Warning: Failed to ensure cause registration: %v", err)
+			// Continue anyway - we'll try again on next donation
+		}
+
+		// Record the donation amount for milestone calculation
+		donationAmount := big.NewInt(int64(donation.Amount))
+
+		_, err = c.trackerService.RecordDonation(ctx, donation.CauseID, donationAmount)
+		if err != nil {
+			log.Printf("Warning: Failed to record donation in milestone tracker: %v", err)
+			// Don't fail the whole donation if milestone tracking fails
+		} else {
+			log.Printf("Successfully recorded donation in milestone tracker for cause %v", donation.CauseID)
+		}
+	}
 
 	if err := c.donationRepo.Create(ctx, donation); err != nil {
 		return nil, err

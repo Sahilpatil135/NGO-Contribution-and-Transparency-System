@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/ecdsa"
 	"fmt"
+	"log"
 	"math/big"
 	"os"
 
@@ -25,7 +26,7 @@ type Client struct {
 func NewClient() (*Client, error) {
 	var ethernetClientUrl string = os.Getenv("ETH_RPC_URL")
 	if ethernetClientUrl == "" {
-		ethernetClientUrl = "http://127.0.0.1:8545"
+		ethernetClientUrl = "ws://127.0.0.1:8545"
 	}
 
 	// Connect to the EthClient RPC
@@ -34,7 +35,7 @@ func NewClient() (*Client, error) {
 		// log.Fatalf("Failed to connect to the Eth client: %v", err)
 		return nil, fmt.Errorf("Failed to connect to Eth Client: %v", err)
 	}
-	fmt.Println("Connected to Hardhat node")
+	log.Println("Connected to Hardhat node")
 
 	// Get Private Key from Hardhat ENV
 	privateKeyHex := os.Getenv("PRIVATE_ETH_KEY")

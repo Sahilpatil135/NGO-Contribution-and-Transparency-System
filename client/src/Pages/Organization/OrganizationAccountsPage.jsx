@@ -303,7 +303,7 @@ const OrganizationAccountsPage = () => {
                     </div>
                     <div className="text-right">
                       <p className="text-2xl font-bold text-green-700">
-                        ${Number(disbursement.amount).toLocaleString('en-US', {
+                        ₹{Number(disbursement.amount).toLocaleString('en-US', {
                           minimumFractionDigits: 2,
                           maximumFractionDigits: 2
                         })}

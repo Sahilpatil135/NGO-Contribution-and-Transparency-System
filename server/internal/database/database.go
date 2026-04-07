@@ -55,7 +55,12 @@ func New() Service {
 		db: db,
 	}
 
-	fmt.Println("Connected to Database")
+	err = db.PingContext(context.Background())
+	if err != nil {
+		log.Println("Not Connected to Database")
+	} else {
+		log.Println("Connected to Database")
+	}
 
 	return dbInstance
 }

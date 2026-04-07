@@ -17,6 +17,7 @@ type OrganizationRepository interface {
 	GetByEmail(ctx context.Context, email string) (*models.Organization, error)
 	GetByID(ctx context.Context, id uuid.UUID) (*models.Organization, error)
 	GetByProviderID(ctx context.Context, provider, providerID string) (*models.Organization, error)
+	AddToAmount(ctx context.Context, organizationID uuid.UUID, amount float64) error
 	// GetAll(ctx context.Context, provider, providerID string) (*models.Organization, error)
 	// Update(ctx context.Context, organization *models.Organization) error
 	Delete(ctx context.Context, id uuid.UUID) error
@@ -84,7 +85,7 @@ func (r *organizationRepository) GetByEmail(ctx context.Context, email string) (
 	query := `
 		SELECT 
 		u.id as user_id, u.name, u.email, u.password_hash, u.provider, u.provider_id, u.avatar_url, u.is_active, u.is_verified, u.created_at, u.updated_at, u.role,
-		o.id as id, o.organization_name, o.registration_number, o.organization_type, o.about, o.website_url, o.address, o.is_approved
+		o.id as id, o.organization_name, o.registration_number, o.organization_type, o.about, o.website_url, o.address, o.is_approved, COALESCE(o.amount, 0) as amount
 		FROM users u
 		FULL JOIN organizations o ON o.user_id = u.id
 		WHERE email = $1 AND is_active = true AND u.role = 'organization'
@@ -115,6 +116,7 @@ func (r *organizationRepository) GetByEmail(ctx context.Context, email string) (
 		&organization.WebsiteUrl,
 		&organization.Address,
 		&organization.IsApproved,
+		&organization.Amount,
 	)
 
 	if err != nil {
@@ -131,7 +133,7 @@ func (r *organizationRepository) GetByID(ctx context.Context, id uuid.UUID) (*mo
 	query := `
 		SELECT 
 		u.id as user_id, u.name, u.email, u.password_hash, u.provider, u.provider_id, u.avatar_url, u.is_active, u.is_verified, u.created_at, u.updated_at, u.role,
-		o.id as id, o.organization_name, o.registration_number, o.organization_type, o.about, o.website_url, o.address, o.is_approved
+		o.id as id, o.organization_name, o.registration_number, o.organization_type, o.about, o.website_url, o.address, o.is_approved, COALESCE(o.amount, 0) as amount
 		FROM users u
 		FULL JOIN organizations o ON o.user_id = u.id
 		WHERE u.id = $1 AND u.role = 'organization'
@@ -162,6 +164,7 @@ func (r *organizationRepository) GetByID(ctx context.Context, id uuid.UUID) (*mo
 		&organization.WebsiteUrl,
 		&organization.Address,
 		&organization.IsApproved,
+		&organization.Amount,
 	)
 
 	if err != nil {
@@ -178,7 +181,7 @@ func (r *organizationRepository) GetByProviderID(ctx context.Context, provider, 
 	query := `
 		SELECT 
 		u.id as user_id, u.name, u.email, u.password_hash, u.provider, u.provider_id, u.avatar_url, u.is_active, u.is_verified, u.created_at, u.updated_at, u.role,
-		o.id as id, o.organization_name, o.registration_number, o.organization_type, o.about, o.website_url, o.address, o.is_approved
+		o.id as id, o.organization_name, o.registration_number, o.organization_type, o.about, o.website_url, o.address, o.is_approved, COALESCE(o.amount, 0) as amount
 		FROM users u
 		FULL JOIN organizations o ON o.user_id = u.id
 		WHERE u.provider_id = $1 AND u.role = 'organization'
@@ -207,6 +210,7 @@ func (r *organizationRepository) GetByProviderID(ctx context.Context, provider, 
 		&organization.WebsiteUrl,
 		&organization.Address,
 		&organization.IsApproved,
+		&organization.Amount,
 	)
 
 	if err != nil {
@@ -217,6 +221,17 @@ func (r *organizationRepository) GetByProviderID(ctx context.Context, provider, 
 	}
 
 	return organization, nil
+}
+
+// AddToAmount increments the organization's total disbursed amount
+func (r *organizationRepository) AddToAmount(ctx context.Context, organizationID uuid.UUID, amount float64) error {
+	query := `
+		UPDATE organizations
+		SET amount = COALESCE(amount, 0) + $2
+		WHERE id = $1
+	`
+	_, err := r.db.ExecContext(ctx, query, organizationID, amount)
+	return err
 }
 
 // func (r *organizationRepository) Update(ctx context.Context, organization *models.Organization) error { }

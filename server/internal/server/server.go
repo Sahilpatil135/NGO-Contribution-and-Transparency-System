@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
@@ -59,6 +60,8 @@ func NewServer() *http.Server {
 	causeVoteService := services.NewCauseVoteService(causeVoteRepo)
 	causeReviewService := services.NewCauseReviewService(causeReviewRepo)
 	proofService := services.NewProofService(proofSessionRepo, proofImageRepo, causeRepo)
+
+	// Initialize blockchain services
 	chainService, err := blockchain.NewDonationChainService(
 		blockchainClient,
 		os.Getenv("CONTRACT_ADDRESS_1"),
@@ -66,7 +69,40 @@ func NewServer() *http.Server {
 	if err != nil {
 		log.Fatal(err)
 	}
-	donationService := services.NewDonationService(donationRepo, *chainService)
+
+	// Initialize milestone tracker service
+	trackerService, err := blockchain.NewMilestoneTrackerService(
+		blockchainClient,
+		os.Getenv("MILESTONE_TRACKER_ADDRESS"),
+	)
+	if err != nil {
+		log.Printf("Warning: Failed to initialize milestone tracker service: %v", err)
+		// Continue without tracker if not configured
+	}
+
+	donationService := services.NewDonationService(donationRepo, *chainService, trackerService, causeRepo)
+
+	// Start milestone tracker event listener if tracker service is available
+	if trackerService != nil {
+		eventListener, err := services.NewEscrowEventListener(
+			blockchainClient,
+			os.Getenv("MILESTONE_TRACKER_ADDRESS"),
+			disbursementRepo,
+			organizationRepo,
+			causeRepo,
+		)
+		if err != nil {
+			log.Printf("Warning: Failed to initialize event listener: %v", err)
+		} else {
+			// Start listening for events in a goroutine
+			go func() {
+				if err := eventListener.Start(context.Background()); err != nil {
+					log.Printf("Event listener error: %v", err)
+				}
+			}()
+			log.Println("Milestone tracker event listener started")
+		}
+	}
 
 	// Initialize handlers
 	authHandler := handlers.NewAuthHandler(authService, jwtService)
