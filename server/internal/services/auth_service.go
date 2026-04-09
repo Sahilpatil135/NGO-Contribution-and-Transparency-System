@@ -70,7 +70,7 @@ func (a *authService) RegisterUser(ctx context.Context, req *models.CreateUserRe
 	}
 
 	// Generate JWT token
-	token, err := a.jwtService.GenerateToken(user.ID, user.Email)
+	token, err := a.jwtService.GenerateToken(user.ID, user.Email, user.Role)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate token: %w", err)
 	}
@@ -139,7 +139,7 @@ func (a *authService) RegisterOrganization(ctx context.Context, req *models.Crea
 	}
 
 	// Generate JWT token
-	token, err := a.jwtService.GenerateToken(user.ID, user.Email)
+	token, err := a.jwtService.GenerateToken(user.ID, user.Email, user.Role)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate token: %w", err)
 	}
@@ -168,7 +168,7 @@ func (a *authService) Login(ctx context.Context, req *models.LoginRequest) (*mod
 	}
 
 	// Generate JWT token
-	token, err := a.jwtService.GenerateToken(user.ID, user.Email)
+	token, err := a.jwtService.GenerateToken(user.ID, user.Email, user.Role)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to generate token: %w", err)
 	}
@@ -214,7 +214,7 @@ func (a *authService) CreateOrUpdateOAuthUser(ctx context.Context, provider, pro
 		}
 
 		// Generate JWT token
-		token, err := a.jwtService.GenerateToken(user.ID, user.Email)
+		token, err := a.jwtService.GenerateToken(user.ID, user.Email, user.Role)
 		if err != nil {
 			return nil, fmt.Errorf("failed to generate token: %w", err)
 		}
@@ -239,7 +239,7 @@ func (a *authService) CreateOrUpdateOAuthUser(ctx context.Context, provider, pro
 		}
 
 		// Generate JWT token
-		token, err := a.jwtService.GenerateToken(existingUser.ID, existingUser.Email)
+		token, err := a.jwtService.GenerateToken(existingUser.ID, existingUser.Email, existingUser.Role)
 		if err != nil {
 			return nil, fmt.Errorf("failed to generate token: %w", err)
 		}
@@ -271,7 +271,7 @@ func (a *authService) CreateOrUpdateOAuthUser(ctx context.Context, provider, pro
 	}
 
 	// Generate JWT token
-	token, err := a.jwtService.GenerateToken(user.ID, user.Email)
+	token, err := a.jwtService.GenerateToken(user.ID, user.Email, user.Role)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate token: %w", err)
 	}

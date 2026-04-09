@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { ValidationRules } from '../FormValidation';
 import './Auth.css';
 
 const Signup = () => {
@@ -13,12 +14,77 @@ const Signup = () => {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({});
+  const [touched, setTouched] = useState({});
 
   const handleChange = (e) => {
+    const { name, value } = e.target;
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [name]: value
     });
+    
+    // Clear field error on change
+    if (fieldErrors[name]) {
+      setFieldErrors({ ...fieldErrors, [name]: '' });
+    }
+    // Clear global error
+    if (error) setError('');
+  };
+
+  const handleBlur = (field) => {
+    setTouched({ ...touched, [field]: true });
+    validateField(field, formData[field]);
+  };
+
+  const validateField = (field, value) => {
+    let fieldError = '';
+    
+    switch (field) {
+      case 'name':
+        fieldError = ValidationRules.required(value) || ValidationRules.minLength(2)(value);
+        break;
+      case 'email':
+        fieldError = ValidationRules.required(value) || ValidationRules.email(value);
+        break;
+      case 'password':
+        fieldError = ValidationRules.required(value) || ValidationRules.minLength(6)(value);
+        break;
+      case 'confirmPassword':
+        fieldError = ValidationRules.required(value);
+        if (!fieldError && value !== formData.password) {
+          fieldError = 'Passwords do not match';
+        }
+        break;
+      default:
+        break;
+    }
+    
+    setFieldErrors({ ...fieldErrors, [field]: fieldError });
+    return fieldError;
+  };
+
+  const validateAllFields = () => {
+    const errors = {};
+    let isValid = true;
+
+    Object.keys(formData).forEach(field => {
+      const error = validateField(field, formData[field]);
+      if (error) {
+        errors[field] = error;
+        isValid = false;
+      }
+    });
+
+    setFieldErrors(errors);
+    setTouched({
+      name: true,
+      email: true,
+      password: true,
+      confirmPassword: true
+    });
+
+    return isValid;
   };
 
   const handleEmailSignup = async (e) => {
@@ -26,31 +92,9 @@ const Signup = () => {
     setIsLoading(true);
     setError('');
 
-    // Basic validation
-    if (!formData.name || !formData.email || !formData.password || !formData.confirmPassword) {
-      setError('Please fill in all fields.');
-      setIsLoading(false);
-      return;
-    }
-
-    // Validate passwords match
-    if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
-      setIsLoading(false);
-      return;
-    }
-
-    // Validate password strength
-    if (formData.password.length < 6) {
-      setError('Password must be at least 6 characters long');
-      setIsLoading(false);
-      return;
-    }
-
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(formData.email)) {
-      setError('Please enter a valid email address');
+    // Validate all fields
+    if (!validateAllFields()) {
+      setError('Please fix the errors above');
       setIsLoading(false);
       return;
     }
@@ -99,9 +143,13 @@ const Signup = () => {
               name="name"
               value={formData.name}
               onChange={handleChange}
-              required
+              onBlur={() => handleBlur('name')}
+              className={touched.name && fieldErrors.name ? 'input-error' : ''}
               placeholder="Enter your full name"
             />
+            {touched.name && fieldErrors.name && (
+              <span className="error-text">{fieldErrors.name}</span>
+            )}
           </div>
 
           <div className="form-group">
@@ -112,9 +160,13 @@ const Signup = () => {
               name="email"
               value={formData.email}
               onChange={handleChange}
-              required
+              onBlur={() => handleBlur('email')}
+              className={touched.email && fieldErrors.email ? 'input-error' : ''}
               placeholder="Enter your email"
             />
+            {touched.email && fieldErrors.email && (
+              <span className="error-text">{fieldErrors.email}</span>
+            )}
           </div>
 
           <div className="form-group">
@@ -125,10 +177,13 @@ const Signup = () => {
               name="password"
               value={formData.password}
               onChange={handleChange}
-              required
-              placeholder="Create a password"
-              minLength="6"
+              onBlur={() => handleBlur('password')}
+              className={touched.password && fieldErrors.password ? 'input-error' : ''}
+              placeholder="Create a password (min 6 characters)"
             />
+            {touched.password && fieldErrors.password && (
+              <span className="error-text">{fieldErrors.password}</span>
+            )}
           </div>
 
           <div className="form-group">
@@ -139,10 +194,13 @@ const Signup = () => {
               name="confirmPassword"
               value={formData.confirmPassword}
               onChange={handleChange}
-              required
+              onBlur={() => handleBlur('confirmPassword')}
+              className={touched.confirmPassword && fieldErrors.confirmPassword ? 'input-error' : ''}
               placeholder="Confirm your password"
-              minLength="6"
             />
+            {touched.confirmPassword && fieldErrors.confirmPassword && (
+              <span className="error-text">{fieldErrors.confirmPassword}</span>
+            )}
           </div>
 
           <button 

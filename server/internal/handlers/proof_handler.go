@@ -23,10 +23,10 @@ import (
 )
 
 type ProofHandler struct {
-	jwtService     services.JWTService
-	proofService   services.ProofService
+	jwtService       services.JWTService
+	proofService     services.ProofService
 	organizationRepo repository.OrganizationRepository
-	causeRepo 	repository.CauseRepository
+	causeRepo        repository.CauseRepository
 }
 
 func NewProofHandler(jwt services.JWTService, proofService services.ProofService, organizationRepo repository.OrganizationRepository, causeRepo repository.CauseRepository) *ProofHandler {
@@ -343,13 +343,13 @@ func (h *ProofHandler) GetProofImagesBySession(w http.ResponseWriter, r *http.Re
 	}
 
 	type ProofImageItem struct {
-		Image     string    `json:"image"`
-		Lat       *float64  `json:"lat"`
-		Lng       *float64  `json:"lng"`
+		Image     string     `json:"image"`
+		Lat       *float64   `json:"lat"`
+		Lng       *float64   `json:"lng"`
 		Timestamp *time.Time `json:"timestamp"`
-		AIStatus  string    `json:"aiStatus"`
-		Flags     []string  `json:"flags,omitempty"`
-		Score     *int      `json:"score,omitempty"`
+		AIStatus  string     `json:"aiStatus"`
+		Flags     []string   `json:"flags,omitempty"`
+		Score     *int       `json:"score,omitempty"`
 	}
 
 	out := make([]ProofImageItem, 0, len(imgs))
@@ -368,6 +368,8 @@ func (h *ProofHandler) GetProofImagesBySession(w http.ResponseWriter, r *http.Re
 			aiStatus = *img.VerificationStatus
 		}
 
+		var finalScore int = int(*img.FinalScore)
+
 		out = append(out, ProofImageItem{
 			Image:     mediaPath,
 			Lat:       img.Latitude,
@@ -375,7 +377,7 @@ func (h *ProofHandler) GetProofImagesBySession(w http.ResponseWriter, r *http.Re
 			Timestamp: img.Timestamp,
 			AIStatus:  aiStatus,
 			Flags:     []string{},
-			Score:     &img.MetadataScore,
+			Score:     &finalScore,
 		})
 	}
 

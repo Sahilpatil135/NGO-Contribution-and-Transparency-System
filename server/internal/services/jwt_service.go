@@ -10,7 +10,7 @@ import (
 )
 
 type JWTService interface {
-	GenerateToken(userID uuid.UUID, email string) (string, error)
+	GenerateToken(userID uuid.UUID, email string, role string) (string, error)
 	ValidateToken(tokenString string) (*Claims, error)
 }
 
@@ -21,7 +21,7 @@ type jwtService struct {
 type Claims struct {
 	UserID uuid.UUID `json:"user_id"`
 	Email  string    `json:"email"`
-	// Role   string    `json:"role"`
+	Role   string    `json:"role"`
 	jwt.RegisteredClaims
 }
 
@@ -35,12 +35,11 @@ func NewJWTService() JWTService {
 	}
 }
 
-func (j *jwtService) GenerateToken(userID uuid.UUID, email string) (string, error) {
+func (j *jwtService) GenerateToken(userID uuid.UUID, email string, role string) (string, error) {
 	claims := &Claims{
 		UserID: userID,
 		Email:  email,
-		//  TODO: Add Role (user/ngo) to the claims
-		// Role: role,
+		Role:   role,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)), // 24 hours
 			IssuedAt:  jwt.NewNumericDate(time.Now()),

@@ -25,6 +25,7 @@ type CauseRepository interface {
 	GetByDomainID(ctx context.Context, id uuid.UUID) ([]*models.Cause, error)
 	GetByAidTypeID(ctx context.Context, id uuid.UUID) ([]*models.Cause, error)
 	GetAll(ctx context.Context) ([]*models.Cause, error)
+	GetAllPaginated(ctx context.Context, limit, offset int) ([]*models.Cause, int64, error)
 
 	// GetCauseExecution returns execution window and location for proof validation
 	GetCauseExecution(ctx context.Context, causeID uuid.UUID) (*models.CauseExecution, error)
@@ -778,6 +779,7 @@ func (c *causeRepository) GetReceiptVerificationJobsByIDs(
 
 	return jobs, nil
 }
+
 // }
 func (c *causeRepository) CreateProduct(ctx context.Context, product *models.CauseProduct) error {
 	query := `
@@ -1014,4 +1016,90 @@ func (c *causeRepository) GetAidTypeByID(ctx context.Context, id uuid.UUID) (*mo
 	}
 
 	return aidType, err
+}
+
+// GetAllPaginated returns causes with pagination support
+func (c *causeRepository) GetAllPaginated(ctx context.Context, limit, offset int) ([]*models.Cause, int64, error) {
+	// Count total causes
+	var total int64
+	countQuery := `SELECT COUNT(*) FROM causes WHERE is_active = true`
+	if err := c.db.QueryRowContext(ctx, countQuery).Scan(&total); err != nil {
+		return nil, 0, err
+	}
+
+	query := `
+SELECT 
+c.id, c.title, c.description, c.collected_amount,
+c.goal_amount, c.deadline, c.is_active, c.cover_image_url, c.created_at,
+c.execution_lat, c.execution_lng, c.execution_radius_meters, c.execution_start_time, c.execution_end_time, c.funding_status,
+c.beneficiaries_count, c.execution_location, c.impact_goal, c.problem_statement, c.execution_plan, c.donor_count, c.updated_at,
+cd.id, cd.name, cd.description, cd.icon_url,
+ca.id, ca.name, ca.description, ca.icon_url,
+o.id, o.organization_name
+FROM causes c 
+LEFT JOIN cause_domains cd on cd.id = c.domain_id
+LEFT JOIN cause_aid_types ca on ca.id = c.aid_type_id
+LEFT JOIN organizations o on o.id = c.organization_id
+WHERE is_active = true
+ORDER BY c.created_at DESC
+LIMIT $1 OFFSET $2
+`
+
+	result, err := c.db.QueryContext(ctx, query, limit, offset)
+	if err != nil && err != sql.ErrNoRows {
+		return nil, 0, err
+	}
+	defer result.Close()
+
+	var causesResult []*models.Cause = make([]*models.Cause, 0, limit)
+
+	for result.Next() {
+		cause := &models.Cause{
+			Domain:       models.CauseCategory{},
+			AidType:      models.CauseCategory{},
+			Organization: models.OrganizationInCause{},
+		}
+
+		err = result.Scan(
+			&cause.ID,
+			&cause.Title,
+			&cause.Description,
+			&cause.CollectedAmount,
+			&cause.GoalAmount,
+			&cause.Deadline,
+			&cause.IsActive,
+			&cause.CoverImageURL,
+			&cause.CreatedAt,
+			&cause.ExecutionLat,
+			&cause.ExecutionLng,
+			&cause.ExecutionRadiusMeters,
+			&cause.ExecutionStartTime,
+			&cause.ExecutionEndTime,
+			&cause.FundingStatus,
+			&cause.BeneficiariesCount,
+			&cause.ExecutionLocation,
+			&cause.ImpactGoal,
+			&cause.ProblemStatement,
+			&cause.ExecutionPlan,
+			&cause.DonorCount,
+			&cause.UpdatedAt,
+			&cause.Domain.ID,
+			&cause.Domain.Name,
+			&cause.Domain.Description,
+			&cause.Domain.IconURL,
+			&cause.AidType.ID,
+			&cause.AidType.Name,
+			&cause.AidType.Description,
+			&cause.AidType.IconURL,
+			&cause.Organization.ID,
+			&cause.Organization.Name,
+		)
+		if err != nil {
+			return nil, 0, err
+		}
+
+		causesResult = append(causesResult, cause)
+	}
+
+	return causesResult, total, nil
 }

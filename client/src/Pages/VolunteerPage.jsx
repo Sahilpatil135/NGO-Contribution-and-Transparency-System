@@ -124,16 +124,17 @@ export default function VolunteerPage() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <label className="block text-sm font-medium mb-2">
-            Cause ID <span className="text-red-500">*</span>
+            Cause ID
           </label>
-          <input
+          <h1
             name="cause_id"
             value={form.cause_id}
             onChange={handleChange}
             placeholder="Cause ID"
-            className="w-full border border-gray-300 rounded-lg py-2 px-3 focus:outline-none focus:border-[#ff6200] placeholder-gray-500"
+            contentEditable="false"
+            className="w-full py-2 px focus:outline-none focus:border-[#ff6200] placeholder-gray-500"
             required
-          />
+          >{form.cause_id}</h1>
 
           <label className="block text-sm font-medium mb-2">
             Full Name <span className="text-red-500">*</span>

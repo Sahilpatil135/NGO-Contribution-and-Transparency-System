@@ -59,6 +59,25 @@
   border: 1px solid #fcc;
 }
 
+/* Field Error Styles */
+.form-group input.input-error {
+  border-color: #ef4444;
+  background-color: #fef2f2;
+}
+
+.form-group input.input-error:focus {
+  border-color: #dc2626;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+.error-text {
+  display: block;
+  color: #dc2626;
+  font-size: 13px;
+  margin-top: 6px;
+  font-weight: 500;
+}
+
 /* Form Styles */
 .auth-form {
   margin-bottom: 24px;

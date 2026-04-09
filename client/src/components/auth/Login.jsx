@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { ValidationRules } from '../FormValidation';
 import './Auth.css';
 
 const Login = () => {
@@ -12,6 +13,8 @@ const Login = () => {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({});
+  const [touched, setTouched] = useState({});
 
   useEffect(() => {
     // Check for error parameters in URL
@@ -22,10 +25,62 @@ const Login = () => {
   }, [searchParams]);
 
   const handleChange = (e) => {
+    const { name, value } = e.target;
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [name]: value
     });
+    
+    // Clear field error on change
+    if (fieldErrors[name]) {
+      setFieldErrors({ ...fieldErrors, [name]: '' });
+    }
+    // Clear global error
+    if (error) setError('');
+  };
+
+  const handleBlur = (field) => {
+    setTouched({ ...touched, [field]: true });
+    validateField(field, formData[field]);
+  };
+
+  const validateField = (field, value) => {
+    let fieldError = '';
+    
+    switch (field) {
+      case 'email':
+        fieldError = ValidationRules.required(value) || ValidationRules.email(value);
+        break;
+      case 'password':
+        fieldError = ValidationRules.required(value);
+        break;
+      default:
+        break;
+    }
+    
+    setFieldErrors({ ...fieldErrors, [field]: fieldError });
+    return fieldError;
+  };
+
+  const validateAllFields = () => {
+    const errors = {};
+    let isValid = true;
+
+    Object.keys(formData).forEach(field => {
+      const error = validateField(field, formData[field]);
+      if (error) {
+        errors[field] = error;
+        isValid = false;
+      }
+    });
+
+    setFieldErrors(errors);
+    setTouched({
+      email: true,
+      password: true
+    });
+
+    return isValid;
   };
 
   const handleEmailLogin = async (e) => {
@@ -33,9 +88,9 @@ const Login = () => {
     setIsLoading(true);
     setError('');
 
-    // Basic validation
-    if (!formData.email || !formData.password) {
-      setError('Please fill in all fields.');
+    // Validate all fields
+    if (!validateAllFields()) {
+      setError('Please fix the errors above');
       setIsLoading(false);
       return;
     }
@@ -82,9 +137,13 @@ const Login = () => {
               name="email"
               value={formData.email}
               onChange={handleChange}
-              required
+              onBlur={() => handleBlur('email')}
+              className={touched.email && fieldErrors.email ? 'input-error' : ''}
               placeholder="Enter your email"
             />
+            {touched.email && fieldErrors.email && (
+              <span className="error-text">{fieldErrors.email}</span>
+            )}
           </div>
 
           <div className="form-group">
@@ -95,10 +154,16 @@ const Login = () => {
               name="password"
               value={formData.password}
               onChange={handleChange}
-              required
+              onBlur={() => handleBlur('password')}
+              className={touched.password && fieldErrors.password ? 'input-error' : ''}
               placeholder="Enter your password"
             />
+            {touched.password && fieldErrors.password && (
+              <span className="error-text">{fieldErrors.password}</span>
+            )}
           </div>
+
+          {error && <div className="error-message">{error}</div>}
 
           <button
             type="submit"
@@ -107,8 +172,6 @@ const Login = () => {
           >
             {isLoading ? 'Signing in...' : 'Sign In'}
           </button>
-
-          {error && <div className="error-message">{error}</div>}
 
         </form>
 

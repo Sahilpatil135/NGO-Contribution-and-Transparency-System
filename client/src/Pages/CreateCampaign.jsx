@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { API_ENDPOINTS, apiRequest } from "../config/api";
+import { getGoalLabel, getGoalPlaceholder } from "../utils/goalHelper";
 
 const PRODUCT_AID_TYPE_NAMES = [
   "Goods & Resources",
@@ -550,7 +551,7 @@ const CreateCampaign = () => {
       <div className="grid md:grid-cols-2 gap-6">
         <div>
           <label className="block text-sm font-medium mb-2">
-            Goal Amount (₹) <span className="text-red-500">*</span>
+            {getGoalLabel(aidTypes.find(a => a.id === formData.aid_type_id)?.name)} <span className="text-red-500">*</span>
           </label>
           <input
             type="number"
@@ -558,10 +559,14 @@ const CreateCampaign = () => {
             value={formData.goal_amount}
             onChange={handleChange}
             className="w-full border rounded-md p-2 focus:outline-none focus:border-[#ff6200] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none placeholder-gray-500"
-            placeholder="e.g. 500000"
+            placeholder={getGoalPlaceholder(aidTypes.find(a => a.id === formData.aid_type_id)?.name)}
           />
           <p className="text-xs text-gray-500 mt-1">
-            Must be at least ₹1000.
+            {aidTypes.find(a => a.id === formData.aid_type_id)?.name === "Volunteering" 
+              ? "Number of volunteers needed for this campaign." 
+              : aidTypes.find(a => a.id === formData.aid_type_id)?.name === "Blood Donations"
+              ? "Number of blood units needed for this campaign."
+              : "Must be at least ₹1000."}
           </p>
         </div>
 

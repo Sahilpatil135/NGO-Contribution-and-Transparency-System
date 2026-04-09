@@ -5,6 +5,8 @@ import { useLocation } from "react-router-dom";
 import DonateButton from "../components/DonateButton";
 import { apiRequest, API_ENDPOINTS } from "../config/api";
 import { getCauseImage } from "../utils/imageHelper";
+import { formatGoal, formatCollected, getCollectedLabel } from "../utils/goalHelper";
+import { ValidationRules, FormField, ErrorMessage } from "../components/FormValidation";
 
 const CheckoutPage = () => {
   const location = useLocation();
@@ -23,6 +25,8 @@ const CheckoutPage = () => {
     pincode: "",
     pan: "",
   });
+  const [errors, setErrors] = useState({});
+  const [touched, setTouched] = useState({});
 
   const suggestedAmounts = [100, 500, 1000, 2500, 5000];
 
@@ -50,6 +54,7 @@ const CheckoutPage = () => {
   }, [causeId]);
 
   // Calculate progress
+  const aidTypeName = cause?.aid_type?.name || "";
   const collected = Number(cause?.collected_amount) || 0;
   const goal = Number(cause?.goal_amount) || 0;
   const progressPercent = goal > 0 ? Math.min((collected / goal) * 100, 100) : 0;
@@ -60,36 +65,83 @@ const CheckoutPage = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm({ ...form, [name]: value });
+    
+    // Clear error when user starts typing
+    if (errors[name]) {
+      setErrors({ ...errors, [name]: "" });
+    }
+  };
+
+  const handleBlur = (field) => {
+    setTouched({ ...touched, [field]: true });
+    validateField(field, form[field]);
+  };
+
+  const validateField = (field, value) => {
+    let error = "";
+    
+    switch (field) {
+      case "name":
+        error = ValidationRules.required(value) || ValidationRules.minLength(3)(value);
+        break;
+      case "mobile":
+        error = ValidationRules.required(value) || ValidationRules.phone(value);
+        break;
+      case "email":
+        error = ValidationRules.required(value) || ValidationRules.email(value);
+        break;
+      case "address":
+        error = ValidationRules.required(value) || ValidationRules.minLength(10)(value);
+        break;
+      case "pincode":
+        const pincodeRegex = /^[1-9][0-9]{5}$/;
+        error = ValidationRules.required(value) || 
+                (!pincodeRegex.test(value) ? "Please enter a valid 6-digit Indian pincode" : "");
+        break;
+      case "pan":
+        const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
+        error = ValidationRules.required(value) || 
+                (!panRegex.test(value.toUpperCase()) ? "Please enter a valid PAN (e.g., ABCDE1234F)" : "");
+        break;
+      default:
+        break;
+    }
+    
+    setErrors({ ...errors, [field]: error });
+    return error;
   };
 
   // Validation
   const validateForm = () => {
-    const mobileRegex = /^[6-9]\d{9}$/;
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const pincodeRegex = /^[1-9][0-9]{5}$/;
-    const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
+    const newErrors = {};
+    let isValid = true;
 
-    if (!mobileRegex.test(form.mobile)) {
-      alert("Please enter a valid 10-digit Indian mobile number.");
-      return false;
-    }
-    if (!emailRegex.test(form.email)) {
-      alert("Please enter a valid email address.");
-      return false;
-    }
-    if (!pincodeRegex.test(form.pincode)) {
-      alert("Please enter a valid 6-digit Indian pincode.");
-      return false;
-    }
-    if (!panRegex.test(form.pan)) {
-      alert("Please enter a valid PAN number (e.g., ABCDE1234F).");
-      return false;
-    }
+    // Validate all fields
+    Object.keys(form).forEach(field => {
+      const error = validateField(field, form[field]);
+      if (error) {
+        newErrors[field] = error;
+        isValid = false;
+      }
+    });
+
+    // Check Indian citizen confirmation
     if (!isIndianCitizen) {
-      alert("Please confirm that you are an Indian citizen.");
-      return false;
+      newErrors.citizenship = "Please confirm that you are an Indian citizen.";
+      isValid = false;
     }
-    return true;
+
+    setErrors(newErrors);
+    setTouched({
+      name: true,
+      mobile: true,
+      email: true,
+      address: true,
+      pincode: true,
+      pan: true,
+    });
+
+    return isValid;
   };
 
   // const handleSubmit = () => {
@@ -164,9 +216,15 @@ const CheckoutPage = () => {
                   name="name"
                   value={form.name}
                   onChange={handleChange}
+                  onBlur={() => handleBlur("name")}
                   placeholder="Enter your full name"
-                  className="w-full border border-gray-300 rounded-lg py-2 px-3 focus:outline-none focus:border-[#ff6200] placeholder-gray-400"
+                  className={`w-full border rounded-lg py-2 px-3 focus:outline-none focus:border-[#ff6200] placeholder-gray-400 ${
+                    touched.name && errors.name ? 'border-red-500' : 'border-gray-300'
+                  }`}
                 />
+                {touched.name && errors.name && (
+                  <p className="text-red-600 text-sm mt-1">{errors.name}</p>
+                )}
                 <div className="flex items-center mt-2">
                   <input
                     type="checkbox"
@@ -192,10 +250,16 @@ const CheckoutPage = () => {
                   name="mobile"
                   value={form.mobile}
                   onChange={handleChange}
+                  onBlur={() => handleBlur("mobile")}
                   placeholder="10-digit Indian mobile number (e.g., 9876543210)"
                   maxLength="10"
-                  className="w-full border border-gray-300 rounded-lg py-2 px-3 focus:outline-none focus:border-[#ff6200] placeholder-gray-400"
+                  className={`w-full border rounded-lg py-2 px-3 focus:outline-none focus:border-[#ff6200] placeholder-gray-400 ${
+                    touched.mobile && errors.mobile ? 'border-red-500' : 'border-gray-300'
+                  }`}
                 />
+                {touched.mobile && errors.mobile && (
+                  <p className="text-red-600 text-sm mt-1">{errors.mobile}</p>
+                )}
               </div>
 
               {/* Email Address */}
@@ -209,9 +273,15 @@ const CheckoutPage = () => {
                   name="email"
                   value={form.email}
                   onChange={handleChange}
+                  onBlur={() => handleBlur("email")}
                   placeholder="Enter your email address"
-                  className="w-full border border-gray-300 rounded-lg py-2 px-3 focus:outline-none focus:border-[#ff6200] placeholder-gray-400"
+                  className={`w-full border rounded-lg py-2 px-3 focus:outline-none focus:border-[#ff6200] placeholder-gray-400 ${
+                    touched.email && errors.email ? 'border-red-500' : 'border-gray-300'
+                  }`}
                 />
+                {touched.email && errors.email && (
+                  <p className="text-red-600 text-sm mt-1">{errors.email}</p>
+                )}
               </div>
 
               {/* Address */}
@@ -223,10 +293,16 @@ const CheckoutPage = () => {
                   name="address"
                   value={form.address}
                   onChange={handleChange}
+                  onBlur={() => handleBlur("address")}
                   placeholder="Enter your complete address"
                   rows="2"
-                  className="w-full border border-gray-300 rounded-lg py-2 px-3 focus:outline-none focus:border-[#ff6200] placeholder-gray-400"
+                  className={`w-full border rounded-lg py-2 px-3 focus:outline-none focus:border-[#ff6200] placeholder-gray-400 ${
+                    touched.address && errors.address ? 'border-red-500' : 'border-gray-300'
+                  }`}
                 ></textarea>
+                {touched.address && errors.address && (
+                  <p className="text-red-600 text-sm mt-1">{errors.address}</p>
+                )}
               </div>
 
               {/* Pincode */}
@@ -240,10 +316,16 @@ const CheckoutPage = () => {
                   name="pincode"
                   value={form.pincode}
                   onChange={handleChange}
+                  onBlur={() => handleBlur("pincode")}
                   placeholder="6-digit Indian pincode (e.g., 400001)"
                   maxLength="6"
-                  className="w-full border border-gray-300 rounded-lg py-2 px-3 focus:outline-none focus:border-[#ff6200] placeholder-gray-400"
+                  className={`w-full border rounded-lg py-2 px-3 focus:outline-none focus:border-[#ff6200] placeholder-gray-400 ${
+                    touched.pincode && errors.pincode ? 'border-red-500' : 'border-gray-300'
+                  }`}
                 />
+                {touched.pincode && errors.pincode && (
+                  <p className="text-red-600 text-sm mt-1">{errors.pincode}</p>
+                )}
               </div>
 
               {/* PAN */}
@@ -257,24 +339,36 @@ const CheckoutPage = () => {
                   name="pan"
                   value={form.pan}
                   onChange={handleChange}
+                  onBlur={() => handleBlur("pan")}
                   placeholder="ABCDE1234F"
                   maxLength="10"
-                  className="w-full border border-gray-300 rounded-lg py-2 px-3 focus:outline-none focus:border-[#ff6200] placeholder-gray-400"
+                  style={{ textTransform: "uppercase" }}
+                  className={`w-full border rounded-lg py-2 px-3 focus:outline-none focus:border-[#ff6200] placeholder-gray-400 ${
+                    touched.pan && errors.pan ? 'border-red-500' : 'border-gray-300'
+                  }`}
                 />
+                {touched.pan && errors.pan && (
+                  <p className="text-red-600 text-sm mt-1">{errors.pan}</p>
+                )}
               </div>
 
               {/* Indian Citizen Confirmation */}
-              <div className="flex items-center mt-2">
-                <input
-                  type="checkbox"
-                  id="citizen"
-                  checked={isIndianCitizen}
-                  onChange={() => setIsIndianCitizen(!isIndianCitizen)}
-                  className="mr-2 accent-[#ff6200] cursor-pointer"
-                />
-                <label htmlFor="citizen" className="text-sm text-gray-600">
-                  I confirm that I am an Indian citizen
-                </label>
+              <div>
+                <div className="flex items-center mt-2">
+                  <input
+                    type="checkbox"
+                    id="citizen"
+                    checked={isIndianCitizen}
+                    onChange={() => setIsIndianCitizen(!isIndianCitizen)}
+                    className="mr-2 accent-[#ff6200] cursor-pointer"
+                  />
+                  <label htmlFor="citizen" className="text-sm text-gray-600">
+                    I confirm that I am an Indian citizen <span className="text-red-500">*</span>
+                  </label>
+                </div>
+                {errors.citizenship && Object.keys(touched).length > 0 && (
+                  <p className="text-red-600 text-sm mt-1">{errors.citizenship}</p>
+                )}
               </div>
 
               {/* <button
@@ -350,10 +444,10 @@ const CheckoutPage = () => {
 
                   <div className="flex justify-between text-sm mb-6">
                     <p className="text-[#3a0b2e] font-semibold">
-                      ₹{collected.toLocaleString('en-IN')} raised
+                      {formatCollected(collected, aidTypeName)} {getCollectedLabel(aidTypeName).toLowerCase()}
                     </p>
                     <p className="text-gray-600">
-                      of ₹{goal.toLocaleString('en-IN')} goal
+                      of {formatGoal(goal, aidTypeName)} goal
                     </p>
                   </div>
                 </>

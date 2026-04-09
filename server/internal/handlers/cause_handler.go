@@ -683,7 +683,7 @@ func (c *CauseHandler) UploadUpdateReceipt(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	publicPath := "/api/ipfs/" + cid
+	publicPath := "api/ipfs/" + cid
 
 	// new {
 	// Persist a DB-backed receipt verification job and trigger AI analysis async.
@@ -978,4 +978,23 @@ func (c *CauseHandler) UploadProductImage(w http.ResponseWriter, r *http.Request
 	json.NewEncoder(w).Encode(map[string]string{
 		"url": "/" + publicPath,
 	})
+}
+
+// GetAllCausesPaginated returns causes with pagination support
+func (c *CauseHandler) GetAllCausesPaginated(w http.ResponseWriter, r *http.Request) {
+	// Get pagination params
+	params := models.GetPaginationParams(r)
+
+	// Get paginated causes
+	causes, total, err := c.causeService.GetAllPaginated(r.Context(), params.PerPage, params.Offset)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	// Create paginated response
+	response := models.NewPaginatedResponse(causes, params.Page, params.PerPage, total)
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
 }

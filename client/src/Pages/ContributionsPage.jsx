@@ -4,6 +4,7 @@ import CausesCarousel from '../components/CausesCarousel';
 import Card from '../components/Card';
 import { Link } from 'react-router-dom';
 import { apiRequest, API_ENDPOINTS } from "../config/api";
+import { CampaignCardSkeleton } from '../components/LoadingSkeleton';
 
 const ContributionsPage = () => {
 
@@ -88,7 +89,11 @@ const ContributionsPage = () => {
                             <Card key={idx} cause={cause} />
                         ))
                     ) : (
-                        <h1>LOADING</h1>
+                        <>
+                            <CampaignCardSkeleton />
+                            <CampaignCardSkeleton />
+                            <CampaignCardSkeleton />
+                        </>
                     )}
                 </div>
             </section>

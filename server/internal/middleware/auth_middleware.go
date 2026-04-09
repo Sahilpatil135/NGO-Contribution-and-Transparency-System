@@ -12,7 +12,10 @@ import (
 
 type contextKey string
 
-const UserIDKey contextKey = "user_id"
+const (
+	UserIDKey contextKey = "user_id"
+	UserRoleKey contextKey = "user_role"
+)
 
 func AuthMiddleware(jwtService services.JWTService) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
@@ -40,8 +43,9 @@ func AuthMiddleware(jwtService services.JWTService) func(http.Handler) http.Hand
 				return
 			}
 
-			// Add user ID to context
+			// Add user ID and role to context
 			ctx := context.WithValue(r.Context(), UserIDKey, claims.UserID)
+			ctx = context.WithValue(ctx, UserRoleKey, claims.Role)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
@@ -51,4 +55,39 @@ func AuthMiddleware(jwtService services.JWTService) func(http.Handler) http.Hand
 func GetUserIDFromContext(ctx context.Context) (uuid.UUID, bool) {
 	userID, ok := ctx.Value(UserIDKey).(uuid.UUID)
 	return userID, ok
+}
+
+// GetUserRoleFromContext extracts user role from request context
+func GetUserRoleFromContext(ctx context.Context) (string, bool) {
+	role, ok := ctx.Value(UserRoleKey).(string)
+	return role, ok
+}
+
+// RequireRole creates middleware that restricts access to specific roles
+func RequireRole(allowedRoles ...string) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			role, ok := GetUserRoleFromContext(r.Context())
+			if !ok {
+				http.Error(w, "Unauthorized: role not found", http.StatusUnauthorized)
+				return
+			}
+
+			// Check if user's role is in allowed roles
+			allowed := false
+			for _, allowedRole := range allowedRoles {
+				if role == allowedRole {
+					allowed = true
+					break
+				}
+			}
+
+			if !allowed {
+				http.Error(w, "Forbidden: insufficient permissions", http.StatusForbidden)
+				return
+			}
+
+			next.ServeHTTP(w, r)
+		})
+	}
 }

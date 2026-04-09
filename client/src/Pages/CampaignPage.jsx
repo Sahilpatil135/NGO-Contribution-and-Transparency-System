@@ -3,6 +3,7 @@ import img1 from "../../public/domains/domain_example.png";
 import { Link, useParams } from "react-router-dom";
 import { apiRequest, API_ENDPOINTS, API_BASE_URL } from "../config/api";
 import { getCauseImage } from "../utils/imageHelper";
+import { formatGoal, formatCollected, getGoalLabel, getCollectedLabel } from "../utils/goalHelper";
 import { LuLink2, LuLock, LuShieldCheck } from "react-icons/lu";
 import { BiUpvote, BiDownvote } from "react-icons/bi";
 import { useAuth } from "../contexts/AuthContext";
@@ -163,6 +164,7 @@ const CampaignPage = () => {
     cause.products &&
     cause.products.length > 0;
 
+  const aidTypeName = cause?.aid_type?.name || "";
   const fundingStatus = cause.funding_status || "Not Started";
   const goal = parseFloat(cause.goal_amount) || 0;
   const collected = parseFloat(cause.collected_amount) || 0;
@@ -576,6 +578,7 @@ const CampaignPage = () => {
                       Array.isArray(u.media) && u.media.length > 0
                         ? u.media.filter((m) => m.media_type === "receipt")
                         : [];
+
                     const proofSessionId = u?.proof_session_id
                       ? String(u.proof_session_id)
                       : null;
@@ -583,8 +586,9 @@ const CampaignPage = () => {
                       proofSessionId && proofsBySession[proofSessionId]
                         ? proofsBySession[proofSessionId]
                         : [];
-                    console.log(receipts);
-                    console.log(u);
+
+                    console.log("score ", u)
+
                     return (
                       <div
                         key={u.id}
@@ -644,9 +648,11 @@ const CampaignPage = () => {
                             </div>
                             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                               {receipts.map((m) => {
+
                                 const src = m.media_url.startsWith("http")
                                   ? m.media_url
                                   : `${API_BASE_URL}${m.media_url}`;
+
                                 return (
                                   <div
                                     key={m.id}
@@ -1069,15 +1075,19 @@ const CampaignPage = () => {
             <div className="grid grid-cols-3 text-center mb-4">
               <div>
                 <p className="text-2xl font-extrabold text-[#ff6200]">
-                  ₹{collected.toLocaleString()}
+                  {formatCollected(collected, aidTypeName)}
                 </p>
-                <p className="text-gray-600 text-sm">Raised</p>
+                <p className="text-gray-600 text-sm">{getCollectedLabel(aidTypeName)}</p>
               </div>
               <div>
                 <p className="text-2xl font-extrabold text-[#3a0b2e]">
-                  {donations ? donations.length : 0}
+                  {aidTypeName.toLowerCase() != "volunteering" && (
+                    donations ? donations.length : 0
+                  )}
                 </p>
-                <p className="text-gray-600 text-sm">Donors</p>
+                {aidTypeName.toLowerCase() != "volunteering" &&
+                  <p className="text-gray-600 text-sm">
+                    Donors</p>}
               </div>
               <div>
                 <p className="text-2xl font-extrabold text-[#3a0b2e]">
@@ -1089,9 +1099,9 @@ const CampaignPage = () => {
             <div className="grid grid-cols-2 text-center mb-6">
               <div>
                 <p className="text-2xl font-extrabold text-[#3a0b2e]">
-                  ₹{goal.toLocaleString()}
+                  {formatGoal(goal, aidTypeName)}
                 </p>
-                <p className="text-gray-600 text-sm">Goal</p>
+                <p className="text-gray-600 text-sm">{getGoalLabel(aidTypeName)}</p>
               </div>
               <div>
                 <p className="text-2xl font-extrabold text-[#3a0b2e]">
@@ -1115,19 +1125,21 @@ const CampaignPage = () => {
             />
           </div>
 
-          <div className="flex justify-between text-xs text-gray-600 mb-4">
-            <div className="flex items-center gap-2">
-              <span className="inline-block w-3 h-3 bg-green-500 rounded"></span>
-              <span>₹{disbursed.toLocaleString()} disbursed</span>
+          {aidTypeName.toLowerCase() != "volunteering" &&
+            <div className="flex justify-between text-xs text-gray-600 mb-4">
+              <div className="flex items-center gap-2">
+                <span className="inline-block w-3 h-3 bg-green-500 rounded"></span>
+                <span>{formatCollected(disbursed, aidTypeName)} disbursed</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="inline-block w-3 h-3 bg-[#ff6200] rounded"></span>
+                <span>{formatCollected(collected, aidTypeName)} collected</span>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="inline-block w-3 h-3 bg-[#ff6200] rounded"></span>
-              <span>₹{collected.toLocaleString()} collected</span>
-            </div>
-          </div>
+          }
 
           <p className="text-gray-600 mb-6 text-sm text-center">
-            Raised of ₹{goal.toLocaleString()} goal
+            {getCollectedLabel(aidTypeName)} of {formatGoal(goal, aidTypeName)} goal
           </p>
 
           {/* {fundingStatus !== "Fully Funded" &&

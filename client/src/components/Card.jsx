@@ -6,9 +6,11 @@ import { IoMdTime } from "react-icons/io";
 import { Link, useNavigate } from "react-router-dom";
 import { apiRequest, API_ENDPOINTS } from "../config/api";
 import { getCauseImage } from "../utils/imageHelper";
+import { formatGoal, formatCollected, getCollectedLabel } from "../utils/goalHelper";
 
 const Card = ({ cause }) => {
   const navigate = useNavigate();
+  const aidTypeName = cause?.aid_type?.name || "";
   const raised = parseFloat(cause.collected_amount);
 
   let goal
@@ -201,8 +203,8 @@ const Card = ({ cause }) => {
 
               {/* Raised vs Goal */}
               <div className="flex justify-between text-sm text-gray-600">
-                <span> <span className="text-lg font-bold text-black">₹{raised.toLocaleString()}</span> Raised</span>
-                <span>Goal: <span className="text-red-500 font-bold">₹{goal.toLocaleString()}</span></span>
+                <span> <span className="text-lg font-bold text-black">{formatCollected(raised, aidTypeName)}</span> {getCollectedLabel(aidTypeName)}</span>
+                <span>Goal: <span className="text-red-500 font-bold">{formatGoal(goal, aidTypeName)}</span></span>
               </div>
             </div>
           ) : (

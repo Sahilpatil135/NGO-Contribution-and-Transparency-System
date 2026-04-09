@@ -5,6 +5,7 @@ import StatsCounter from '../components/StatsCounter';
 import Card from '../components/Card';
 import { apiRequest, API_ENDPOINTS } from '../config/api';
 import { useEffect, useState } from 'react';
+import { CampaignCardSkeleton } from '../components/LoadingSkeleton';
 
 const HomePage = () => {
     const { user } = useAuth();
@@ -156,7 +157,11 @@ const HomePage = () => {
                             <Card key={idx} cause={cause} />
                         ))
                     ) : (
-                        <h1>LOADING</h1>
+                        <>
+                            <CampaignCardSkeleton />
+                            <CampaignCardSkeleton />
+                            <CampaignCardSkeleton />
+                        </>
                     )}
                 </div>
             </section>

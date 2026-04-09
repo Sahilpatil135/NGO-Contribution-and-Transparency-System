@@ -109,7 +109,7 @@ export default function UploadUpdate() {
     }
     setDraftRestored(true);
   }, [draftKey]);
-// }
+  // }
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => {
@@ -279,7 +279,7 @@ export default function UploadUpdate() {
       }
     });
   }, [receipts, form.update_type]);
-// }
+  // }
 
   const handleReceiptChange = async (e) => {
     const file = e.target.files?.[0];

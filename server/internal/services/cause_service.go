@@ -27,6 +27,7 @@ type CauseService interface {
 	GetByDomainID(ctx context.Context, id uuid.UUID) ([]*models.Cause, error)
 	GetByAidTypeID(ctx context.Context, id uuid.UUID) ([]*models.Cause, error)
 	GetAll(ctx context.Context) ([]*models.Cause, error)
+	GetAllPaginated(ctx context.Context, limit, offset int) ([]*models.Cause, int64, error)
 
 	// Update(ctx context.Context, cause *models.Cause) error
 	Delete(ctx context.Context, id uuid.UUID) error
@@ -386,8 +387,8 @@ func (c *causeService) CheckBloodDonationEligibility(ctx context.Context, userID
 		return &models.BloodDonationEligibilityResponse{
 			HasIncompleteSubmission: true,
 			Eligible:                false,
-			RequiredGapDays:           requiredGapDays,
-			EligibilityMessage:        "You already have a blood donation submission in progress. Please wait until it is completed before submitting again.",
+			RequiredGapDays:         requiredGapDays,
+			EligibilityMessage:      "You already have a blood donation submission in progress. Please wait until it is completed before submitting again.",
 		}, nil
 	}
 
@@ -449,6 +450,8 @@ func (c *causeService) GetByID(ctx context.Context, id uuid.UUID) (*models.Cause
 		cause.Updates = updates
 	}
 
+	fmt.Printf("%+v\n", cause.Updates[0].Media[0])
+
 	return cause, nil
 }
 
@@ -490,6 +493,10 @@ func (c *causeService) GetAll(ctx context.Context) ([]*models.Cause, error) {
 	}
 
 	return causesResult, nil
+}
+
+func (c *causeService) GetAllPaginated(ctx context.Context, limit, offset int) ([]*models.Cause, int64, error) {
+	return c.causeRepo.GetAllPaginated(ctx, limit, offset)
 }
 
 func (c *causeService) Delete(ctx context.Context, id uuid.UUID) error {
@@ -632,7 +639,7 @@ func (c *causeService) CreateUpdate(ctx context.Context, causeID uuid.UUID, req 
 	} else if strings.EqualFold(req.UpdateType, "Execution") && req.ClaimedAmount != nil && len(req.ReceiptURLs) > 0 {
 		// Backward-compatible fallback: older clients may only send receipt URLs.
 		// In this mode, we synchronously call the Python AI service.
-	// }
+		// }
 		first := strings.TrimSpace(req.ReceiptURLs[0])
 		if first != "" {
 			// The upload endpoint returns a public URL like "/uploads/receipts/<file>".
