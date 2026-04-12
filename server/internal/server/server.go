@@ -56,7 +56,7 @@ func NewServer() *http.Server {
 	// Initialize services
 	jwtService := services.NewJWTService()
 	authService := services.NewAuthService(userRepo, organizationRepo, jwtService)
-	causeService := services.NewCauseService(causeRepo)
+	causeService := services.NewCauseService(causeRepo, organizationRepo)
 	causeVoteService := services.NewCauseVoteService(causeVoteRepo)
 	causeReviewService := services.NewCauseReviewService(causeReviewRepo)
 	proofService := services.NewProofService(proofSessionRepo, proofImageRepo, causeRepo)

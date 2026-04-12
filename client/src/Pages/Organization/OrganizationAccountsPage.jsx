@@ -199,6 +199,14 @@ const OrganizationAccountsPage = () => {
                 </span>
               </p>
             )}
+            {organization?.trust_score != null && (
+              <p className="text-sm text-gray-500 mt-2 flex items-center gap-2 bg-blue-50 w-fit px-3 py-1 rounded-md border border-blue-100 shadow-sm">
+                Trust Score:{" "}
+                <span className="font-bold text-blue-800 text-base">
+                  {Number(organization.trust_score).toFixed(1)} / 100
+                </span>
+              </p>
+            )}
           </div>
 
           <div className="text-sm text-gray-600">

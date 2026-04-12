@@ -25,6 +25,7 @@ type Organization struct {
 	Address            *string   `json:"address" db:"address"`
 	IsApproved         bool      `json:"is_approved" db:"is_approved"`
 	Amount             float64   `json:"amount" db:"amount"` // Total disbursed amount tracked off-chain
+	TrustScore         *float64  `json:"trust_score" db:"trust_score"`
 }
 
 // CreateOrganizationRequest represents the request payload for creating a organization
@@ -55,6 +56,7 @@ type OrganizationResponse struct {
 	Address            *string   `json:"address" db:"address"`
 	IsApproved         bool      `json:"is_approved" db:"is_approved"`
 	Amount             float64   `json:"amount" db:"amount"`
+	TrustScore         *float64  `json:"trust_score" db:"trust_score"`
 }
 
 // ToOrganizationResponse converts a Organization to OrganizationResponse
@@ -71,5 +73,6 @@ func (o *Organization) ToOrganizationResponse() OrganizationResponse {
 		Address:            o.Address,
 		IsApproved:         o.IsApproved,
 		Amount:             o.Amount,
+		TrustScore:         o.TrustScore,
 	}
 }

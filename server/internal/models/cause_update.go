@@ -17,6 +17,8 @@ type CauseUpdate struct {
 	FundingPercentage  *int           `json:"funding_percentage,omitempty" db:"funding_percentage"`
 	ClaimedAmount      *float64       `json:"claimed_amount,omitempty" db:"claimed_amount"`
 	VerificationScore  *float64       `json:"verification_score,omitempty" db:"verification_score"`
+	ReceiptScoreAvg    *float64       `json:"receipt_score_avg,omitempty" db:"receipt_score_avg"`
+	ProofImageScoreAvg *float64       `json:"proof_image_score_avg,omitempty" db:"proof_image_score_avg"`
 	VerificationStatus string         `json:"verification_status,omitempty" db:"verification_status"`
 	ProofSessionID     *uuid.UUID    `json:"proof_session_id,omitempty" db:"proof_session_id"`
 	// Backward-compat for existing frontend (CampaignPage.jsx) expecting is_verified.

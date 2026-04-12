@@ -47,6 +47,7 @@ type CauseRepository interface {
 	GetReceiptVerificationJob(ctx context.Context, organizationID uuid.UUID, receiptJobID uuid.UUID) (*models.ReceiptVerificationJob, error)
 	UpdateReceiptVerificationJobResult(ctx context.Context, organizationID uuid.UUID, receiptJobID uuid.UUID, status string, receiptScore *float64, errorMessage *string) error
 	GetReceiptVerificationJobsByIDs(ctx context.Context, organizationID uuid.UUID, receiptJobIDs []uuid.UUID) ([]*models.ReceiptVerificationJob, error)
+	GetProofImageScoreAvg(ctx context.Context, sessionID uuid.UUID) (*float64, error)
 	// }
 
 	// Update(ctx context.Context, cause *models.Cause) error
@@ -456,7 +457,7 @@ func (c *causeRepository) GetProductsByCauseID(ctx context.Context, causeID uuid
 
 func (c *causeRepository) GetUpdatesByCauseID(ctx context.Context, causeID uuid.UUID) ([]*models.CauseUpdate, error) {
 	query := `
-		SELECT id, cause_id, title, description, update_type, funding_percentage, claimed_amount, verification_score, verification_status, proof_session_id, created_at
+		SELECT id, cause_id, title, description, update_type, funding_percentage, claimed_amount, verification_score, receipt_score_avg, proof_image_score_avg, verification_status, proof_session_id, created_at
 		FROM cause_updates
 		WHERE cause_id = $1
 		ORDER BY created_at DESC
@@ -472,6 +473,8 @@ func (c *causeRepository) GetUpdatesByCauseID(ctx context.Context, causeID uuid.
 		u := &models.CauseUpdate{}
 		var claimed sql.NullFloat64
 		var vScore sql.NullFloat64
+		var rScore sql.NullFloat64
+		var pScore sql.NullFloat64
 		var vStatus sql.NullString
 		var proofSessionID sql.NullString
 		if err := rows.Scan(
@@ -483,6 +486,8 @@ func (c *causeRepository) GetUpdatesByCauseID(ctx context.Context, causeID uuid.
 			&u.FundingPercentage,
 			&claimed,
 			&vScore,
+			&rScore,
+			&pScore,
 			&vStatus,
 			&proofSessionID,
 			&u.CreatedAt,
@@ -496,6 +501,14 @@ func (c *causeRepository) GetUpdatesByCauseID(ctx context.Context, causeID uuid.
 		if vScore.Valid {
 			v := vScore.Float64
 			u.VerificationScore = &v
+		}
+		if rScore.Valid {
+			v := rScore.Float64
+			u.ReceiptScoreAvg = &v
+		}
+		if pScore.Valid {
+			v := pScore.Float64
+			u.ProofImageScoreAvg = &v
 		}
 		if vStatus.Valid {
 			u.VerificationStatus = vStatus.String
@@ -539,8 +552,8 @@ func (c *causeRepository) CreateUpdate(ctx context.Context, update *models.Cause
 	query := `
 		INSERT INTO cause_updates (
 			id, cause_id, title, description, update_type, funding_percentage,
-			claimed_amount, verification_score, verification_status, proof_session_id, created_at
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+			claimed_amount, verification_score, receipt_score_avg, proof_image_score_avg, verification_status, proof_session_id, created_at
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
 	`
 
 	_, err := c.db.ExecContext(ctx, query,
@@ -552,6 +565,8 @@ func (c *causeRepository) CreateUpdate(ctx context.Context, update *models.Cause
 		update.FundingPercentage,
 		update.ClaimedAmount,
 		update.VerificationScore,
+		update.ReceiptScoreAvg,
+		update.ProofImageScoreAvg,
 		update.VerificationStatus,
 		proofSessionArg,
 		update.CreatedAt,
@@ -780,6 +795,25 @@ func (c *causeRepository) GetReceiptVerificationJobsByIDs(
 	return jobs, nil
 }
 
+func (c *causeRepository) GetProofImageScoreAvg(ctx context.Context, sessionID uuid.UUID) (*float64, error) {
+	query := `
+		SELECT AVG(final_score)
+		FROM proof_images
+		WHERE session_id = $1
+	`
+	var avg sql.NullFloat64
+	if err := c.db.QueryRowContext(ctx, query, sessionID).Scan(&avg); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+		return nil, err
+	}
+	if avg.Valid {
+		v := avg.Float64
+		return &v, nil
+	}
+	return nil, nil
+}
 // }
 func (c *causeRepository) CreateProduct(ctx context.Context, product *models.CauseProduct) error {
 	query := `
