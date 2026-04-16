@@ -1,0 +1,37 @@
+{
+  "api": {
+    "BenchmarkHelloWorldHandler": {
+      "samples": 3,
+      "avg_latency_ns": 1413.0,
+      "avg_latency_ms": 0.001413,
+      "avg_throughput_rps": 707714.08,
+      "avg_bytes_per_op": 1457.0,
+      "avg_allocs_per_op": 15.0
+    },
+    "BenchmarkHelloWorldHandlerParallel": {
+      "samples": 3,
+      "avg_latency_ns": 1982.33,
+      "avg_latency_ms": 0.001982,
+      "avg_throughput_rps": 504456.03,
+      "avg_bytes_per_op": 6569.0,
+      "avg_allocs_per_op": 24.0
+    }
+  },
+  "blockchain": {
+    "DonationLedger.recordDonation": {
+      "avg_gas": 180831,
+      "min_gas": null,
+      "max_gas": null
+    },
+    "MilestoneTracker.recordDonation": {
+      "avg_gas": 50173,
+      "min_gas": 41623,
+      "max_gas": 58723
+    },
+    "MilestoneTracker.registerOrUpdateCause": {
+      "avg_gas": 71450,
+      "min_gas": null,
+      "max_gas": null
+    }
+  }
+}

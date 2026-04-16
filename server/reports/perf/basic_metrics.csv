@@ -1,0 +1,14 @@
+category,metric,value,unit
+api,BenchmarkHelloWorldHandler.avg_latency_ms,0.001413,ms
+api,BenchmarkHelloWorldHandler.avg_throughput_rps,707714.08,rps
+api,BenchmarkHelloWorldHandler.avg_bytes_per_op,1457.0,bytes/op
+api,BenchmarkHelloWorldHandler.avg_allocs_per_op,15.0,allocs/op
+api,BenchmarkHelloWorldHandlerParallel.avg_latency_ms,0.001982,ms
+api,BenchmarkHelloWorldHandlerParallel.avg_throughput_rps,504456.03,rps
+api,BenchmarkHelloWorldHandlerParallel.avg_bytes_per_op,6569.0,bytes/op
+api,BenchmarkHelloWorldHandlerParallel.avg_allocs_per_op,24.0,allocs/op
+blockchain,DonationLedger.recordDonation.avg_gas,180831,gas
+blockchain,MilestoneTracker.recordDonation.avg_gas,50173,gas
+blockchain,MilestoneTracker.recordDonation.min_gas,41623,gas
+blockchain,MilestoneTracker.recordDonation.max_gas,58723,gas
+blockchain,MilestoneTracker.registerOrUpdateCause.avg_gas,71450,gas

@@ -62,3 +62,8 @@ watch:
         fi
 
 .PHONY: all build run test clean watch docker-run docker-down itest
+
+perf:
+	@bash ./scripts/run_metrics_tests.sh
+
+.PHONY: perf
