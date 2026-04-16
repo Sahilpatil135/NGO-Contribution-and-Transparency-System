@@ -47,6 +47,7 @@ const CampaignPage = () => {
       const causeResult = await apiRequest(
         `${API_ENDPOINTS.GET_CAUSES}/${causeID}`
       );
+      console.log(causeResult);
 
       if (causeResult.success && causeResult.data) {
         setCause(causeResult.data);
@@ -820,7 +821,7 @@ const CampaignPage = () => {
                           onClick={async () => {
                             if (!causeID) return;
                             const text = reviewText.trim();
-                            if (text.length < 5) return;
+                            if (text.length < 2) return;
                             setReviewsSubmitting(true);
                             const res = await apiRequest(
                               API_ENDPOINTS.CREATE_CAUSE_REVIEW(causeID),

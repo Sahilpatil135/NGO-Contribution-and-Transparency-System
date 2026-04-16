@@ -47,11 +47,13 @@ type CauseService interface {
 
 type causeService struct {
 	causeRepo repository.CauseRepository
+	orgRepo   repository.OrganizationRepository
 }
 
-func NewCauseService(causeRepo repository.CauseRepository) *causeService {
+func NewCauseService(causeRepo repository.CauseRepository, orgRepo repository.OrganizationRepository) *causeService {
 	return &causeService{
 		causeRepo: causeRepo,
+		orgRepo:   orgRepo,
 	}
 }
 
@@ -627,15 +629,28 @@ func (c *causeService) CreateUpdate(ctx context.Context, causeID uuid.UUID, req 
 			count int
 		)
 		for _, j := range jobs {
-			if j.ReceiptScore != nil {
+			if strings.TrimSpace(strings.ToLower(j.Status)) == "verified" && j.ReceiptScore != nil {
 				sum += *j.ReceiptScore
 				count++
 			}
 		}
+
+		var receiptAvg float64
 		if count > 0 {
-			avg := sum / float64(count)
-			update.VerificationScore = &avg
+			receiptAvg = sum / float64(count)
+			update.ReceiptScoreAvg = &receiptAvg
 		}
+		
+		var proofAvg float64
+		if req.ProofSessionID != nil {
+			if avg, err := c.causeRepo.GetProofImageScoreAvg(ctx, *req.ProofSessionID); err == nil && avg != nil {
+				proofAvg = *avg
+				update.ProofImageScoreAvg = &proofAvg
+			}
+		}
+
+		verificationScore := (0.6 * receiptAvg) + (0.4 * proofAvg)
+		update.VerificationScore = &verificationScore
 	} else if strings.EqualFold(req.UpdateType, "Execution") && req.ClaimedAmount != nil && len(req.ReceiptURLs) > 0 {
 		// Backward-compatible fallback: older clients may only send receipt URLs.
 		// In this mode, we synchronously call the Python AI service.
@@ -684,6 +699,18 @@ func (c *causeService) CreateUpdate(ctx context.Context, causeID uuid.UUID, req 
 			}
 			update.Media = append(update.Media, media)
 		}
+	}
+
+	if strings.EqualFold(req.UpdateType, "Execution") {
+		// Asynchronously update trust score so we don't slow down this response
+		go func() {
+			bgCtx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+			defer cancel()
+			orgIDAny := ctx.Value("organizationID")
+			if orgID, ok := orgIDAny.(uuid.UUID); ok && orgID != uuid.Nil {
+				_ = c.orgRepo.UpdateTrustScore(bgCtx, orgID)
+			}
+		}()
 	}
 
 	return update, nil

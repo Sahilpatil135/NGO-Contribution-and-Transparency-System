@@ -117,19 +117,6 @@ ADD COLUMN total_images INTEGER DEFAULT 0,
 ADD COLUMN verified_images INTEGER DEFAULT 0,
 ADD COLUMN session_score NUMERIC(5,2);
 
--- Added on 18/3/2026
-CREATE TABLE disbursements (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    cause_id UUID REFERENCES causes(id) ON DELETE CASCADE,
-
-    amount NUMERIC(12,2) NOT NULL,
-    milestone_percentage INTEGER, -- e.g. 20, 40, etc.
-
-    tx_hash TEXT, -- blockchain transaction reference
-
-    released_at TIMESTAMP DEFAULT NOW()
-);
-
 ALTER TABLE cause_updates DROP COLUMN is_verified;
 
 ALTER TABLE cause_updates
@@ -238,3 +225,17 @@ CHECK (status IN ('pending', 'approved', 'assigned', 'completed', 'rejected'));
 ALTER TABLE cause_volunteer
 ADD CONSTRAINT check_volunteer_consent
 CHECK (consent = true);
+
+--new 
+--Added on 8/4/2026
+ALTER TABLE cause_updates
+ADD COLUMN receipt_score_avg NUMERIC(5,2),
+ADD COLUMN proof_image_score_avg NUMERIC(5,2);
+
+--new
+ALTER TABLE cause_reviews
+ADD COLUMN rating INTEGER CHECK (rating >= 1 AND rating <= 5);
+
+--new
+ALTER TABLE organizations
+ADD COLUMN trust_score NUMERIC(5,2);
