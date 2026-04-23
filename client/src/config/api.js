@@ -50,6 +50,9 @@ export const API_ENDPOINTS = {
   GET_CAUSE_DISBURSEMENTS: (causeId) =>
     `${API_BASE_URL}/api/disbursements/cause/${causeId}`,
 
+  // Admin
+  GET_ADMIN_DASHBOARD: `${API_BASE_URL}/api/admin/dashboard`,
+
   // Cause votes
   GET_CAUSE_VOTES: (causeId) =>
     `${API_BASE_URL}/api/causes/${causeId}/votes`,

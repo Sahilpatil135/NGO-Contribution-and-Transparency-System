@@ -19,7 +19,7 @@ type OrganizationRepository interface {
 	GetByProviderID(ctx context.Context, provider, providerID string) (*models.Organization, error)
 	AddToAmount(ctx context.Context, organizationID uuid.UUID, amount float64) error
 	UpdateTrustScore(ctx context.Context, organizationID uuid.UUID) error
-	// GetAll(ctx context.Context, provider, providerID string) (*models.Organization, error)
+	// GetAll(ctx context.Context) ([]*models.Organization, error)
 	// Update(ctx context.Context, organization *models.Organization) error
 	Delete(ctx context.Context, id uuid.UUID) error
 }
@@ -292,6 +292,8 @@ func (r *organizationRepository) UpdateTrustScore(ctx context.Context, organizat
 	_, err := r.db.ExecContext(ctx, query, organizationID)
 	return err
 }
+
+
 
 // func (r *organizationRepository) Update(ctx context.Context, organization *models.Organization) error { }
 

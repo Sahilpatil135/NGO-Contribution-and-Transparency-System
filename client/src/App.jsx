@@ -21,6 +21,14 @@ import UploadUpdate from './Pages/Ngo/UploadUpdate';
 import MobileProofCapture from './Pages/MobileProofCapture';
 import BloodDonationPage from './Pages/BloodDonationPage';
 import VolunteerPage from './Pages/VolunteerPage';
+import AdminDashboard from './Pages/AdminDashboard';
+import {
+  NgoVerificationManagementPage,
+  DisputeResolutionPanelPage,
+  CauseActivityMonitoringPage,
+  TrustScoreOverviewPage,
+  UserNgoManagementPage
+} from './Pages/AdminGovernancePages';
 
 const AppRoutes = () => {
   const { isAuthenticated, isLoading } = useAuth();
@@ -78,6 +86,14 @@ const AppRoutes = () => {
           element={<OrganizationAccountsPage />}
         />
         <Route path="/makeContribution/:category/:slug" element={isAuthenticated ? <DonationTypePage /> : <Navigate to="/login" replace />} />
+        {/* <Route path="/admin" element={isAuthenticated ? <AdminDashboard /> : <Navigate to="/login" replace />} /> */}
+        <Route path="/admin" element={<AdminDashboard />} />
+
+        <Route path="/admin/ngo-verifications" element={isAuthenticated ? <NgoVerificationManagementPage /> : <Navigate to="/login" replace />} />
+        <Route path="/admin/disputes" element={isAuthenticated ? <DisputeResolutionPanelPage /> : <Navigate to="/login" replace />} />
+        <Route path="/admin/causes-monitoring" element={isAuthenticated ? <CauseActivityMonitoringPage /> : <Navigate to="/login" replace />} />
+        <Route path="/admin/trust-scores" element={isAuthenticated ? <TrustScoreOverviewPage /> : <Navigate to="/login" replace />} />
+        <Route path="/admin/user-ngo-management" element={isAuthenticated ? <UserNgoManagementPage /> : <Navigate to="/login" replace />} />
 
         <Route path="/ngoRegistration" element={<NgoRegistration />} />
 
