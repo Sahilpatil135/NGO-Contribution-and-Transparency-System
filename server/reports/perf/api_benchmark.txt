@@ -1,0 +1,12 @@
+goos: linux
+goarch: amd64
+pkg: server/internal/server
+cpu: AMD Ryzen 7 5800HS with Radeon Graphics        
+BenchmarkHelloWorldHandler-16            	  824374	      1409 ns/op	    1457 B/op	      15 allocs/op
+BenchmarkHelloWorldHandler-16            	  779139	      1422 ns/op	    1457 B/op	      15 allocs/op
+BenchmarkHelloWorldHandler-16            	  723597	      1408 ns/op	    1457 B/op	      15 allocs/op
+BenchmarkHelloWorldHandlerParallel-16    	  665360	      1962 ns/op	    6569 B/op	      24 allocs/op
+BenchmarkHelloWorldHandlerParallel-16    	  585583	      2017 ns/op	    6569 B/op	      24 allocs/op
+BenchmarkHelloWorldHandlerParallel-16    	  609804	      1968 ns/op	    6569 B/op	      24 allocs/op
+PASS
+ok  	server/internal/server	7.098s
