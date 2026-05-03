@@ -96,15 +96,15 @@ const OrganizationAccountsPage = () => {
 
       try {
         const res = await apiRequest(API_ENDPOINTS.GET_MY_ORGANIZATION_DISBURSEMENTS);
-        console.log(res.data.disbursements)
-        console.log(organizationId, user?.role === "organization")
+        // console.log(res.data.disbursements)
+        // console.log(organizationId, user?.role === "organization")
 
         if (res.data?.disbursements && Array.isArray(res.data.disbursements)) {
-          console.log(res.data.disbursements)
+          // console.log(res.data.disbursements)
           setDisbursements(res.data.disbursements);
           setLoadingDisbursements(true);
         } else {
-          console.log("EMPTY")
+          // console.log("EMPTY")
           setDisbursements([]);
         }
       } catch (e) {

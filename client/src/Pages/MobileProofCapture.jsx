@@ -15,7 +15,7 @@ export default function MobileProofCapture() {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          console.log("Initial location captured:", position.coords.latitude, position.coords.longitude);
+          // console.log("Initial location captured:", position.coords.latitude, position.coords.longitude);
           setLocation({
             lat: position.coords.latitude,
             lng: position.coords.longitude,
@@ -67,7 +67,7 @@ export default function MobileProofCapture() {
               }
             );
           });
-          console.log("Location captured:", position.coords.latitude, position.coords.longitude);
+          // console.log("Location captured:", position.coords.latitude, position.coords.longitude);
           setLocation({
             lat: position.coords.latitude,
             lng: position.coords.longitude,
@@ -76,7 +76,7 @@ export default function MobileProofCapture() {
           console.warn("Geolocation error:", geoError);
           // Use previously stored location if available
           if (location && location.lat && location.lng) {
-            console.log("Using cached location:", location);
+            // console.log("Using cached location:", location);
             position = {
               coords: {
                 latitude: location.lat,
@@ -99,11 +99,11 @@ export default function MobileProofCapture() {
       if (position && position.coords) {
         latValue = position.coords.latitude.toString();
         lngValue = position.coords.longitude.toString();
-        console.log("Sending location in form:", latValue, lngValue);
+        // console.log("Sending location in form:", latValue, lngValue);
       } else if (location && location.lat && location.lng) {
         latValue = location.lat.toString();
         lngValue = location.lng.toString();
-        console.log("Sending cached location in form:", latValue, lngValue);
+        // console.log("Sending cached location in form:", latValue, lngValue);
       } else {
         console.warn("No location available to send");
       }

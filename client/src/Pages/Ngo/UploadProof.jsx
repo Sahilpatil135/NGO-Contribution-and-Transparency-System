@@ -71,14 +71,14 @@ export default function UploadProof() {
     );
 
     ws.onopen = () => {
-      console.log("WebSocket connected");
+      // console.log("WebSocket connected");
     };
 
     ws.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
-        console.log("Received WebSocket data:", data);
-        console.log("Location data - lat:", data.lat, "lng:", data.lng);
+        // console.log("Received WebSocket data:", data);
+        // console.log("Location data - lat:", data.lat, "lng:", data.lng);
         setCaptures((prev) => [...prev, data]);
       } catch (err) {
         console.error("Error parsing WebSocket message:", err);
@@ -90,7 +90,7 @@ export default function UploadProof() {
     };
 
     ws.onclose = () => {
-      console.log("WebSocket disconnected");
+      // console.log("WebSocket disconnected");
     };
 
     return () => {

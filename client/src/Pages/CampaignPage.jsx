@@ -47,7 +47,7 @@ const CampaignPage = () => {
       const causeResult = await apiRequest(
         `${API_ENDPOINTS.GET_CAUSES}/${causeID}`
       );
-      console.log(causeResult);
+      // console.log(causeResult);
 
       if (causeResult.success && causeResult.data) {
         setCause(causeResult.data);
@@ -257,7 +257,7 @@ const CampaignPage = () => {
   const isBloodDonationAid =
     cause.aid_type?.name === BLOOD_DONATION_AID_TYPE_NAME;
 
-  console.log(isBloodDonationAid, cause.aid_type?.name, BLOOD_DONATION_AID_TYPE_NAME)
+  // console.log(isBloodDonationAid, cause.aid_type?.name, BLOOD_DONATION_AID_TYPE_NAME)
   const isVolunteeringAid =
     cause.aid_type?.name === VOLUNTEERING_AID_TYPE_NAME;
 
@@ -590,7 +590,7 @@ const CampaignPage = () => {
                         ? proofsBySession[proofSessionId]
                         : [];
 
-                    console.log("score ", u)
+                    // console.log("score ", u)
 
                     return (
                       <div
@@ -721,7 +721,7 @@ const CampaignPage = () => {
                                     : p?.image
                                       ? `${API_BASE_URL}/uploads/${p.image}`
                                       : null;
-                                  console.log("proofs data", p);
+                                  // console.log("proofs data", p);
                                   return (
                                     <div
                                       key={p?.image ? p.image : idx}

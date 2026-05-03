@@ -24,6 +24,6 @@ export const ENV = {
 
 // Dev log
 if (ENV.IS_DEVELOPMENT) {
-  console.log('Environment configuration:', ENV);
+  // console.log('Environment configuration:', ENV);
 }
 
