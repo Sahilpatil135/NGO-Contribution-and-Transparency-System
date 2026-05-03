@@ -14,11 +14,13 @@ const Navbar = () => {
         s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
 
     const userLandingPath =
-        user?.role === "organization" && organization?.id
-            ? `/organization/${organization.id}/accounts`
-            : user?.role === "organization"
-              ? "/organization/accounts"
-              : "/profile";
+        user?.role === "admin"
+            ? "/admin"
+            : user?.role === "organization" && organization?.id
+                ? `/organization/${organization.id}/accounts`
+                : user?.role === "organization"
+                    ? "/organization/accounts"
+                    : "/profile";
 
     const navLinks = [
         { name: "Home", path: "/" },

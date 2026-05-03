@@ -78,7 +78,7 @@ export const AuthProvider = ({ children }) => {
           await fetchCurrentOrganization();
         }
 
-        return { success: true };
+        return { success: true, role: userData.role };
       } else {
         return { success: false, error: result.error || 'Login failed. Please try again.' };
       }

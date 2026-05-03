@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { ValidationRules } from '../FormValidation';
 import './Auth.css';
 
 const Login = () => {
   const { login, googleAuth } = useAuth();
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [formData, setFormData] = useState({
     email: '',
@@ -99,8 +100,11 @@ const Login = () => {
       const result = await login(formData.email, formData.password);
       if (!result.success) {
         setError(result.error || 'Login failed. Please try again.');
+      } else if (result.role === 'admin') {
+        // Redirect admin users to the admin dashboard
+        navigate('/admin', { replace: true });
       }
-      // If successful, the AuthContext will handle the redirect
+      // For regular users, App.jsx handles redirect via isAuthenticated check
     } catch (err) {
       setError('Login failed. Please try again.');
     } finally {

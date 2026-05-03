@@ -24,16 +24,19 @@ export const useOAuthCallback = () => {
           localStorage.setItem('authToken', token);
           const me = await fetchCurrentUser();
           if (me.success) {
-            navigate('/', { replace: true });
+            // Redirect admin users to the admin dashboard
+            const destination = me.data?.role === 'admin' ? '/admin' : '/';
+            navigate(destination, { replace: true });
           } else {
             navigate('/login?error=oauth_failed');
           }
           return;
         }
 
-        // Fallback: if already authenticated
+        // Fallback: if already authenticated, respect role
         if (user) {
-          navigate('/', { replace: true });
+          const destination = user.role === 'admin' ? '/admin' : '/';
+          navigate(destination, { replace: true });
           return;
         }
 

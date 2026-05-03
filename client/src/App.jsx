@@ -31,8 +31,15 @@ import {
 } from './Pages/AdminGovernancePages';
 
 const AppRoutes = () => {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
   const location = useLocation();
+
+  // Guard for routes that require the "admin" role
+  const AdminRoute = ({ element }) => {
+    if (!isAuthenticated) return <Navigate to="/login" replace />;
+    if (user?.role !== 'admin') return <Navigate to="/" replace />;
+    return element;
+  };
 
   if (isLoading) {
     return (
@@ -86,14 +93,13 @@ const AppRoutes = () => {
           element={<OrganizationAccountsPage />}
         />
         <Route path="/makeContribution/:category/:slug" element={isAuthenticated ? <DonationTypePage /> : <Navigate to="/login" replace />} />
-        {/* <Route path="/admin" element={isAuthenticated ? <AdminDashboard /> : <Navigate to="/login" replace />} /> */}
-        <Route path="/admin" element={<AdminDashboard />} />
-
-        <Route path="/admin/ngo-verifications" element={isAuthenticated ? <NgoVerificationManagementPage /> : <Navigate to="/login" replace />} />
-        <Route path="/admin/disputes" element={isAuthenticated ? <DisputeResolutionPanelPage /> : <Navigate to="/login" replace />} />
-        <Route path="/admin/causes-monitoring" element={isAuthenticated ? <CauseActivityMonitoringPage /> : <Navigate to="/login" replace />} />
-        <Route path="/admin/trust-scores" element={isAuthenticated ? <TrustScoreOverviewPage /> : <Navigate to="/login" replace />} />
-        <Route path="/admin/user-ngo-management" element={isAuthenticated ? <UserNgoManagementPage /> : <Navigate to="/login" replace />} />
+        {/* Admin routes — require "admin" role */}
+        <Route path="/admin" element={<AdminRoute element={<AdminDashboard />} />} />
+        <Route path="/admin/ngo-verifications" element={<AdminRoute element={<NgoVerificationManagementPage />} />} />
+        <Route path="/admin/disputes" element={<AdminRoute element={<DisputeResolutionPanelPage />} />} />
+        <Route path="/admin/causes-monitoring" element={<AdminRoute element={<CauseActivityMonitoringPage />} />} />
+        <Route path="/admin/trust-scores" element={<AdminRoute element={<TrustScoreOverviewPage />} />} />
+        <Route path="/admin/user-ngo-management" element={<AdminRoute element={<UserNgoManagementPage />} />} />
 
         <Route path="/ngoRegistration" element={<NgoRegistration />} />
 
