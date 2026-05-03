@@ -814,6 +814,7 @@ func (c *causeRepository) GetProofImageScoreAvg(ctx context.Context, sessionID u
 	}
 	return nil, nil
 }
+
 // }
 func (c *causeRepository) CreateProduct(ctx context.Context, product *models.CauseProduct) error {
 	query := `

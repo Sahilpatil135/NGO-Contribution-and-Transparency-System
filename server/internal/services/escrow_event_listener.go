@@ -120,7 +120,7 @@ func (l *EscrowEventListener) processPastEvents(ctx context.Context) error {
 		End:     nil,
 		Context: ctx,
 	}
-	
+
 	iterator, err := l.contract.MilestoneTrackerFilterer.FilterMilestoneReached(opts, nil)
 	if err != nil {
 		return fmt.Errorf("failed to create event filter: %w", err)
@@ -132,7 +132,7 @@ func (l *EscrowEventListener) processPastEvents(ctx context.Context) error {
 
 	for iterator.Next() {
 		event := iterator.Event
-		
+
 		// Check if this disbursement already exists (to avoid duplicates)
 		causeID := blockchain.Bytes16ToUUID(event.CauseId)
 		existing, err := l.disbursementRepo.GetByCauseAndMilestone(ctx, causeID, int(event.Milestone))
@@ -146,7 +146,7 @@ func (l *EscrowEventListener) processPastEvents(ctx context.Context) error {
 			log.Printf("[ERROR] Failed to process historical milestone: %v", err)
 			continue
 		}
-		
+
 		processedCount++
 	}
 

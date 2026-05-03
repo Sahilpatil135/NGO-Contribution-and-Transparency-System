@@ -452,8 +452,6 @@ func (c *causeService) GetByID(ctx context.Context, id uuid.UUID) (*models.Cause
 		cause.Updates = updates
 	}
 
-	fmt.Printf("%+v\n", cause.Updates[0].Media[0])
-
 	return cause, nil
 }
 
@@ -640,7 +638,7 @@ func (c *causeService) CreateUpdate(ctx context.Context, causeID uuid.UUID, req 
 			receiptAvg = sum / float64(count)
 			update.ReceiptScoreAvg = &receiptAvg
 		}
-		
+
 		var proofAvg float64
 		if req.ProofSessionID != nil {
 			if avg, err := c.causeRepo.GetProofImageScoreAvg(ctx, *req.ProofSessionID); err == nil && avg != nil {

@@ -57,18 +57,6 @@ func NewClient() (*Client, error) {
 	// var chainID big.Int = *big.NewInt(31337)
 	chainID, err := client.ChainID(context.Background())
 
-	// Replace with your actual deployed contract address
-	// contractAddress := common.HexToAddress(os.Getenv("CONTRACT_ADDRESS_1"))
-
-	// Load the contract
-	// instance, err := donationLedger.NewDonationLedger(contractAddress, client)
-	// if err != nil {
-	// log.Fatalf("Failed to load the contract: %v", err)
-	// }
-
-	// recordDonation(instance, auth)
-	// getDonationsByCauseId(instance, auth)
-
 	return &Client{
 		EthClient:  client,
 		PrivateKey: privateKey,

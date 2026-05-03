@@ -12,6 +12,8 @@ import torch
 import imagehash
 from transformers import CLIPProcessor, CLIPModel
 import os
+import tempfile
+from urllib.request import Request, urlopen
 
 app = FastAPI()
 
@@ -49,6 +51,91 @@ class AnalyzeRequest(BaseModel):
 class ReceiptRequest(BaseModel):
     receipt_path: str    
     claimed_amount: float
+
+IPFS_GATEWAYS = [
+    "https://gateway.pinata.cloud/ipfs/",
+    "https://ipfs.io/ipfs/",
+    "https://cloudflare-ipfs.com/ipfs/",
+]
+
+CONTENT_TYPE_EXTENSIONS = {
+    "image/jpeg": ".jpg",
+    "image/jpg": ".jpg",
+    "image/png": ".png",
+    "application/pdf": ".pdf",
+}
+
+def _extract_ext_from_path(path: str):
+    ext = os.path.splitext(path)[1].lower()
+    if ext in [".jpg", ".jpeg", ".png", ".pdf", ".jfif"]:
+        if ext == ".jpeg":
+            return ".jpg"
+        return ext
+    return None
+
+def _extension_from_content_type(content_type: str):
+    if not content_type:
+        return None
+    return CONTENT_TYPE_EXTENSIONS.get(content_type.split(";")[0].strip().lower())
+
+def _extract_ipfs_ref(path: str):
+    if path.startswith("ipfs://"):
+        ref = path[len("ipfs://"):].lstrip("/")
+        if ref.startswith("ipfs/"):
+            ref = ref[len("ipfs/"):]
+        return ref
+
+    marker = "/ipfs/"
+    if marker in path:
+        return path.split(marker, 1)[1].lstrip("/")
+    return None
+
+def _build_ipfs_urls(path: str):
+    ref = _extract_ipfs_ref(path)
+    if not ref:
+        return []
+
+    urls = []
+    if path.startswith("http://") or path.startswith("https://"):
+        urls.append(path)
+
+    for gateway in IPFS_GATEWAYS:
+        urls.append(gateway + ref)
+    return urls
+
+def resolve_ipfs_to_local_path(path: str):
+    """
+    If path is an IPFS path/URL, download it to a temp local file and return:
+    (resolved_path, temp_file_path_or_None)
+    """
+    if os.path.exists(path):
+        return path, None
+
+    candidate_urls = _build_ipfs_urls(path)
+    if not candidate_urls:
+        return path, None
+
+    ext_hint = _extract_ext_from_path(path) or ".jpg"
+    last_error = None
+
+    for url in candidate_urls:
+        try:
+            req = Request(url, headers={"User-Agent": "ngo-ai-service/1.0"})
+            with urlopen(req, timeout=20) as resp:
+                content = resp.read()
+                if not content:
+                    raise ValueError("empty response body")
+
+                ext = _extension_from_content_type(resp.headers.get("Content-Type")) or _extract_ext_from_path(url) or ext_hint
+                tmp = tempfile.NamedTemporaryFile(delete=False, suffix=ext)
+                tmp.write(content)
+                tmp.close()
+                return tmp.name, tmp.name
+        except Exception as err:
+            last_error = err
+            continue
+
+    raise ValueError(f"Failed to fetch IPFS file: {last_error}")
 
 # ─────────────────────────────────────────────
 #  Helper functions for GST validation
@@ -140,6 +227,7 @@ def convert_pdf(path):
     return path
 
 def preprocess_receipt(path):
+    print(path)
 
     img = cv2.imread(path)
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)   
@@ -462,83 +550,90 @@ def analyze(data: AnalyzeRequest):
       - duplicate_image
     """
 
-    if not os.path.exists(data.image_path):
-        return {"error": "Image not found"}
+    temp_path = None
+    try:
+        image_path, temp_path = resolve_ipfs_to_local_path(data.image_path)
+    except Exception as e:
+        return {"error": f"Failed to load image: {e}"}
 
-    flags = []
-    score = 0
-    hard_failures = []
+    try:
+        if not os.path.exists(image_path):
+            return {"error": "Image not found"}
 
-    # ── 1. Image quality — blur detection (max 20 pts) ──────────────────────
-    img = cv2.imread(data.image_path)
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        flags = []
+        score = 0
+        hard_failures = []
 
-    blur_score = cv2.Laplacian(gray, cv2.CV_64F).var()
-    print(f"Blur score: {blur_score}")
+        # ── 1. Image quality — blur detection (max 20 pts) ──────────────────────
+        img = cv2.imread(image_path)
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
-    if blur_score < 50:
-        flags.append("blurry_image")
-    else:
-        score += 20
+        blur_score = cv2.Laplacian(gray, cv2.CV_64F).var()
+        print(f"Blur score: {blur_score}")
+
+        if blur_score < 50:
+            flags.append("blurry_image")
+        else:
+            score += 20
 
     # ── 2. Perceptual hash — duplicate detection ─────────────────────────────
     # try to detect diplicate image after retrieving previous phashes from datatbase. Then add 10 pts. and make blur to 10pts
-    pil_img = Image.open(data.image_path).convert("RGB")
+        pil_img = Image.open(image_path).convert("RGB")
 
-    current_phash = imagehash.phash(pil_img)
+        current_phash = imagehash.phash(pil_img)
 
-    for prev in data.previous_phashes:
-        prev_hash = imagehash.hex_to_hash(prev)
+        for prev in data.previous_phashes:
+            prev_hash = imagehash.hex_to_hash(prev)
 
-        # Hamming distance
-        distance = current_phash - prev_hash
+            # Hamming distance
+            distance = current_phash - prev_hash
 
-        if distance < 5:
-            flags.append("Duplicate image")
-            hard_failures.append("duplicate_image")
-            break
+            if distance < 5:
+                flags.append("Duplicate image")
+                hard_failures.append("duplicate_image")
+                break
     
     # After verified images, store the hash in your database.Store: Cause ID, Image URL, Perceptual Hash, CLIP Embedding
-    data.previous_phashes.append(str(current_phash))
-    print(f"Previous phashes: {data.previous_phashes}")
-    score += 20
+        data.previous_phashes.append(str(current_phash))
+        print(f"Previous phashes: {data.previous_phashes}")
+        score += 20
 
     # ── 3. Semantic similarity — cause vs image (max 60 pts) ─────────────────
-    CLIP_LOW  = 0.15   # score = 0  below this
-    CLIP_HIGH = 0.35   # score = 60 at or above this
-    CLIP_THRESHOLD = 0.20   # below → hard cause_mismatch flag
+        CLIP_LOW  = 0.15   # score = 0  below this
+        CLIP_HIGH = 0.35   # score = 60 at or above this
+        CLIP_THRESHOLD = 0.20   # below → hard cause_mismatch flag
 
-    image = Image.open(data.image_path)
+        image = Image.open(image_path)
 
-    inputs = processor(
-        text=[data.cause_text],
-        images=image,
-        return_tensors="pt",
-        padding=True
-    ).to(device)
+        inputs = processor(
+            text=[data.cause_text],
+            images=image,
+            return_tensors="pt",
+            padding=True
+        ).to(device)
 
-    outputs = model(**inputs)
+        outputs = model(**inputs)
 
-    image_embeds = outputs.image_embeds
-    text_embeds = outputs.text_embeds
+        image_embeds = outputs.image_embeds
+        text_embeds = outputs.text_embeds
 
     # cosine similarity
-    similarity = torch.cosine_similarity(image_embeds, text_embeds).item()
-    print(f"Raw CLIP similarity: {similarity:.4f}")
+        similarity = torch.cosine_similarity(image_embeds, text_embeds).item()
+        print(f"Raw CLIP similarity: {similarity:.4f}")
 
     # semantic_score = int((similarity + 1) / 2 * 80)  # normalize -1..1 → 0..80
     
-    if similarity < CLIP_THRESHOLD:
-        flags.append("cause_mismatch")
-        hard_failures.append("cause_mismatch")
-        semantic_pts = 0
-    else:
-        # linear map [CLIP_LOW, CLIP_HIGH] → [0, 60]
-        clamped = max(CLIP_LOW, min(CLIP_HIGH, similarity))
-        semantic_pts = int(((clamped - CLIP_LOW) / (CLIP_HIGH - CLIP_LOW)) * 60)
+        if similarity < CLIP_THRESHOLD:
+            flags.append("cause_mismatch")
+            hard_failures.append("cause_mismatch")
+            semantic_pts = 0
+        else:
+            # linear map [CLIP_LOW, CLIP_HIGH] → [0, 60]
+            clamped = max(CLIP_LOW, min(CLIP_HIGH, similarity))
+            semantic_pts = int(((clamped - CLIP_LOW) / (CLIP_HIGH - CLIP_LOW)) * 60)
  
-    score += semantic_pts
-    print(f"Semantic pts: {semantic_pts} / 60  (similarity={similarity:.4f})")
+        score += semantic_pts
+        print(f"Semantic pts: {semantic_pts} / 60  (similarity={similarity:.4f})")
 
 
     # ── 4. Product detection via YOLO + CLIP (max 40 pts) ────────────────────
@@ -578,26 +673,29 @@ def analyze(data: AnalyzeRequest):
 
     # ── 5. Final decision ────────────────────────────────────────────────────    
     # Cap score at 100
-    score = min(score, 100)
+        score = min(score, 100)
  
-    if hard_failures:
-        # One or more critical checks failed — cannot be "verified"
-        status = "review" if score >= 40 else "rejected"
-    elif score >= 70:
-        status = "verified"
-    elif score >= 40:
-        status = "review"
-    else:
-        status = "rejected"
+        if hard_failures:
+            # One or more critical checks failed — cannot be "verified"
+            status = "review" if score >= 40 else "rejected"
+        elif score >= 70:
+            status = "verified"
+        elif score >= 40:
+            status = "review"
+        else:
+            status = "rejected"
  
-    return {
-        "final_score": score,
-        "validation_status": status,
-        "semantic_similarity": round(similarity, 4),
-        # "product_matches": product_matches,
-        "hard_failures": hard_failures,   # surfaces what blocked "verified"
-        "flags": flags
-    }
+        return {
+            "final_score": score,
+            "validation_status": status,
+            "semantic_similarity": round(similarity, 4),
+            # "product_matches": product_matches,
+            "hard_failures": hard_failures,   # surfaces what blocked "verified"
+            "flags": flags
+        }
+    finally:
+        if temp_path and os.path.exists(temp_path):
+            os.remove(temp_path)
 
 
 # <-- analyze-reciept Endpoint -->
@@ -621,71 +719,78 @@ def analyze_receipt(data: ReceiptRequest):
       - amount_mismatch
     """
 
-    valid, error = validate_file(data.receipt_path)
+    temp_path = None
+    try:
+        receipt_path, temp_path = resolve_ipfs_to_local_path(data.receipt_path)
+    except Exception as e:
+        return {"error": f"Failed to load receipt: {e}"}
 
-    if not valid:
-        return {"error": error}
+    try:
+        valid, error = validate_file(receipt_path)
 
-    flags = []
-    score = 0
-    hard_failures = []
+        if not valid:
+            return {"error": error}
 
-    # convert pdf if needed
-    path = convert_pdf(data.receipt_path)
+        flags = []
+        score = 0
+        hard_failures = []
 
-    # Ensure jpg format 
-    path = ensure_jpg(path)
+        # convert pdf if needed
+        path = convert_pdf(receipt_path)
 
-    # preprocessing
-    processed = preprocess_receipt(path)
+        # Ensure jpg format 
+        path = ensure_jpg(path)
 
-    # OCR
-    text = extract_receipt_text(processed)
-    print(f"Extracted OCR Text:{text}")
+        # preprocessing
+        processed = preprocess_receipt(path)
 
-    # Normalize text
-    text = normalize_ocr_text(text)
-    print(f"Normalize OCR Text:{text}")
+        # OCR
+        text = extract_receipt_text(processed)
+        print(f"Extracted OCR Text:{text}")
 
-    # parse fields
-    amounts, gst, gst_corrected = parse_receipt(text, data.claimed_amount)
-    print(f"Amount:{amounts}, GST: {gst}")
+        # Normalize text
+        text = normalize_ocr_text(text)
+        print(f"Normalize OCR Text:{text}")
+
+        # parse fields
+        amounts, gst, gst_corrected = parse_receipt(text, data.claimed_amount)
+        print(f"Amount:{amounts}, GST: {gst}")
     # amount, gst, gst_corrected = parse_receipt(text, data.claimed_amount)
     # print(f"Amount:{amount}, GST: {gst}")
 
     # ── 1. GST validation (25 pts) ───────────────────────────────────────────
-    gst_valid = validate_gst(gst)
+        gst_valid = validate_gst(gst)
 
-    if gst_valid:
-        score += 25
-        if gst_corrected:
-            flags.append("gst_ocr_corrected")  # soft flag, not penalized
-    else:
-        flags.append("invalid_gst")
-        hard_failures.append("invalid_gst")
+        if gst_valid:
+            score += 25
+            if gst_corrected:
+                flags.append("gst_ocr_corrected")  # soft flag, not penalized
+        else:
+            flags.append("invalid_gst")
+            hard_failures.append("invalid_gst")
 
 
     # ── 2. Tamper detection (25 pts) ─────────────────────────────────────────
-    tamper_score = tamper_detection(path)
+        tamper_score = tamper_detection(path)
 
-    if tamper_score < 10:
-        score += 25
-    else:
-        flags.append("possible_tampering")
-        hard_failures.append("possible_tampering")
+        if tamper_score < 10:
+            score += 25
+        else:
+            flags.append("possible_tampering")
+            hard_failures.append("possible_tampering")
 
     # ── 3. Amount matching (25 pts) ──────────────────────────────────────────
-    amount_found = False
-    for amt in amounts:
+        amount_found = False
+        for amt in amounts:
 
-        if abs(amt - data.claimed_amount) < 10:
-            score += 25
-            amount_found = True
-            break
+            if abs(amt - data.claimed_amount) < 10:
+                score += 25
+                amount_found = True
+                break
 
-    if not amount_found:
-        flags.append("amount_mismatch")
-        hard_failures.append("amount_mismatch")
+        if not amount_found:
+            flags.append("amount_mismatch")
+            hard_failures.append("amount_mismatch")
     # for amt in amounts:    
 
     #     if abs(amt - data.claimed_amount) < 10:
@@ -711,37 +816,39 @@ def analyze_receipt(data: ReceiptRequest):
     #     hard_failures.append("amount_not_found")
 
     # ── 4. Vendor reputation via GST (25 pts) ────────────────────────────────
-    if gst_valid:
-        score += 25
+        if gst_valid:
+            score += 25
 
 
     # remove 
-     # ── 5. Extract products (informational) ──────────────────────────────────
+    # ── 5. Extract products (informational) ──────────────────────────────────
     # products = extract_products(text)           
     
     # ── 6. Final decision ────────────────────────────────────────────────────
-    score = min(score, 100)
+        score = min(score, 100)
  
-    if hard_failures:
-        status = "review" if score >= 40 else "rejected"
-    elif score >= 70:
-        status = "verified"
-    elif score >= 40:
-        status = "review"
-    else:
-        status = "rejected"
+        if hard_failures:
+            status = "review" if score >= 40 else "rejected"
+        elif score >= 70:
+            status = "verified"
+        elif score >= 40:
+            status = "review"
+        else:
+            status = "rejected"
  
-    print(f"Score: {score}, Status: {status}")
- 
-    return {
-        "detected_amount": amounts[0],
-        "gst_number": gst,
-        "gst_ocr_corrected": gst_corrected,
-        "tamper_score": tamper_score,
-        "receipt_score": score,
-        "status": status,
-        # "products": products,
-        "hard_failures": hard_failures,   # surfaces what blocked "verified"
-        "flags": flags
-    }
-
+        print(f"Score: {score}, Status: {status}")
+    
+        return {
+            "detected_amount": amounts[0],
+            "gst_number": gst,
+            "gst_ocr_corrected": gst_corrected,
+            "tamper_score": tamper_score,
+            "receipt_score": score,
+            "status": status,
+            # "products": products,
+            "hard_failures": hard_failures,   # surfaces what blocked "verified"
+            "flags": flags
+        }
+    finally:
+        if temp_path and os.path.exists(temp_path):
+            os.remove(temp_path)

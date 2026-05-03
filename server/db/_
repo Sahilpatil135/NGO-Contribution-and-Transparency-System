@@ -1,0 +1,5 @@
+update cause_aid_types set name = 'Disaster Relief Assistance' where id = '55bd4667-492d-4b50-88d0-bc7400f21ce1';
+
+update cause_aid_types set name = 'Educational Support' where id = 'ef504f64-a0a3-4c58-8de2-dc8b6afa1413';
+
+update cause_aid_types set name = 'Medical Assistance' where id = '8fc1ab7b-2f26-4235-a243-0b6e578718ee';

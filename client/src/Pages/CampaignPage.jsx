@@ -256,6 +256,8 @@ const CampaignPage = () => {
   const canDonate = fundingStatus !== "Fully Funded" && fundingStatus !== "Closed";
   const isBloodDonationAid =
     cause.aid_type?.name === BLOOD_DONATION_AID_TYPE_NAME;
+
+  console.log(isBloodDonationAid, cause.aid_type?.name, BLOOD_DONATION_AID_TYPE_NAME)
   const isVolunteeringAid =
     cause.aid_type?.name === VOLUNTEERING_AID_TYPE_NAME;
 

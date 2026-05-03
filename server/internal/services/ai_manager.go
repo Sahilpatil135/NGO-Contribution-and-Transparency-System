@@ -3,15 +3,15 @@ package services
 import (
 	"bytes"
 	"encoding/json"
+	"log"
 	"net/http"
 	"os/exec"
 	"path/filepath"
 	"time"
-	"log"
 	// "fmt"
 )
 
-var aiURL = "http://127.0.0.1:8002"
+var aiURL = "http://127.0.0.1:8001"
 
 func isAIServiceRunning() bool {
 
@@ -19,7 +19,7 @@ func isAIServiceRunning() bool {
 		Timeout: 2 * time.Second,
 	}
 
-	log.Println("Checking AI service health at", aiURL + "/health")
+	log.Println("Checking AI service health at", aiURL+"/health")
 
 	resp, err := client.Get(aiURL + "/health")
 
@@ -64,10 +64,10 @@ func startAIService() error {
 	// 	if isAIServiceRunning() {
 	// 		return nil
 	// 	}
-	
+
 	// 	time.Sleep(2 * time.Second)
 	// }
-	
+
 	// return fmt.Errorf("AI service failed to start")
 
 	return nil
@@ -100,7 +100,6 @@ func CallAIService(imagePath string, causeText string) (map[string]interface{}, 
 
 	jsonData, _ := json.Marshal(payload)
 	log.Println("AI request payload:", string(jsonData))
-
 
 	resp, err := http.Post(
 		aiURL+"/analyze",
@@ -168,3 +167,4 @@ func CallAIReceiptService(receiptPath string, claimedAmount float64) (map[string
 
 	return result, nil
 }
+
